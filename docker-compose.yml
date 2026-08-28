@@ -1,0 +1,113 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: leave-mongo
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    # Persistent MongoDB data.
+    #
+    # IMPORTANT:
+    # `docker compose down` removes the Mongo container, but NOT this volume.
+    # Your MongoDB data will therefore survive:
+    #
+    #   docker compose down
+    #   docker compose up -d
+    #
+    # Do NOT use `docker compose down -v` if you want to keep the data,
+    # because `-v` also removes named volumes.
+    # Docs: https://docs.docker.com/reference/cli/docker/compose/down/#options
+    volumes:
+      - mongo_data:/data/db
+    # Flamingock needs multi-document transactions, which Mongo only supports
+    # on a replica set — even a single-node one. This self-initiates rs0 on
+    # first boot; no separate init container needed.
+    #
+    # NOTE: this is a community workaround, not an officially documented
+    # MongoDB feature — running rs.initiate() from inside a healthcheck
+    # works, but it's a side-effecting hack rather than a supported startup
+    # mechanism. Fine for local/dev use; don't rely on it in production.
+    # Replica set docs: https://www.mongodb.com/docs/manual/reference/method/rs.initiate/
+    healthcheck:
+      test: >
+        mongosh --quiet --port 27017 --eval
+        "try { rs.status().ok } catch (e) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}).ok }"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  mongo-express:
+    # NOTE: the official `mongo-express` image on Docker Hub is deprecated
+    # (last updated Apr 2024, no supported tags) — see
+    # https://hub.docker.com/_/mongo-express
+    # Pinning a known-good tag instead of `latest` so this doesn't silently
+    # break or change behavior on a future pull. Swap for a maintained fork
+    # if you need active security patches.
+    image: mongo-express:1.0.2
+    container_name: leave-mongo-express
+    restart: unless-stopped
+    ports:
+      - "8888:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      # Basic auth is off by default when the username/password vars are
+      # left unset — there is no documented `ME_CONFIG_BASICAUTH_ENABLED`
+      # variable, so the old line here was a no-op. Leaving both unset
+      # gets you the same "no auth" behavior. Set these two if you want
+      # to lock down the UI:
+      #   ME_CONFIG_BASICAUTH_USERNAME: "admin"
+      #   ME_CONFIG_BASICAUTH_PASSWORD: "change-me"
+      # Full env var reference:
+      # https://github.com/mongo-express/mongo-express-docker
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mail:
+    image: mailhog/mailhog:v1.0.1
+    container_name: leave-mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.5
+    container_name: leave-keycloak
+    command: start-dev
+    ports:
+      - "9090:8080"
+    environment:
+      # KC_BOOTSTRAP_ADMIN_USERNAME / KC_BOOTSTRAP_ADMIN_PASSWORD is the
+      # current way to seed the initial admin user (replaces the older
+      # KEYCLOAK_ADMIN / KEYCLOAK_ADMIN_PASSWORD vars).
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Pins the hostname used in issued tokens' "iss" claim and in the
+      # discovery document to the URL your BROWSER uses.
+      #
+      # Must match issuer-uri in application.yml and
+      # environment.keycloak.issuer in the Angular app.
+      #
+      # A full "scheme://host:port" value like this is the documented form
+      # for fixing the issuer URL (hostname:v2). start-dev defaults
+      # hostname-strict to false, so this isn't strictly required in dev
+      # mode, but setting it explicitly keeps issued tokens stable.
+      # Docs: https://www.keycloak.org/server/hostname
+      KC_HOSTNAME: http://localhost:9090
+    # IMPORTANT:
+    # Keycloak's `start-dev` uses an embedded H2 database by default.
+    # Without a volume, that database lives inside the container.
+    #
+    # `docker compose down` removes the container -> Keycloak data is lost.
+    #
+    # This volume keeps the embedded H2 database outside the container,
+    # so users, realms, clients, roles, etc. survive container recreation.
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+
+volumes:
+  # Persistent MongoDB database
+  mongo_data:
+  # Persistent Keycloak embedded H2 database
+  keycloak_data:
