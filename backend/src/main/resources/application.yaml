@@ -1,3 +1,70 @@
+# NB: variables default to localhost for local dev
+# but can be overridden by env vars in docker-compose
 spring:
   application:
     name: demo
+  data:
+    mongodb:
+      auto-index-creation: true
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:1025}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Must match the token's "iss" claim -> the URL the BROWSER uses to reach Keycloak.
+          issuer-uri: ${OAUTH2_ISSUER_URI:http://localhost:9090/realms/leave-workforce}
+          # Where THIS CONTAINER fetches the signing keys from -> Keycloak's internal docker name.
+          # Spring Boot lets these two differ: issuer-uri validates the "iss" claim,
+          # jwk-set-uri is what's actually called over the network.
+          jwk-set-uri: ${OAUTH2_JWK_SET_URI:http://localhost:9090/realms/leave-workforce/protocol/openid-connect/certs}
+
+  mongodb:
+    uri: ${MONGODB_URI:mongodb://localhost:27017/leave_management?replicaSet=rs0&retryWrites=true}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Flamingock (replaces Mongock). Stage location is set in code via
+# @EnableFlamingock(stages = @Stage(location = "com.acme.leave.migrations")).
+flamingock:
+  runnerType: ApplicationRunner   # runs after full context init (recommended)
+  lockAcquiredForMillis: 60000    # distributed lock TTL — raise for long-running changes
+
+app:
+  mongodb:
+    # Used by FlamingockConfig to build its target system / audit store against
+    # the same database as spring.data.mongodb.uri above. Keep these two in sync.
+    database: ${MONGODB_DATABASE:leave_management}
+  mail:
+    from: ${APP_MAIL_FROM:noreply@acme.tn}
+    enabled: ${APP_MAIL_ENABLED:true}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:4300}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+logging:
+  level:
+    com.acme.leave: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.security: INFO
+    io.flamingock: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
