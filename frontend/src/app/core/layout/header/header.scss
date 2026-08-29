@@ -1,0 +1,146 @@
+.header-toolbar {
+  height: 64px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: light-dark(#fff, #121212);
+  border-bottom: 1px solid light-dark(#e2e8f0, #2d2d2d);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  color: light-dark(#0f172a, #f8fafc);
+}
+
+html.dark .header-toolbar {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* =========================
+   Mobile menu
+   ========================= */
+.mobile-menu {
+  display: none;
+  flex-shrink: 0;
+  color: light-dark(#475569, #94a3b8);
+}
+
+/* =========================
+   Brand
+   ========================= */
+.brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.brand-logo {
+  width: 150px;
+  height: auto;
+  display: block;
+  filter: none;
+}
+
+html.dark .brand-logo {
+  filter: invert(1);
+}
+
+/* =========================
+   Desktop navigation
+   ========================= */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 16px;
+}
+
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: light-dark(#64748b, #cbd5e1);
+  text-decoration: none;
+  transition: background-color 0.15s ease,
+  color 0.15s ease;
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  background: light-dark(#f1f5f9, #242424);
+  color: light-dark(#0f172a, #f8fafc);
+}
+
+/* =========================
+   Spacer
+   ========================= */
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+/* =========================
+   Header actions
+   ========================= */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.notif-btn {
+  color: light-dark(#64748b, #cbd5e1);
+}
+
+.notif-btn:hover {
+  color: light-dark(#0f172a, #f8fafc);
+  background: light-dark(#f1f5f9, #242424);
+}
+
+/* =========================
+   Tablet / mobile
+   ========================= */
+@media (max-width: 768px) {
+  .header-toolbar {
+    height: 56px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .mobile-menu {
+    display: inline-flex;
+  }
+  .nav-links {
+    display: none;
+  }
+  .brand-logo {
+    width: 125px;
+  }
+}
+
+/* =========================
+   Small mobile
+   ========================= */
+@media (max-width: 480px) {
+  .header-toolbar {
+    padding: 0 8px;
+  }
+  .brand-logo {
+    width: 115px;
+  }
+}
+
+.brand-logo {
+  width: 150px;
+  height: auto;
+  display: block;
+  filter: invert(1); // dark is default, so logo is inverted by default
+}
+
+html.light .brand-logo {
+  filter: none;
+}

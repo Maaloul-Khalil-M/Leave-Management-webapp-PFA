@@ -1,0 +1,483 @@
+// ---------------------------------------------------------------------------
+// No local color or typography tokens here on purpose.
+//
+// Every color and text style below reads from Angular Material's M3
+// "system-level" CSS custom properties (--mat-sys-*), which Material emits
+// on `html` from your app's theme config and re-maps automatically when a
+// dark theme is active. That's what makes this component theme-aware
+// without a single hardcoded hex value or font-size in this file:
+//   https://material.angular.io/guide/theming
+//
+// Requirements in your global theme for this to work:
+//   - Color tokens (--mat-sys-primary, --mat-sys-surface, --mat-sys-on-surface,
+//     --mat-sys-outline-variant, --mat-sys-error, --mat-sys-tertiary, ...)
+//     are emitted by default whenever you call mat.core-theme() /
+//     mat.all-component-themes($theme) — nothing extra needed.
+//   - Typography shorthands (--mat-sys-title-medium, --mat-sys-body-medium,
+//     --mat-sys-label-small, ...) only exist if your theme config has
+//     typography: (use-system-variables: true) and you call
+//     mat.system-level-typography($theme) alongside the color mixin. If
+//     `font: var(--mat-sys-title-medium)` renders blank, that flag is
+//     probably off — flip it on once in styles.scss rather than pinning
+//     sizes back here.
+//
+// M3's built-in roles are primary / secondary / tertiary / error — there's
+// no shipped "success" or "warning" role. For the 3-state leave status
+// below, --mat-sys-error covers "out" (a real negative state) and
+// --mat-sys-tertiary covers "partial" (a distinct accent) — both real
+// system roles, not invented colors. "in" (the default, majority state)
+// intentionally stays neutral rather than reaching for a green that
+// Material doesn't define, so only the two exceptions draw the eye. If you
+// want a true green "success" role, that has to be added as an extended
+// palette in your app's theme config — it can't come from this file.
+// ---------------------------------------------------------------------------
+:host {
+  display: block;
+}
+
+// ---------------------------------------------------------------------------
+// Everything below is either (a) a plain element we own — div/span/button/p —
+// which is fair game to color freely from the theme's own tokens, or (b)
+// pure layout/spacing applied to a Material host tag (flex, grid, padding,
+// margin, border-radius). No color or font-size is ever set as a literal
+// value; it's always `var(--mat-sys-...)`, so it stays correct if the app's
+// primary color, palette, or theme type changes.
+// ---------------------------------------------------------------------------
+
+// -- Toolbar (color comes from color="primary" on the component itself) ----
+
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 16px;
+
+  @media (min-width: 1024px) {
+    padding-inline: 24px;
+  }
+}
+
+.toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-title {
+  font: var(--mat-sys-title-medium);
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-trigger {
+  display: none;
+
+  @media (min-width: 640px) {
+    display: inline-flex;
+  }
+}
+
+.user-trigger__icon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+// -- Page shell ---------------------------------------------------------------
+
+.page-bg {
+  // App-shell canvas color, not a card surface — this is what used to be a
+  // hardcoded off-white and stayed off-white under your dark theme.
+  background: var(--mat-sys-background);
+  color: var(--mat-sys-on-background);
+  min-height: 100vh;
+}
+
+.page-content {
+  max-width: 1400px;
+  margin-inline: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (min-width: 1024px) {
+    padding: 24px;
+  }
+}
+
+// Shared padding for content cards — layout only, no color here: mat-card
+// already themes its own surface color.
+.card-pad {
+  padding: 16px;
+}
+
+.section-title {
+  font: var(--mat-sys-title-small);
+}
+
+// ---------------------------------------------------------------------------
+// KPI cards
+//
+// Only "Pending approvals" gets the accent (--mat-sys-primary), since it's
+// the one figure that's actually actionable. The rest inherit on-surface
+// from .page-bg so they don't fight the theme.
+// ---------------------------------------------------------------------------
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px;
+}
+
+.kpi-label {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font: var(--mat-sys-headline-medium);
+
+  &--brand {
+    color: var(--mat-sys-primary);
+  }
+
+  // No --warn / --good color rules on purpose — see file header. Class
+  // hooks stay in the markup in case that changes later.
+}
+
+.kpi-sub {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// ---------------------------------------------------------------------------
+// Department capacity rings — plain <button>, fully custom
+// ---------------------------------------------------------------------------
+
+.capacity-content {
+  margin-top: 12px;
+}
+
+.dept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.dept-ring {
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 8px 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  text-align: center;
+  color: inherit;
+
+  &:hover {
+    background: var(--mat-sys-surface-container-high);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+
+  &--active {
+    background: var(--mat-sys-primary-container);
+    border-color: var(--mat-sys-primary);
+    color: var(--mat-sys-on-primary-container);
+  }
+}
+
+.dept-ring__gauge {
+  width: 80px;
+  height: 80px;
+  margin-inline: auto;
+}
+
+.dept-ring__name {
+  display: block;
+  font: var(--mat-sys-label-large);
+  margin-top: 4px;
+}
+
+.dept-ring__meta {
+  display: block;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// ---------------------------------------------------------------------------
+// Main grid: charts + calendar
+// ---------------------------------------------------------------------------
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: start;
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.charts-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (min-width: 1280px) {
+    grid-column: span 3;
+  }
+}
+
+.calendar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  @media (min-width: 1280px) {
+    grid-column: span 2;
+  }
+}
+
+.chart-content {
+  margin-top: 8px;
+}
+
+.chart-dept-bar {
+  height: 288px;
+  width: 100%;
+}
+
+.chart-trend {
+  height: 256px;
+  width: 100%;
+}
+
+.chart-type-donut {
+  height: 224px;
+  width: 100%;
+}
+
+// -- Selected event panel — plain elements; ev.color is bound inline from --
+// -- component data (not this file) — see note at the end of this file.  --
+
+.divider-gap {
+  margin-block: 12px;
+}
+
+.event-detail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-detail__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.event-detail__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-detail__title {
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+}
+
+.event-detail__range {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 2px 0 0;
+}
+
+// Generic status badge. Plain <span> — never a mat-chip — so status/type
+// colors live here instead of fighting Material's chip theming. Uses the
+// M3 "container" pairing (tinted background + matching on-* text), the
+// same pattern Material's own chips and containers use, so it stays
+// correctly contrasted in both light and dark automatically.
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: var(--mat-sys-label-small);
+  text-transform: capitalize;
+  white-space: nowrap;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  &--out {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  &--partial {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  &--in {
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Team status list — plain elements
+// ---------------------------------------------------------------------------
+
+.team-content {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-block: 10px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+}
+
+.team-row__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.team-row__name {
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-row__role {
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  margin: 2px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Same container/on-container pairing as .pill, for the same reason.
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font: var(--mat-sys-label-small);
+  flex-shrink: 0;
+
+  &--out {
+    background: var(--mat-sys-error-container);
+    color: var(--mat-sys-on-error-container);
+  }
+
+  &--partial {
+    background: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+
+  &--in {
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+/*
+// ---------------------------------------------------------------------------
+// FullCalendar theme overrides — FullCalendar is not a Material component,
+// so pointing its own CSS custom properties at Material's system tokens is
+// the only way to bring it in line with the active theme.
+// ---------------------------------------------------------------------------
+
+::ng-deep full-calendar {
+  --fc-border-color: var(--mat-sys-outline-variant);
+  --fc-button-bg-color: var(--mat-sys-primary);
+  --fc-button-border-color: var(--mat-sys-primary);
+  --fc-button-hover-bg-color: var(--mat-sys-primary);
+  --fc-button-active-bg-color: var(--mat-sys-primary);
+  --fc-button-text-color: var(--mat-sys-on-primary);
+  --fc-today-bg-color: var(--mat-sys-surface-container-high);
+  --fc-event-border-color: transparent;
+  --fc-page-bg-color: transparent;
+  color: var(--mat-sys-on-surface);
+
+  .fc-toolbar-title {
+    font: var(--mat-sys-title-small) !important;
+  }
+
+  .fc-button {
+    text-transform: capitalize;
+    font: var(--mat-sys-label-medium);
+  }
+
+  .fc-daygrid-event {
+    border-radius: 4px;
+    padding: 1px 4px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Outside this file: the selected-event dot and pill in the template bind
+// [style.background]="ev.color" / [style.color]="ev.color" straight from
+// your event data, not from CSS. If those hex values are also hardcoded
+// wherever that data comes from, they'll have the same light/dark problem
+// this file just had — but that's in your component/service code, which
+// wasn't part of what was uploaded here, so it's untouched.
+// ---------------------------------------------------------------------------
+*/

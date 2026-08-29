@@ -1,0 +1,276 @@
+<!-- ============================================================
+ Toolbar
+
+<mat-toolbar color="primary" class="app-toolbar">
+  <div class="toolbar-brand">
+    <mat-icon>calendar_month</mat-icon>
+    <span class="toolbar-title">Leave &amp; Workforce</span>
+  </div>
+
+  <div class="toolbar-actions">
+    <button
+      mat-icon-button
+      matTooltip="Pending approvals"
+      [matBadge]="pendingApprovals"
+      matBadgeColor="warn"
+      matBadgeSize="small"
+    >
+      <mat-icon>notifications</mat-icon>
+    </button>
+
+    @if (auth.isLoggedIn) {
+      <button
+        mat-stroked-button
+        color="accent"
+        [matMenuTriggerFor]="userMenu"
+        class="user-trigger"
+      >
+        <mat-icon class="user-trigger__icon">account_circle</mat-icon>
+        {{ auth.username }}
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        <button mat-menu-item (click)="auth.logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    } @else {
+      <button mat-raised-button color="accent" (click)="auth.login()">
+        Sign in
+      </button>
+    }
+  </div>
+</mat-toolbar>
+
+============================================================ -->
+
+<!-- ============================================================ -->
+<!-- Page body                                                     -->
+<!-- ============================================================ -->
+
+<div class="page-bg">
+
+  <div class="page-content">
+
+
+    <mat-card class="card-pad">
+      <mat-card-title class="section-title">
+        <p>Test Dashboard with static data</p>
+        <p>for actual call to mock, go to leaveflow good</p>
+      </mat-card-title>
+    </mat-card>
+
+    <!-- ---------------------------------------------------------- -->
+    <!-- KPI row                                                     -->
+    <!-- ---------------------------------------------------------- -->
+
+    <div class="kpi-grid">
+
+      <mat-card class="kpi-card">
+        <span class="kpi-label">Total headcount</span>
+        <span class="kpi-value">{{ totalHeadcount() }}</span>
+        <span class="kpi-sub">across 5 departments</span>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <span class="kpi-label">Out today</span>
+        <span class="kpi-value kpi-value--warn">{{ totalOutToday() }}</span>
+        <span class="kpi-sub">{{ outPct() }}% of workforce</span>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <span class="kpi-label">Pending approvals</span>
+        <span class="kpi-value kpi-value--brand">{{ pendingApprovals }}</span>
+        <span class="kpi-sub">needs your review</span>
+      </mat-card>
+
+      <mat-card class="kpi-card">
+        <span class="kpi-label">Avg. balance</span>
+        <span class="kpi-value kpi-value--good">{{ avgBalanceDays }}</span>
+        <span class="kpi-sub">days per employee</span>
+      </mat-card>
+
+    </div>
+
+
+    <!-- ---------------------------------------------------------- -->
+    <!-- Department capacity rings                                   -->
+    <!-- ---------------------------------------------------------- -->
+
+    <mat-card class="card-pad">
+
+      <mat-card-title class="section-title">
+        Team capacity, right now
+      </mat-card-title>
+
+      <mat-card-subtitle>
+        Share of each department currently on leave
+      </mat-card-subtitle>
+
+      <mat-card-content class="capacity-content">
+
+        <div class="dept-grid">
+
+          @for (d of departments; track d.dept) {
+            <button
+              type="button"
+              class="dept-ring"
+              [class.dept-ring--active]="selectedDept() === d.dept"
+              (click)="selectDept(d.dept)"
+            >
+
+              <div
+                echarts
+                [options]="gaugeOptionsFor(d)"
+                class="dept-ring__gauge"
+              ></div>
+
+              <span class="dept-ring__name">{{ d.dept }}</span>
+
+              <span class="dept-ring__meta">
+                {{ d.outToday }} of {{ d.headcount }} out
+              </span>
+
+            </button>
+          }
+
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+
+
+    <!-- ---------------------------------------------------------- -->
+    <!-- Main grid: charts + calendar                                -->
+    <!-- ---------------------------------------------------------- -->
+
+    <div class="main-grid">
+
+      <!-- Left column: charts -->
+
+      <div class="charts-col">
+
+        <mat-card class="card-pad">
+
+          <mat-card-title class="section-title">
+            Leave taken by team, this quarter
+          </mat-card-title>
+
+          <mat-card-content class="chart-content">
+            <div echarts [options]="deptBarOptions" class="chart-dept-bar"></div>
+          </mat-card-content>
+        </mat-card>
+
+
+        <mat-card class="card-pad">
+
+          <mat-card-title class="section-title">
+            Leave trend, year to date
+          </mat-card-title>
+
+          <mat-card-content class="chart-content">
+            <div echarts [options]="trendOptions" class="chart-trend"></div>
+          </mat-card-content>
+        </mat-card>
+
+
+        <mat-card class="card-pad">
+
+          <mat-card-title class="section-title">
+            Leave by type
+          </mat-card-title>
+
+          <mat-card-content class="chart-content">
+            <div echarts [options]="typeDonutOptions" class="chart-type-donut"></div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+
+      <!-- Right column: calendar + team status -->
+
+      <div class="calendar-col">
+
+        <mat-card class="card-pad">
+
+          <mat-card-title class="section-title">
+            Leave calendar
+          </mat-card-title>
+
+          <mat-card-content class="chart-content">
+            <full-calendar [options]="calendarOptions"></full-calendar>
+          </mat-card-content>
+
+
+          @if (selectedEvent(); as ev) {
+
+            <mat-divider class="divider-gap"></mat-divider>
+
+            <div class="event-detail">
+
+              <span class="event-detail__dot" [style.background]="ev.color"></span>
+
+              <div class="event-detail__body">
+                <p class="event-detail__title">{{ ev.title }}</p>
+                <p class="event-detail__range">
+                  {{ ev.start }}{{ ev.end ? ' → ' + ev.end : '' }}
+                </p>
+              </div>
+
+              <span
+                class="pill"
+                [style.background]="ev.color + '20'"
+                [style.color]="ev.color"
+              >
+                {{ ev.type }}
+              </span>
+
+            </div>
+
+          }
+
+        </mat-card>
+
+
+        <!-- Team status -->
+
+        <mat-card class="card-pad">
+
+          <mat-card-title class="section-title">
+            Team status
+          </mat-card-title>
+
+          <mat-card-content class="team-content">
+
+            @for (person of teamStatus; track person.name) {
+
+              <div class="team-row">
+
+                <span class="avatar" [class]="'avatar--' + person.status">
+                  {{ person.initials }}
+                </span>
+
+                <div class="team-row__info">
+                  <p class="team-row__name">{{ person.name }}</p>
+                  <p class="team-row__role">{{ person.role }}</p>
+                </div>
+
+                <span class="pill" [class]="'pill--' + person.status">
+                  {{ statusLabel(person.status) }}
+                </span>
+
+              </div>
+
+            }
+
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>

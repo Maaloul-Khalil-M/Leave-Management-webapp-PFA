@@ -25,7 +25,11 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.scss",
+              "src/tailwind.css",
+              "@fullcalendar/angular/skeleton.css",
+              "@fullcalendar/angular/themes/forma/theme.css",
+              "@fullcalendar/angular/themes/forma/palettes/amber.css"
             ]
           },
           "configurations": {

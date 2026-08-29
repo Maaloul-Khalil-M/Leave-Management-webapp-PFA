@@ -42,4 +42,7 @@
       <module name="demo" options="-parameters -Amapstruct.defaultComponentModel=spring" />
     </option>
   </component>
+  <component name="TypeScriptCompiler">
+    <option name="nodeInterpreterTextField" value="$USER_HOME$/.config/nvm/versions/node/v24.15.0/bin/node" />
+  </component>
 </project>
