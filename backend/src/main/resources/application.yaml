@@ -26,8 +26,9 @@ spring:
           # jwk-set-uri is what's actually called over the network.
           jwk-set-uri: ${OAUTH2_JWK_SET_URI:http://localhost:9090/realms/leave-workforce/protocol/openid-connect/certs}
 
+
   mongodb:
-    uri: ${MONGODB_URI:mongodb://localhost:27017/leave_management?replicaSet=rs0&retryWrites=true}
+    uri: ${MONGODB_URI:mongodb://localhost:27017/leave_management?replicaSet=rs0&retryWrites=true&directConnection=true}
 
 server:
   port: ${SERVER_PORT:8080}

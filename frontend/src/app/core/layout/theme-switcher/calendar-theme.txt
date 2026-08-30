@@ -1,0 +1,122 @@
+Yes — keep the **theme plugin imports in TS**, but the **CSS color/palette options need to stay comments here as a reference** because Angular will load the actual CSS from `angular.json`.
+
+If what you want is a clean reference for **every available theme + color**, use this:
+
+```ts id="73184"
+// ==================== FULLCALENDAR THEME ====================
+
+// ACTIVE: Monarch + Blue
+import themePlugin from '@fullcalendar/angular/themes/monarch';
+
+// CSS → angular.json:
+// "@fullcalendar/angular/skeleton.css",
+// "@fullcalendar/angular/themes/monarch/theme.css",
+// "@fullcalendar/angular/themes/monarch/palettes/blue.css"
+
+
+// ==================== ALTERNATIVES ====================
+
+// --- BREEZY ---
+//
+// Plugin:
+// import themePlugin from '@fullcalendar/angular/themes/breezy';
+//
+// Colors:
+// amber
+// emerald
+// indigo
+// rose
+//
+// angular.json:
+// "@fullcalendar/angular/themes/breezy/theme.css",
+// "@fullcalendar/angular/themes/breezy/palettes/amber.css"
+
+
+// --- CLASSIC ---
+//
+// Plugin:
+// import themePlugin from '@fullcalendar/angular/themes/classic';
+//
+// Color:
+// palette
+//
+// angular.json:
+// "@fullcalendar/angular/themes/classic/theme.css",
+// "@fullcalendar/angular/themes/classic/palette.css"
+
+
+// --- FORMA ---
+//
+// Plugin:
+// import themePlugin from '@fullcalendar/angular/themes/forma';
+//
+// Colors:
+// blue
+// green
+// purple
+// red
+//
+// angular.json:
+// "@fullcalendar/angular/themes/forma/theme.css",
+// "@fullcalendar/angular/themes/forma/palettes/blue.css"
+
+
+// --- MONARCH ---
+//
+// Plugin:
+// import themePlugin from '@fullcalendar/angular/themes/monarch';
+//
+// Colors:
+// blue
+// green
+// purple
+// red
+// yellow
+//
+// angular.json:
+// "@fullcalendar/angular/themes/monarch/theme.css",
+// "@fullcalendar/angular/themes/monarch/palettes/blue.css"
+
+
+// --- PULSE ---
+//
+// Plugin:
+// import themePlugin from '@fullcalendar/angular/themes/pulse';
+//
+// Colors:
+// blue
+// green
+// purple
+// red
+//
+// angular.json:
+// "@fullcalendar/angular/themes/pulse/theme.css",
+// "@fullcalendar/angular/themes/pulse/palettes/blue.css"
+```
+
+Then your **actual `angular.json`** only has the active choice:
+
+```json id="41027"
+"styles": [
+  "src/styles.scss",
+  "src/tailwind.css",
+  "@fullcalendar/angular/skeleton.css",
+  "@fullcalendar/angular/themes/monarch/theme.css",
+  "@fullcalendar/angular/themes/monarch/palettes/blue.css"
+]
+```
+
+So when you want, for example, **Forma + purple**, you change:
+
+```ts
+import themePlugin from '@fullcalendar/angular/themes/forma';
+```
+
+and in `angular.json`:
+
+```json id="9t7f3d"
+"@fullcalendar/angular/themes/forma/theme.css",
+"@fullcalendar/angular/themes/forma/palettes/purple.css"
+```
+
+**There is no way for the TS `themePlugin` import itself to make Angular automatically load the corresponding CSS from `node_modules`** in this Angular setup. That's the key distinction.

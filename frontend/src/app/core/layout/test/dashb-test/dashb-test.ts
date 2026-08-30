@@ -15,11 +15,16 @@ import {
   FullCalendarModule,
   type CalendarOptions,
 } from '@fullcalendar/angular';
-import themePlugin from '@fullcalendar/angular/themes/classic';
 import dayGridPlugin from '@fullcalendar/angular/daygrid';
 import timeGridPlugin from '@fullcalendar/angular/timegrid';
 import listPlugin from '@fullcalendar/angular/list';
 import interactionPlugin from '@fullcalendar/angular/interaction';
+
+//import themePlugin from '@fullcalendar/angular/themes/forma';
+import themePlugin from '@fullcalendar/angular/themes/monarch';
+//import themePlugin from '@fullcalendar/angular/themes/breezy';
+//import themePlugin from '@fullcalendar/angular/themes/pulse';
+//import themePlugin from '@fullcalendar/angular/themes/classic';
 
 import type {EChartsOption} from 'echarts';
 

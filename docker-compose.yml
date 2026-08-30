@@ -2,7 +2,7 @@ services:
   mongo:
     image: mongo:7
     container_name: leave-mongo
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+    command: [ "--replSet", "rs0", "--bind_ip_all" ]
     ports:
       - "27017:27017"
     # Persistent MongoDB data.
@@ -51,6 +51,9 @@ services:
       - "8888:8081"
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: "admin"      # Set your preferred username
+      ME_CONFIG_BASICAUTH_PASSWORD: "admin"  # Set your preferred password
+
       # Basic auth is off by default when the username/password vars are
       # left unset — there is no documented `ME_CONFIG_BASICAUTH_ENABLED`
       # variable, so the old line here was a no-op. Leaving both unset
@@ -78,33 +81,22 @@ services:
     ports:
       - "9090:8080"
     environment:
-      # KC_BOOTSTRAP_ADMIN_USERNAME / KC_BOOTSTRAP_ADMIN_PASSWORD is the
-      # current way to seed the initial admin user (replaces the older
-      # KEYCLOAK_ADMIN / KEYCLOAK_ADMIN_PASSWORD vars).
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      # Pins the hostname used in issued tokens' "iss" claim and in the
-      # discovery document to the URL your BROWSER uses.
-      #
-      # Must match issuer-uri in application.yml and
-      # environment.keycloak.issuer in the Angular app.
-      #
-      # A full "scheme://host:port" value like this is the documented form
-      # for fixing the issuer URL (hostname:v2). start-dev defaults
-      # hostname-strict to false, so this isn't strictly required in dev
-      # mode, but setting it explicitly keeps issued tokens stable.
-      # Docs: https://www.keycloak.org/server/hostname
       KC_HOSTNAME: http://localhost:9090
-    # IMPORTANT:
-    # Keycloak's `start-dev` uses an embedded H2 database by default.
-    # Without a volume, that database lives inside the container.
-    #
-    # `docker compose down` removes the container -> Keycloak data is lost.
-    #
-    # This volume keeps the embedded H2 database outside the container,
-    # so users, realms, clients, roles, etc. survive container recreation.
+      # Required for the /health/ready endpoint below to exist at all
+      KC_HEALTH_ENABLED: "true"
     volumes:
       - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test: >
+        exec 3<>/dev/tcp/127.0.0.1/9000;
+        echo -e "GET /health/ready HTTP/1.1\r\nhost: localhost\r\nConnection: close\r\n\r\n" >&3;
+        cat <&3 | grep -q '"status": "UP"'
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
 
 volumes:
   # Persistent MongoDB database

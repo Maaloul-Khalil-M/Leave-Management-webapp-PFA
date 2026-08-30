@@ -10,13 +10,11 @@ import io.flamingock.api.annotations.TargetSystem;
 @Change(id = "create-test-collection", author = "")
 public class _0001__CreateTestCollection {
 
-    @Apply
-    public void apply(MongoDatabase db) {
-        db.createCollection("test");
+    @Apply public void apply(MongoDatabase db) {
+        db.createCollection("my-testing");
     }
 
-    @Rollback
-    public void rollback(MongoDatabase db) {
-        db.getCollection("test").drop();
+    @Rollback public void rollback(MongoDatabase db) {
+        db.getCollection("my-testing").drop();
     }
 }

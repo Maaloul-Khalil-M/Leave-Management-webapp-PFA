@@ -28,8 +28,8 @@
               "src/styles.scss",
               "src/tailwind.css",
               "@fullcalendar/angular/skeleton.css",
-              "@fullcalendar/angular/themes/forma/theme.css",
-              "@fullcalendar/angular/themes/forma/palettes/amber.css"
+              "@fullcalendar/angular/themes/monarch/theme.css",
+              "@fullcalendar/angular/themes/monarch/palettes/red.css"
             ]
           },
           "configurations": {
