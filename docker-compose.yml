@@ -5,29 +5,11 @@ services:
     command: [ "--replSet", "rs0", "--bind_ip_all" ]
     ports:
       - "27017:27017"
-    # Persistent MongoDB data.
-    #
-    # IMPORTANT:
-    # `docker compose down` removes the Mongo container, but NOT this volume.
-    # Your MongoDB data will therefore survive:
-    #
-    #   docker compose down
-    #   docker compose up -d
-    #
-    # Do NOT use `docker compose down -v` if you want to keep the data,
-    # because `-v` also removes named volumes.
-    # Docs: https://docs.docker.com/reference/cli/docker/compose/down/#options
     volumes:
       - mongo_data:/data/db
     # Flamingock needs multi-document transactions, which Mongo only supports
     # on a replica set — even a single-node one. This self-initiates rs0 on
     # first boot; no separate init container needed.
-    #
-    # NOTE: this is a community workaround, not an officially documented
-    # MongoDB feature — running rs.initiate() from inside a healthcheck
-    # works, but it's a side-effecting hack rather than a supported startup
-    # mechanism. Fine for local/dev use; don't rely on it in production.
-    # Replica set docs: https://www.mongodb.com/docs/manual/reference/method/rs.initiate/
     healthcheck:
       test: >
         mongosh --quiet --port 27017 --eval
@@ -38,12 +20,6 @@ services:
       start_period: 5s
 
   mongo-express:
-    # NOTE: the official `mongo-express` image on Docker Hub is deprecated
-    # (last updated Apr 2024, no supported tags) — see
-    # https://hub.docker.com/_/mongo-express
-    # Pinning a known-good tag instead of `latest` so this doesn't silently
-    # break or change behavior on a future pull. Swap for a maintained fork
-    # if you need active security patches.
     image: mongo-express:1.0.2
     container_name: leave-mongo-express
     restart: unless-stopped
@@ -51,18 +27,8 @@ services:
       - "8888:8081"
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
-      ME_CONFIG_BASICAUTH_USERNAME: "admin"      # Set your preferred username
-      ME_CONFIG_BASICAUTH_PASSWORD: "admin"  # Set your preferred password
-
-      # Basic auth is off by default when the username/password vars are
-      # left unset — there is no documented `ME_CONFIG_BASICAUTH_ENABLED`
-      # variable, so the old line here was a no-op. Leaving both unset
-      # gets you the same "no auth" behavior. Set these two if you want
-      # to lock down the UI:
-      #   ME_CONFIG_BASICAUTH_USERNAME: "admin"
-      #   ME_CONFIG_BASICAUTH_PASSWORD: "change-me"
-      # Full env var reference:
-      # https://github.com/mongo-express/mongo-express-docker
+      ME_CONFIG_BASICAUTH_USERNAME: "admin"
+      ME_CONFIG_BASICAUTH_PASSWORD: "admin"
     depends_on:
       mongo:
         condition: service_healthy
@@ -99,7 +65,5 @@ services:
       start_period: 30s
 
 volumes:
-  # Persistent MongoDB database
   mongo_data:
-  # Persistent Keycloak embedded H2 database
   keycloak_data:
