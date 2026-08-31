@@ -15,4 +15,6 @@ public interface EmployeeService {
 
     Employee update(String id, UpdateEmployeeRequest request);
 
+    List<Employee> findByManager(String managerEmployeeId);
+
 }
