@@ -21,12 +21,12 @@ public class _0002__SeedEmployeesAndUsers {
     public static final String EMP_SALMA_ID = "665f00000000000000000031";
     public static final String EMP_AHMED_ID = "665f00000000000000000030";
 
+    // dummy call
     public static final String USER_AHMED_ID = "665f00000000000000000040";
-    // ← dummy returns this one
     public static final String USER_ADMIN_ID = "665f00000000000000000041";
 
-    public static final String ROLE_EMPLOYEE_ID = "665f00000000000000000001";
-    public static final String ROLE_ADMIN_ID = "665f00000000000000000004";
+    //public static final String ROLE_EMPLOYEE_ID = "665f00000000000000000001";
+    //public static final String ROLE_ADMIN_ID = "665f00000000000000000004";
 
     public static final String DEPT_ENGINEERING_ID = "665f00000000000000000010";
     public static final String POS_BACKEND_ID = "665f00000000000000000020";
@@ -175,15 +175,6 @@ public class _0002__SeedEmployeesAndUsers {
                                                                                       "f3a1c9e2-keycloak-sub-for-ahmed")
                                                                               .append("linkedAt",
                                                                                       linkedAt))
-                                                        .append("role",
-                                                                new Document().append(
-                                                                                      "id",
-                                                                                      ROLE_EMPLOYEE_ID)
-                                                                              .append("code",
-                                                                                      "EMPLOYEE"))
-                                                        .append("lastLoginAt",
-                                                                Instant.parse(
-                                                                        "2026-08-15T07:58:00Z"))
                                                         .append("createdAt", linkedAt)
                                                         .append("updatedAt", linkedAt));
 
@@ -199,13 +190,6 @@ public class _0002__SeedEmployeesAndUsers {
                                                                                       "admin-keycloak-sub")
                                                                               .append("linkedAt",
                                                                                       linkedAt))
-                                                        .append("role",
-                                                                new Document().append(
-                                                                                      "id",
-                                                                                      ROLE_ADMIN_ID)
-                                                                              .append("code",
-                                                                                      "ADMIN"))
-                                                        .append("lastLoginAt", linkedAt)
                                                         .append("createdAt", linkedAt)
                                                         .append("updatedAt", linkedAt));
     }

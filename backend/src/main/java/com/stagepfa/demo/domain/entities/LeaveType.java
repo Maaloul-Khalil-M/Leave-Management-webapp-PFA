@@ -1,5 +1,6 @@
 package com.stagepfa.demo.domain.entities;
 
+import com.stagepfa.demo.domain.enums.L_CODE;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,15 +17,17 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "positions")
-public class Position {
+@Document(collection = "leave_types")
+public class LeaveType {
     @Id
     private String id;
 
-    private String code;
+    private L_CODE code;
+    private String label;
 
-    private String title;
-    private String description;
+    private boolean requiresProof;
+    private boolean deductsFromBalance;
+    private boolean isActive;
 
     @CreatedDate
     private Instant createdAt;

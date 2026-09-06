@@ -17,9 +17,11 @@ public class CurrentEmployeeResolver {
 
     public Employee requireActiveEmployee() {
         User user = currentUserService.requireLinkedUser();
-        Employee employee = employeeRepository.findById(user.getEmployeeId()).orElseThrow(
-                () -> new BusinessException(ErrorCode.NOT_FOUND,
-                                            "Linked employee not found: " + user.getEmployeeId()));
+        Employee employee = employeeRepository.findById(user.getEmployeeId())
+                                              .orElseThrow(() -> new BusinessException(
+                                                      ErrorCode.NOT_FOUND,
+                                                      "Linked employee not found: " + user.getEmployeeId()));
+
         if (employee.getEmploymentStatus() != EmploymentStatus.ACTIVE) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                                         "Employee is not active: " + employee.getEmploymentStatus());

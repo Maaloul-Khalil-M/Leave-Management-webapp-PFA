@@ -10,7 +10,11 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 public class Identity {
-    private String provider;   // "KEYCLOAK"
+
+    @Builder.Default
+    private String provider = "KEYCLOAK";
+
     private String subject;    // the JWT "sub"
-    private Instant linkedAt;
+
+    // private Instant linkedAt;
 }

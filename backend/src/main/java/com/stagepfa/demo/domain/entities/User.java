@@ -1,12 +1,11 @@
 package com.stagepfa.demo.domain.entities;
 
 import com.stagepfa.demo.domain.entities.embedded.Identity;
-import com.stagepfa.demo.domain.entities.embedded.RoleRef;
 import com.stagepfa.demo.domain.enums.AccountStatus;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -18,28 +17,29 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@CompoundIndex(name = "identity_provider_subject_unique",
+        def = "{'identity.provider': 1, 'identity.subject': 1}", unique = true)
 public class User {
 
-    //@Id breaks with 24-character id
     @MongoId
     private String id;
 
-    private String email;                 // unique, case-insensitive lookup
-    private String employeeId;          // nullable — null means "pure admin"
+    // Snapshot of the identity claim, not the identifier
+    // based info can be used in jwt claims, e.g. email, name, etc.
+    private String email;
 
-    private AccountStatus accountStatus;  // PENDING_ACTIVATION / ACTIVE / SUSPENDED
-    private Identity identity;            // null until first login links it
+    // FK/reference to Employee.id
+    private String employeeId;
 
-    private RoleRef role;
+    private AccountStatus accountStatus;
 
-    private Instant lastLoginAt;
+    // Keycloak/OIDC sub
+    private Identity identity;
 
     @CreatedDate
     private Instant createdAt;
 
     @LastModifiedDate
     private Instant updatedAt;
-
 }
-
 

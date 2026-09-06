@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 public class DummyCurrentUserService implements CurrentUserService {
 
     private final UserRepository userRepository;
-    private final MongoTemplate mongoTemplate;
+    // private final MongoTemplate mongoTemplate;
 
     // DummyCurrentUserService for employee
     // private static final String DEV_USER_ID = _0002__SeedEmployeesAndUsers

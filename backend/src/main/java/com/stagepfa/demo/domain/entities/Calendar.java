@@ -1,5 +1,6 @@
 package com.stagepfa.demo.domain.entities;
 
+import com.stagepfa.demo.domain.enums.CountryCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,20 +12,27 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.time.LocalDate;
+
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "positions")
-public class Position {
+@Document(collection = "calendars")
+public class Calendar {
+
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private String code;
 
-    private String title;
-    private String description;
+    private String name;
+
+    private CountryCode country;
+
+    private Integer year;
 
     @CreatedDate
     private Instant createdAt;

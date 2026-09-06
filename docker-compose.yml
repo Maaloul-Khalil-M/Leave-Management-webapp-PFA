@@ -67,3 +67,6 @@ services:
 volumes:
   mongo_data:
   keycloak_data:
+
+# how to delete volume to reset mongo data and rerun seeds
+# docker volume rm leave-management-webapp-pfa_mongo_data

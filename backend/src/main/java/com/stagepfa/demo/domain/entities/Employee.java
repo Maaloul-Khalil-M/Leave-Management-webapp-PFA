@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.MongoId;
 
@@ -29,6 +30,7 @@ public class Employee {
     @MongoId
     private String id;
 
+    @Indexed(unique = true)
     private String employeeNumber;
 
     private EmployeeProfile profile;
@@ -36,11 +38,13 @@ public class Employee {
     private EmploymentStatus employmentStatus;
 
     private Assignment currentAssignment;
+    // have country
 
     @Builder.Default
     private List<Assignment> assignmentHistory = new ArrayList<>();
 
     private ManagerRef currentManager;
+
 
     @CreatedDate
     private Instant createdAt;

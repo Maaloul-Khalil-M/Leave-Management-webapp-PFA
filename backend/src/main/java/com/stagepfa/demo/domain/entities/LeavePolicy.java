@@ -1,5 +1,8 @@
 package com.stagepfa.demo.domain.entities;
 
+import com.stagepfa.demo.domain.enums.AccrualUnit;
+import com.stagepfa.demo.domain.enums.CountryCode;
+import com.stagepfa.demo.domain.enums.L_CODE;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -7,24 +10,34 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "positions")
-public class Position {
+@Document(collection = "leave_policies")
+public class LeavePolicy {
     @Id
     private String id;
 
-    private String code;
+    private CountryCode country;
+    private L_CODE leaveTypeCode;
 
-    private String title;
-    private String description;
+
+    private AccrualUnit accrualUnit;
+    private double accrualRate;
+    private Double maxBalance;
+
+    // more rules
+    private Double minBlockDays;
+    private Integer noticeDays;
+
+    //TODO: add bonuses
 
     @CreatedDate
     private Instant createdAt;

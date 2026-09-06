@@ -1,5 +1,7 @@
 package com.stagepfa.demo.migrations;
 
+//TODO: replace with proper initialization tables
+
 import com.mongodb.client.MongoDatabase;
 import io.flamingock.api.annotations.Apply;
 import io.flamingock.api.annotations.Change;

@@ -1,25 +1,20 @@
 package com.stagepfa.demo.domain.entities.embedded;
 
-import com.stagepfa.demo.domain.enums.CountryCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Assignment {
-    private String departmentId;
+public class EmployeeSnapshot {
+    private String employeeId;
+    private String employeeNumber;
+    private String firstName;
+    private String lastName;
+    private String email;
     private String departmentLabel;
-    private String positionId;
     private String positionLabel;
-    private LocalDate startDate;
-    private LocalDate endDate;
-
-    
-    private CountryCode countryCode;
 }

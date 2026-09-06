@@ -33,7 +33,6 @@ public class MeController {
     @GetMapping("/profile")
     public ResponseEntity<EmployeeResponse> profile() {
         Employee employee = employeeResolver.requireActiveEmployee();
-        return ResponseEntity.ok(
-                employeeMapper.toResponse(employee)); // identical mapper as HR controller
+        return ResponseEntity.ok(employeeMapper.toResponse(employee));
     }
 }

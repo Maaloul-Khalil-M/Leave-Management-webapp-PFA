@@ -111,8 +111,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         return employeeRepository.save(existing);
     }
 
+    @Override
+    public List<Employee> findByManager(String managerEmployeeId) {
+        return employeeRepository.findByCurrentManagerEmployeeId(managerEmployeeId);
+    }
 
-    //
+
+    // helpers
 
     private void applyTransfer(Employee employee,
                                AssignmentRequest newAssignmentRequest) {
@@ -155,10 +160,5 @@ public class EmployeeServiceImpl implements EmployeeService {
                                                                    .getLastName() :
                 manager.getEmployeeNumber();
         return ManagerRef.builder().employeeId(manager.getId()).name(managerName).build();
-    }
-
-    @Override
-    public List<Employee> findByManager(String managerEmployeeId) {
-        return employeeRepository.findByCurrentManagerEmployeeId(managerEmployeeId);
     }
 }
