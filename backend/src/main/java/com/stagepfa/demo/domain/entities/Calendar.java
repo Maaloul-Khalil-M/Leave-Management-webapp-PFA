@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,7 +23,8 @@ import java.time.LocalDate;
 @Document(collection = "calendars")
 public class Calendar {
 
-    @Id
+    //@Id
+    @MongoId
     private String id;
 
     @Indexed(unique = true)

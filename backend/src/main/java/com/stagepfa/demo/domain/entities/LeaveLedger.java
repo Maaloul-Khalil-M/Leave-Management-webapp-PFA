@@ -10,6 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ import java.util.List;
 @CompoundIndex(name = "emp_type_year",
         def = "{'employeeId': 1, 'leaveTypeCode': 1, 'year': 1}", unique = true)
 public class LeaveLedger {
-    @Id
+    //@Id
+    @MongoId
     private String id;
 
     private String employeeId; // Reference to Employee entity

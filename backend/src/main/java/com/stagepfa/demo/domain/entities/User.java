@@ -21,6 +21,7 @@ import java.time.Instant;
         def = "{'identity.provider': 1, 'identity.subject': 1}", unique = true)
 public class User {
 
+    //@Id
     @MongoId
     private String id;
 
