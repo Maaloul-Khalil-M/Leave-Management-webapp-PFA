@@ -1,6 +1,7 @@
 package com.stagepfa.demo.repositories;
 
 import com.stagepfa.demo.domain.entities.LeaveLedger;
+import com.stagepfa.demo.domain.enums.L_CODE;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
