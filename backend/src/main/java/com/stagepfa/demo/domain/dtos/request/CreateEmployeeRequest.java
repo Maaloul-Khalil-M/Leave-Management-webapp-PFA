@@ -17,9 +17,10 @@ public class CreateEmployeeRequest {
     @Size(max = 50)
     private String employeeNumber;
 
+    @NotNull
     private EmploymentStatus employmentStatus = EmploymentStatus.ACTIVE;
 
-    // --- profile fields ---
+    // --- profile ---
 
     @NotBlank
     @Size(max = 100)
@@ -30,6 +31,7 @@ public class CreateEmployeeRequest {
     private String lastName;
 
     private String gender;
+
     private LocalDate birthDate;
 
     @NotBlank
@@ -37,9 +39,10 @@ public class CreateEmployeeRequest {
     private String email;
 
     private String phone;
+
     private LocalDate hireDate;
 
-    // --- assignment (was flat departmentId/positionId, now matches Assignment) ---
+    // --- initial assignment ---
 
     @NotNull
     @Valid
@@ -48,8 +51,7 @@ public class CreateEmployeeRequest {
     // --- reporting line ---
 
     /**
-     * Nullable: top-level employees (e.g. a director) may have no manager.
+     * Nullable for employees without a manager.
      */
     private String managerEmployeeId;
 }
-

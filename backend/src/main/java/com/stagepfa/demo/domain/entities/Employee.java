@@ -23,7 +23,6 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-
 @Document(collection = "employees")
 public class Employee {
     //@Id

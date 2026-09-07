@@ -16,5 +16,4 @@ public class Identity {
 
     private String subject;    // the JWT "sub"
 
-    // private Instant linkedAt;
 }

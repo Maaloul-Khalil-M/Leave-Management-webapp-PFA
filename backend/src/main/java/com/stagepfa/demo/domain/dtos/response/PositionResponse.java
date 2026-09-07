@@ -1,7 +1,5 @@
 package com.stagepfa.demo.domain.dtos.response;
 
-import com.stagepfa.demo.domain.entities.embedded.Identity;
-import com.stagepfa.demo.domain.enums.AccountStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,12 +11,11 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserResponse {
+public class PositionResponse {
     private String id;
-    private String email;
-    private String employeeId;
-    private AccountStatus accountStatus;
-    private Identity identity;
+    private String code;
+    private String title;
+    private String description;
     private Instant createdAt;
     private Instant updatedAt;
 }
