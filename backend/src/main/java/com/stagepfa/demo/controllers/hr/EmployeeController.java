@@ -23,25 +23,31 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final EmployeeMapper employeeMapper;
 
+    // returns all employees
     @GetMapping
     public ResponseEntity<PageResponse<EmployeeResponse>> list() {
-        List<EmployeeResponse> data = employeeService.findAll().stream()
+        List<EmployeeResponse> data = employeeService.findAll()
+                                                     .stream()
                                                      .map(employeeMapper::toResponse)
                                                      .toList();
 
-        return ResponseEntity.ok(PageResponse.<EmployeeResponse>builder().data(data)
+        return ResponseEntity.ok(PageResponse.<EmployeeResponse>builder()
+                                             .data(data)
                                              .pagination(PaginationMeta.builder()
                                                                        .nextCursor(null)
                                                                        .hasMore(false)
                                                                        .limit(data.size())
-                                                                       .build()).build());
+                                                                       .build())
+                                             .build());
     }
 
+    // returns a specific employee by id
     @GetMapping("/{id}")
     public ResponseEntity<EmployeeResponse> getById(@PathVariable String id) {
         return ResponseEntity.ok(employeeMapper.toResponse(employeeService.findById(id)));
     }
 
+    // creates a new employee
     @PostMapping
     public ResponseEntity<EmployeeResponse> create(
             @Valid @RequestBody CreateEmployeeRequest request) {
@@ -50,6 +56,7 @@ public class EmployeeController {
                              .body(employeeMapper.toResponse(saved));
     }
 
+    // updates an existing employee
     @PatchMapping("/{id}")
     public ResponseEntity<EmployeeResponse> update(@PathVariable String id,
                                                    @Valid @RequestBody

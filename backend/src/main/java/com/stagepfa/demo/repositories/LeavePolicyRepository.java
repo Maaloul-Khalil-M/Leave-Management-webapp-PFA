@@ -8,8 +8,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.List;
 
 public interface LeavePolicyRepository extends MongoRepository<LeavePolicy, String> {
-    List<LeavePolicy> findByCountryAndLeaveTypeCode(CountryCode country,
-                                                    L_CODE leaveTypeCode);
+    LeavePolicy findByCountryAndLeaveTypeCode(CountryCode country, L_CODE leaveTypeCode);
 
     List<LeavePolicy> findByCountry(CountryCode country);
 }
