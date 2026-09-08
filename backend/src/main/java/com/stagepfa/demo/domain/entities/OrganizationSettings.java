@@ -46,4 +46,5 @@ public class OrganizationSettings {
 
     @LastModifiedDate
     private Instant updatedAt;
+
 }

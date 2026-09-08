@@ -1,5 +1,6 @@
 package com.stagepfa.demo.domain.entities;
 
+import com.stagepfa.demo.domain.enums.DayType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ import java.time.LocalDate;
 @Document(collection = "calendar_days")
 @CompoundIndex(name = "calendarId_date_unique", def = "{'calendarId': 1, 'date': 1}",
         unique = true)
-public class CalendarDay<DayType> {
+public class CalendarDay {
 
     //@Id
     @MongoId

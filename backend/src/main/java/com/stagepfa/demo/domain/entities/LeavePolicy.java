@@ -1,5 +1,6 @@
 package com.stagepfa.demo.domain.entities;
 
+import com.stagepfa.demo.domain.entities.embedded.LeaveBonus;
 import com.stagepfa.demo.domain.enums.AccrualUnit;
 import com.stagepfa.demo.domain.enums.CountryCode;
 import com.stagepfa.demo.domain.enums.L_CODE;
@@ -16,6 +17,8 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -40,6 +43,8 @@ public class LeavePolicy {
     private Integer noticeDays;
 
     //TODO: add bonuses
+    @Builder.Default
+    private List<LeaveBonus> bonuses = new ArrayList<>();
 
     @CreatedDate
     private Instant createdAt;

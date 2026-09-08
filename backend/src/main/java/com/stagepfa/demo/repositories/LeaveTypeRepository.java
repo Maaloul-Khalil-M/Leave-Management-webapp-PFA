@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface LeaveTypeRepository extends MongoRepository<LeaveType, String> {
     Optional<LeaveType> findByCode(String code);
 
-    boolean existsByCode(String code);
+    boolean existsByCode(L_CODE code);
 
     List<LeaveType> findByIsActiveTrue();
 }

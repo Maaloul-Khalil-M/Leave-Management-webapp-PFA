@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/hr/employees")
 @RequiredArgsConstructor
-public class EmployeeController {
+public class EmployeesController {
 
     private final EmployeeService employeeService;
     private final EmployeeMapper employeeMapper;

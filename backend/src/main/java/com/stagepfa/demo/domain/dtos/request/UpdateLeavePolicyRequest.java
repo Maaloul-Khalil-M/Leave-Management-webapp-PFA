@@ -1,31 +1,31 @@
-package com.stagepfa.demo.domain.dtos.response;
+package com.stagepfa.demo.domain.dtos.request;
 
 import com.stagepfa.demo.domain.entities.embedded.LeaveBonus;
 import com.stagepfa.demo.domain.enums.AccrualUnit;
 import com.stagepfa.demo.domain.enums.CountryCode;
-import com.stagepfa.demo.domain.enums.L_CODE;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class LeavePolicyResponse {
+@Data
+public class UpdateLeavePolicyRequest {
 
-    private String id;
-
+    @NotNull
     private CountryCode country;
 
-    private L_CODE leaveTypeCode;
+    @NotBlank
+    private String leaveTypeCode;
 
+    @NotNull
     private AccrualUnit accrualUnit;
 
+    @NotNull
     private double accrualRate;
 
     private Double maxBalance;
@@ -34,10 +34,7 @@ public class LeavePolicyResponse {
 
     private Integer noticeDays;
 
-    private List<LeaveBonus> bonuses;
-
-    private Instant createdAt;
-
-    private Instant updatedAt;
+    @Valid
+    @Builder.Default
+    private List<LeaveBonus> bonuses = new ArrayList<>();
 }
-

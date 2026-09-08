@@ -100,8 +100,15 @@ public class _0002__SeedLeaveCatalog {
                                                               .append("accrualRate", 1.0)
                                                               .append("maxBalance", 30.0)
                                                               .append("minBlockDays",
-                                                                      null) //6d
+                                                                      null)
                                                               .append("noticeDays", 3)
+                                                              .append("bonuses",
+                                                                      List.of(bonus(
+                                                                              "TN seniority +1/5y",
+                                                                              "RATE",
+                                                                              false, 1.0,
+                                                                              5, null,
+                                                                              5)))
                                                               .append("createdAt", now)
                                                               .append("updatedAt", now));
 
@@ -115,6 +122,7 @@ public class _0002__SeedLeaveCatalog {
                                                             .append("maxBalance", null)
                                                             .append("minBlockDays", null)
                                                             .append("noticeDays", 0)
+                                                            .append("bonuses", List.of())
                                                             .append("createdAt", now)
                                                             .append("updatedAt", now));
 
@@ -129,6 +137,8 @@ public class _0002__SeedLeaveCatalog {
                                                               .append("minBlockDays",
                                                                       null)
                                                               .append("noticeDays", null)
+                                                              .append("bonuses",
+                                                                      List.of())
                                                               .append("createdAt", now)
                                                               .append("updatedAt", now));
 
@@ -145,6 +155,8 @@ public class _0002__SeedLeaveCatalog {
                                                                  .append("minBlockDays",
                                                                          null)
                                                                  .append("noticeDays", 0)
+                                                                 .append("bonuses",
+                                                                         List.of())
                                                                  .append("createdAt", now)
                                                                  .append("updatedAt",
                                                                          now));
@@ -162,6 +174,8 @@ public class _0002__SeedLeaveCatalog {
                                                               .append("minBlockDays",
                                                                       null)
                                                               .append("noticeDays", null)
+                                                              .append("bonuses",
+                                                                      List.of())
                                                               .append("createdAt", now)
                                                               .append("updatedAt", now));
 
@@ -175,6 +189,7 @@ public class _0002__SeedLeaveCatalog {
                                                             .append("maxBalance", null)
                                                             .append("minBlockDays", null)
                                                             .append("noticeDays", 0)
+                                                            .append("bonuses", List.of())
                                                             .append("createdAt", now)
                                                             .append("updatedAt", now));
 
@@ -189,6 +204,8 @@ public class _0002__SeedLeaveCatalog {
                                                               .append("minBlockDays",
                                                                       null)
                                                               .append("noticeDays", null)
+                                                              .append("bonuses",
+                                                                      List.of())
                                                               .append("createdAt", now)
                                                               .append("updatedAt", now));
 
@@ -205,6 +222,8 @@ public class _0002__SeedLeaveCatalog {
                                                                  .append("minBlockDays",
                                                                          null)
                                                                  .append("noticeDays", 0)
+                                                                 .append("bonuses",
+                                                                         List.of())
                                                                  .append("createdAt", now)
                                                                  .append("updatedAt",
                                                                          now));
@@ -221,5 +240,16 @@ public class _0002__SeedLeaveCatalog {
                                       .append("isActive", isActive)
                                       .append("createdAt", now)
                                       .append("updatedAt", now);
+    }
+
+    private static Document bonus(String label, String appliesTo, boolean isOverride,
+                                  double amount, Integer minYearsOfService,
+                                  Integer maxAge, Integer everyNYears) {
+        return new Document("label", label).append("appliesTo", appliesTo)
+                                           .append("isOverride", isOverride)
+                                           .append("amount", amount)
+                                           .append("minYearsOfService", minYearsOfService)
+                                           .append("maxAge", maxAge)
+                                           .append("everyNYears", everyNYears);
     }
 }

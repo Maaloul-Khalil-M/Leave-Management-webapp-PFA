@@ -1,4 +1,4 @@
-package com.stagepfa.demo.controllers.me;
+package com.stagepfa.demo.controllers.employee;
 
 import com.stagepfa.demo.domain.dtos.response.EmployeeResponse;
 import com.stagepfa.demo.domain.dtos.response.UserResponse;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/me")
+@RequestMapping("/api/employee")
 @RequiredArgsConstructor
-public class MeController {
+public class EmployeeController {
 
     private final CurrentUserService currentUserService;
     private final CurrentEmployeeResolver employeeResolver;

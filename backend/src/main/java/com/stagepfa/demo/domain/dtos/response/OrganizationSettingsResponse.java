@@ -18,6 +18,6 @@ public class OrganizationSettingsResponse {
     private String companyName;
     private CountryCode country;
     private List<Integer> weekendDays;
+    private Instant createdAt;
     private Instant updatedAt;
-    private String updatedBy;
 }

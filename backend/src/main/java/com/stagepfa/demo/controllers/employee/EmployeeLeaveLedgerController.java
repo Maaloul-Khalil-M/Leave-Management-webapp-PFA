@@ -1,4 +1,4 @@
-package com.stagepfa.demo.controllers.me;
+package com.stagepfa.demo.controllers.employee;
 
 
 import com.stagepfa.demo.domain.dtos.common.PageResponse;
@@ -19,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/me/leave-ledgers")
+@RequestMapping("/api/employee/leave-ledgers")
 @RequiredArgsConstructor
-public class MeLeaveLedgerController {
+public class EmployeeLeaveLedgerController {
 
     private final CurrentUserService currentUserService;
     private final LeaveLedgerService leaveLedgerService;
