@@ -1,30 +1,32 @@
-import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { map, catchError, of } from 'rxjs';
-import { MeService } from '../me/me.service';
-import { OAuthService } from 'angular-oauth2-oidc';
+import {inject} from '@angular/core';
+import {CanActivateFn} from '@angular/router';
+import {map, catchError, of} from 'rxjs';
+import {OAuthService} from 'angular-oauth2-oidc';
+import {MeService} from './test/me.service';
 
-/**
- * Requires valid token + ACTIVE employee status.
- * PENDING users go to /pending-setup.
- */
 export const employeeGuard: CanActivateFn = () => {
   const oauth = inject(OAuthService);
   const meService = inject(MeService);
-  const router = inject(Router);
 
   if (!oauth.hasValidAccessToken()) {
-    oauth.initCodeFlow(undefined, { kc_idp_hint: 'google' });
-    return router.parseUrl('/');
+    alert('You are not logged in. Please sign in with Google.');
+    oauth.initCodeFlow(undefined, {kc_idp_hint: 'google'});
+
+    return false;
   }
 
   return meService.loadMe().pipe(
     map((me) => {
-      if (me.linked && me.employeeStatus === 'ACTIVE') {
+      if (me.accountStatus === 'ACTIVE') {
         return true;
       }
-      return router.parseUrl('/pending-setup');
+
+      alert(`Your account is ${me.accountStatus}.`);
+      return false;
     }),
-    catchError(() => of(router.parseUrl('/')))
+    catchError(() => {
+      alert('Unable to load your user account.');
+      return of(false);
+    })
   );
 };

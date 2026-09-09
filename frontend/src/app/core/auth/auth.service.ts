@@ -1,12 +1,12 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { OAuthService } from 'angular-oauth2-oidc';
+import {Injectable, inject, signal, computed} from '@angular/core';
+import {OAuthService} from 'angular-oauth2-oidc';
 
 /**
  * OIDC client against Keycloak. Roles are read from the access token JWT
  * (realm_access.roles + resource_access['angular-app'].roles) — same source
  * Spring Security uses. App DB never stores roles.
  */
-@Injectable({ providedIn: 'root' })
+@Injectable({providedIn: 'root'})
 export class AuthService {
   private readonly oauthService = inject(OAuthService);
 
@@ -14,7 +14,8 @@ export class AuthService {
 
   readonly username = computed(() => {
     const claims = this.identityClaims();
-    return (claims?.['preferred_username'] as string) ?? (claims?.['email'] as string) ?? null;
+    return (claims?.['preferred_username'] as string) ?? (claims?.['email'] as string) ??
+           null;
   });
 
   readonly email = computed(() => {
@@ -65,7 +66,8 @@ export class AuthService {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const realmRoles: string[] = payload?.realm_access?.roles ?? [];
-      const clientRoles: string[] = payload?.resource_access?.['angular-app']?.roles ?? [];
+      const clientRoles: string[] = payload?.resource_access?.['angular-app']?.roles ??
+        [];
       return [...new Set([...realmRoles, ...clientRoles])].sort();
     } catch {
       return [];

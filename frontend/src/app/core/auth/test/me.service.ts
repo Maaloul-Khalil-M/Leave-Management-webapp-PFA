@@ -1,34 +1,43 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import {Injectable, inject, signal} from '@angular/core';
+import {HttpClient} from '@angular/common/http';
+import {Observable, tap} from 'rxjs';
 
-export interface MeResponse {
-  keycloakSubject: string;
+export interface UserResponse {
+  id: string;
   email: string;
-  preferredUsername: string | null;
-  linked: boolean;
-  appUserId: string;
   employeeId: string | null;
-  employeeFullName: string | null;
-  department: string | null;
-  /** PENDING | ACTIVE | null */
-  employeeStatus: string | null;
-  /** From Keycloak JWT (realm + client roles) */
-  roles: string[];
+  accountStatus: AccountStatus;
+  identity: Identity;
+  createdAt: string;
+  updatedAt: string;
 }
 
-@Injectable({ providedIn: 'root' })
+export interface Identity {
+  provider: string;
+  subject: string;
+}
+
+export type AccountStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE';
+
+@Injectable({providedIn: 'root'})
 export class MeService {
   private readonly http = inject(HttpClient);
-  private readonly base = 'http://localhost:8081';
 
-  readonly me = signal<MeResponse | null>(null);
+  private readonly apiUrl = 'http://localhost:8080'; // Replace with your actual API URL
 
-  loadMe(): Observable<MeResponse> {
-    return this.http.get<MeResponse>(`${this.base}/api/v1/me`).pipe(tap((r) => this.me.set(r)));
+  readonly me = signal<UserResponse | null>(null);
+
+  loadMe(): Observable<UserResponse> {
+    return this.http
+               .get<UserResponse>(`${(this.apiUrl)}/api/employee`)
+               .pipe(
+                 tap((user) => this.me.set(user))
+               );
   }
 
   callWork(): Observable<unknown> {
-    return this.http.get(`${this.base}/api/v1/work`);
+    return this.http.get(
+      `${this.apiUrl}/api/test`
+    );
   }
 }
