@@ -9,6 +9,7 @@ import com.stagepfa.demo.exception.ErrorCode;
 import com.stagepfa.demo.mappers.LeaveLedgerMapper;
 import com.stagepfa.demo.services.CurrentUserService;
 import com.stagepfa.demo.services.LeaveLedgerService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +30,10 @@ public class EmployeeLeaveLedgerController {
 
     // returns all leave ledgers for the current user (employee)
     @GetMapping
+    @Operation(operationId = "listCurrentEmployeeLeaveLedgers",
+            summary = "List current employee leave ledgers")
     public ResponseEntity<PageResponse<LeaveLedgerResponse>> list() {
-        var user = currentUserService.requireCurrentUser();
+        var user = currentUserService.requireLinkedUser();
         if (user.getEmployeeId() == null) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                                         "No employee linked to this account");
@@ -53,8 +56,10 @@ public class EmployeeLeaveLedgerController {
 
     // returns a specific leave ledger by id for the current user (employee)
     @GetMapping("/{id}")
+    @Operation(operationId = "getCurrentEmployeeLeaveLedgerById",
+            summary = "Get current employee leave ledger by ID")
     public ResponseEntity<LeaveLedgerResponse> getById(@PathVariable String id) {
-        var user = currentUserService.requireCurrentUser();
+        var user = currentUserService.requireLinkedUser();
         if (user.getEmployeeId() == null) {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                                         "No employee linked to this account");

@@ -9,9 +9,15 @@ import com.stagepfa.demo.repositories.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+/**
+ * Resolves the currently authenticated user's linked Employee, and enforces
+ * that the employee is active. Use this in controllers/services that need
+ * "who is calling, and are they allowed to act" in one call.
+ */
 @Service
 @RequiredArgsConstructor
 public class CurrentEmployeeResolver {
+
     private final CurrentUserService currentUserService;
     private final EmployeeRepository employeeRepository;
 

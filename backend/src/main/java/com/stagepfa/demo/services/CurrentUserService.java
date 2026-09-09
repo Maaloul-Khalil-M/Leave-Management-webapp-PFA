@@ -5,20 +5,12 @@ import com.stagepfa.demo.exception.BusinessException;
 import com.stagepfa.demo.exception.ErrorCode;
 
 public interface CurrentUserService {
-    /**
-     * Always returns the current app User, or throws if none resolvable.
-     */
-    User requireCurrentUser();
 
     /**
-     * requireCurrentUser() + must have a linked employeeId.
+     * Returns the User linked to the currently authenticated JWT.
+     * If this is the user's first login, the identity link is created.
+     * The returned User is guaranteed to have an employeeId set.
+     * return the currently authenticated and linked User
      */
-    default User requireLinkedUser() {
-        User user = requireCurrentUser();
-        if (user.getEmployeeId() == null) {
-            throw new BusinessException(ErrorCode.FORBIDDEN,
-                                        "No employee is linked to this account");
-        }
-        return user;
-    }
+    User requireLinkedUser();
 }

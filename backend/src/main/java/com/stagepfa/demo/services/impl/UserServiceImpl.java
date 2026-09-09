@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -63,6 +64,7 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException(
                     "User email already exists: " + request.getEmail());
         }
+
         if (request.getEmployeeId() != null) {
             employeeRepository.findById(request.getEmployeeId())
                               .orElseThrow(() -> new ResourceNotFoundException("Employee",
@@ -70,15 +72,17 @@ public class UserServiceImpl implements UserService {
         }
 
         Instant now = Instant.now();
+
         User user = User.builder()
                         .email(request.getEmail()
                                       .trim()
-                                      .toLowerCase())
+                                      .toLowerCase(Locale.ROOT))
                         .employeeId(request.getEmployeeId())
                         .accountStatus(AccountStatus.PENDING_ACTIVATION)
                         .createdAt(now)
                         .updatedAt(now)
                         .build();
+
         return userRepository.save(user);
     }
 
@@ -121,6 +125,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User recordLogin(User user, String subject, String provider) {
+        if (subject == null || subject.isBlank()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN,
+                                        "Identity subject is missing");
+        }
+
+        String resolvedProvider =
+                provider != null && !provider.isBlank() ? provider : "KEYCLOAK";
+
         Identity identity = user.getIdentity();
 
         if (identity != null && identity.getSubject() != null) {
@@ -129,9 +141,11 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.FORBIDDEN,
                                             "Identity subject mismatch for user: " + user.getEmail());
             }
+
+            // Same subject = idempotent login.
         } else {
             user.setIdentity(Identity.builder()
-                                     .provider(provider != null ? provider : "KEYCLOAK")
+                                     .provider(resolvedProvider)
                                      .subject(subject)
                                      .build());
         }
@@ -140,11 +154,13 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                                         "Account is " + user.getAccountStatus() + " and cannot log in");
         }
+
         if (user.getAccountStatus() == AccountStatus.PENDING_ACTIVATION) {
             user.setAccountStatus(AccountStatus.ACTIVE);
         }
 
         user.setUpdatedAt(Instant.now());
+
         return userRepository.save(user);
     }
 }

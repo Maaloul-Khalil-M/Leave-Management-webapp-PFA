@@ -7,6 +7,7 @@ import com.stagepfa.demo.domain.dtos.request.UpdateEmployeeRequest;
 import com.stagepfa.demo.domain.dtos.response.EmployeeResponse;
 import com.stagepfa.demo.mappers.EmployeeMapper;
 import com.stagepfa.demo.services.EmployeeService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ public class EmployeesController {
 
     // returns all employees
     @GetMapping
+    @Operation(operationId = "listEmployees", summary = "List employees")
     public ResponseEntity<PageResponse<EmployeeResponse>> list() {
         List<EmployeeResponse> data = employeeService.findAll()
                                                      .stream()
@@ -43,12 +45,14 @@ public class EmployeesController {
 
     // returns a specific employee by id
     @GetMapping("/{id}")
+    @Operation(operationId = "getEmployeeById", summary = "Get an employee by ID")
     public ResponseEntity<EmployeeResponse> getById(@PathVariable String id) {
         return ResponseEntity.ok(employeeMapper.toResponse(employeeService.findById(id)));
     }
 
     // creates a new employee
     @PostMapping
+    @Operation(operationId = "createEmployee", summary = "Create an employee")
     public ResponseEntity<EmployeeResponse> create(
             @Valid @RequestBody CreateEmployeeRequest request) {
         var saved = employeeService.create(request);
@@ -58,6 +62,7 @@ public class EmployeesController {
 
     // updates an existing employee
     @PatchMapping("/{id}")
+    @Operation(operationId = "updateEmployee", summary = "Update an employee")
     public ResponseEntity<EmployeeResponse> update(@PathVariable String id,
                                                    @Valid @RequestBody
                                                    UpdateEmployeeRequest request) {

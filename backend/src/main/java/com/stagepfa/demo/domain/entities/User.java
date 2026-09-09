@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.mapping.MongoId;
 
 import java.time.Instant;
 
-@Document("users")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,6 +18,7 @@ import java.time.Instant;
 @Builder
 @CompoundIndex(name = "identity_provider_subject_unique",
         def = "{'identity.provider': 1, 'identity.subject': 1}", unique = true)
+@Document(collection = "users")
 public class User {
 
     //@Id

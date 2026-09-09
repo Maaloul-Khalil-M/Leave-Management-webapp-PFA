@@ -7,6 +7,8 @@ import com.stagepfa.demo.domain.dtos.response.DepartmentResponse;
 import com.stagepfa.demo.domain.entities.Department;
 import com.stagepfa.demo.mappers.DepartmentMapper;
 import com.stagepfa.demo.services.DepartmentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class DepartmentController {
     private final DepartmentMapper departmentMapper;
 
     @GetMapping
+    @Operation(operationId = "listDepartments", summary = "List departments")
     public ResponseEntity<PageResponse<DepartmentResponse>> list() {
         List<DepartmentResponse> data = departmentService.findAll()
                                                          .stream()
@@ -40,12 +43,15 @@ public class DepartmentController {
     }
 
     @GetMapping("/{id}")
+    @Operation(operationId = "getDepartmentById", summary = "Get a department by ID")
     public ResponseEntity<DepartmentResponse> getById(@PathVariable String id) {
         return ResponseEntity.ok(
                 departmentMapper.toResponse(departmentService.findById(id)));
     }
 
     @PostMapping
+    @Operation(operationId = "createDepartment", summary = "Create a department")
+    @ApiResponse(responseCode = "201", description = "Department created successfully")
     public ResponseEntity<DepartmentResponse> create(
             @Valid @RequestBody CreateDepartmentRequest request) {
         Department entity = departmentMapper.toEntity(request);

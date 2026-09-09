@@ -7,6 +7,7 @@ import com.stagepfa.demo.domain.dtos.response.LeavePolicyResponse;
 import com.stagepfa.demo.domain.enums.CountryCode;
 import com.stagepfa.demo.mappers.LeavePolicyMapper;
 import com.stagepfa.demo.services.LeavePolicyService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,7 @@ public class LeavePolicyController {
 
     // Get all policies, optionally filtered by country
     @GetMapping
+    @Operation(operationId = "listLeavePolicies", summary = "List leave policies")
     public ResponseEntity<PageResponse<LeavePolicyResponse>> list(
             @RequestParam(required = false) CountryCode country) {
 
@@ -54,6 +56,7 @@ public class LeavePolicyController {
 
     // get a policy by id
     @GetMapping("/{id}")
+    @Operation(operationId = "getLeavePolicyById", summary = "Get a leave policy by ID")
     public ResponseEntity<LeavePolicyResponse> get(@PathVariable String id) {
         return ResponseEntity.ok(
                 leavePolicyMapper.toResponse(leavePolicyService.findById(id)));
@@ -61,6 +64,7 @@ public class LeavePolicyController {
 
     // create a new policy
     @PostMapping
+    @Operation(operationId = "createLeavePolicy", summary = "Create a leave policy")
     public ResponseEntity<LeavePolicyResponse> create(
             @Valid @RequestBody CreateLeavePolicyRequest request) {
         var saved = leavePolicyService.create(leavePolicyMapper.toEntity(request));

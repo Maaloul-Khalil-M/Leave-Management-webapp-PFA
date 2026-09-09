@@ -42,7 +42,6 @@ public class LeavePolicy {
     private Double minBlockDays;
     private Integer noticeDays;
 
-    //TODO: add bonuses
     @Builder.Default
     private List<LeaveBonus> bonuses = new ArrayList<>();
 

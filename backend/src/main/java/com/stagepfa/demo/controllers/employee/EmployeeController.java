@@ -8,6 +8,7 @@ import com.stagepfa.demo.mappers.EmployeeMapper;
 import com.stagepfa.demo.mappers.UserMapper;
 import com.stagepfa.demo.services.CurrentEmployeeResolver;
 import com.stagepfa.demo.services.CurrentUserService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,12 +26,15 @@ public class EmployeeController {
     private final EmployeeMapper employeeMapper;
 
     @GetMapping
+    @Operation(operationId = "getCurrentUser", summary = "Get current user")
     public ResponseEntity<UserResponse> me() {
-        User user = currentUserService.requireCurrentUser(); // with dummy
+        User user = currentUserService.requireLinkedUser();
         return ResponseEntity.ok(userMapper.toResponse(user));
     }
 
     @GetMapping("/profile")
+    @Operation(operationId = "getCurrentEmployeeProfile",
+            summary = "Get current employee profile")
     public ResponseEntity<EmployeeResponse> profile() {
         Employee employee = employeeResolver.requireActiveEmployee();
         return ResponseEntity.ok(employeeMapper.toResponse(employee));

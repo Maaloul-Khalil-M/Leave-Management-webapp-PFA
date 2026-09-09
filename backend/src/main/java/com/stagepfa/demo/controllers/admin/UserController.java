@@ -7,6 +7,7 @@ import com.stagepfa.demo.domain.dtos.request.UpdateUserRequest;
 import com.stagepfa.demo.domain.dtos.response.UserResponse;
 import com.stagepfa.demo.mappers.UserMapper;
 import com.stagepfa.demo.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +25,7 @@ public class UserController {
     private final UserMapper userMapper;
 
     @GetMapping
+    @Operation(operationId = "listUsers", summary = "List users")
     public ResponseEntity<PageResponse<UserResponse>> list() {
         List<UserResponse> data = userService.findAll()
                                              .stream()
@@ -40,11 +42,13 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
+    @Operation(operationId = "getUserById", summary = "Get a user by ID")
     public ResponseEntity<UserResponse> getById(@PathVariable String id) {
         return ResponseEntity.ok(userMapper.toResponse(userService.findById(id)));
     }
 
     @PostMapping
+    @Operation(operationId = "createUser", summary = "Create a user")
     public ResponseEntity<UserResponse> create(
             @Valid @RequestBody CreateUserRequest request) {
         var saved = userService.create(request);
@@ -53,6 +57,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
+    @Operation(operationId = "updateUser", summary = "Update a user")
     public ResponseEntity<UserResponse> update(@PathVariable String id,
                                                @Valid @RequestBody
                                                UpdateUserRequest request) {

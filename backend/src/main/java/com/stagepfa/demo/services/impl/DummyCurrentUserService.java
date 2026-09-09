@@ -20,7 +20,7 @@ public class DummyCurrentUserService implements CurrentUserService {
 
 
     @Override
-    public User requireCurrentUser() {
+    public User requireLinkedUser() {
         return userRepository.findById(DEV_USER_ID)
                              .orElseThrow(
                                      () -> new BusinessException(ErrorCode.UNAUTHORIZED,

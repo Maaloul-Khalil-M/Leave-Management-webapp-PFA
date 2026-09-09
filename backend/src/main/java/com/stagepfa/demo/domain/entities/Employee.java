@@ -33,6 +33,7 @@ public class Employee {
     private String employeeNumber;
 
     private EmployeeProfile profile;
+    //have email
 
     private EmploymentStatus employmentStatus;
 

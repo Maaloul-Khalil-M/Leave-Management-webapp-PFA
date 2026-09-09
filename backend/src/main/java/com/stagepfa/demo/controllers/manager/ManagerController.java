@@ -7,6 +7,7 @@ import com.stagepfa.demo.domain.entities.Employee;
 import com.stagepfa.demo.domain.entities.User;
 import com.stagepfa.demo.services.CurrentUserService;
 import com.stagepfa.demo.services.EmployeeService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,19 +25,23 @@ public class ManagerController {
     private final EmployeeService employeeService;
 
     @GetMapping("/team")
+    @Operation(operationId = "listManagerTeam", summary = "List manager team members")
     public ResponseEntity<PageResponse<TeamMemberResponse>> team() {
         String managerEmployeeId = requireManagerEmployeeId();
 
         List<TeamMemberResponse> data = employeeService.findByManager(managerEmployeeId)
-                                                       .stream().map(this::toTeamMember)
+                                                       .stream()
+                                                       .map(this::toTeamMember)
                                                        .toList();
 
-        return ResponseEntity.ok(PageResponse.<TeamMemberResponse>builder().data(data)
+        return ResponseEntity.ok(PageResponse.<TeamMemberResponse>builder()
+                                             .data(data)
                                              .pagination(PaginationMeta.builder()
                                                                        .nextCursor(null)
                                                                        .hasMore(false)
                                                                        .limit(data.size())
-                                                                       .build()).build());
+                                                                       .build())
+                                             .build());
     }
 
     private String requireManagerEmployeeId() {
@@ -48,15 +53,20 @@ public class ManagerController {
     private TeamMemberResponse toTeamMember(Employee e) {
         var profile = e.getProfile();
         var assignment = e.getCurrentAssignment();
-        return TeamMemberResponse.builder().employeeId(e.getId())
-                                 .employeeNumber(e.getEmployeeNumber()).firstName(
-                        profile != null ? profile.getFirstName() : null)
+        return TeamMemberResponse.builder()
+                                 .employeeId(e.getId())
+                                 .employeeNumber(e.getEmployeeNumber())
+                                 .firstName(
+                                         profile != null ? profile.getFirstName() : null)
                                  .lastName(profile != null ? profile.getLastName() : null)
                                  .email(profile != null ? profile.getEmail() : null)
                                  .departmentLabel(assignment != null ?
                                                           assignment.getDepartmentLabel() :
-                                                          null).positionLabel(
-                        assignment != null ? assignment.getPositionLabel() : null)
-                                 .employmentStatus(e.getEmploymentStatus()).build();
+                                                          null)
+                                 .positionLabel(assignment != null ?
+                                                        assignment.getPositionLabel() :
+                                                        null)
+                                 .employmentStatus(e.getEmploymentStatus())
+                                 .build();
     }
 }

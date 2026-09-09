@@ -16,6 +16,7 @@ spring:
           starttls:
             enable: false
   security:
+    client-id: ${APP_SECURITY_CLIENT_ID:angular-app}
     oauth2:
       resourceserver:
         jwt:
