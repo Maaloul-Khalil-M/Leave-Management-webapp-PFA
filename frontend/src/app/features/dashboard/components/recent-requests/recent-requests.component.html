@@ -34,6 +34,16 @@
               [class.draft]="req.status === 'Draft'">
               {{ req.status }}
             </span>
+            @if (req.status === 'Draft') {
+              <button
+                type="button"
+                class="submit-mini-btn"
+                (click)="submitDraft(req.id)"
+                [disabled]="submittingId() === req.id"
+                title="Submit request for approval">
+                {{ submittingId() === req.id ? '…' : 'Submit' }}
+              </button>
+            }
           </div>
         </div>
       }

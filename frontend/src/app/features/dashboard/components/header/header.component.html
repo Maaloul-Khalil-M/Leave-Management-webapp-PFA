@@ -21,6 +21,7 @@
   <nav class="nav-links">
     <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
     <a class="nav-link" routerLink="/leave-requests" routerLinkActive="active">My Requests</a>
+    <a class="nav-link" routerLink="/manager/approvals" routerLinkActive="active">Approvals</a>
   </nav>
 
   <!-- Actions -->
@@ -48,6 +49,10 @@
           <mat-icon>event_note</mat-icon>
           My Requests
         </button>
+        <button mat-menu-item routerLink="/manager/approvals">
+          <mat-icon>rule</mat-icon>
+          Team Approvals
+        </button>
         <button mat-menu-item routerLink="/dev/auth-test">
           <mat-icon>security</mat-icon>
           Auth & Token Diagnostics
@@ -66,5 +71,6 @@
 <mat-menu #menu="matMenu">
   <button mat-menu-item routerLink="/dashboard">Dashboard</button>
   <button mat-menu-item routerLink="/leave-requests">My Requests</button>
+  <button mat-menu-item routerLink="/manager/approvals">Team Approvals</button>
   <button mat-menu-item routerLink="/dev/auth-test">Auth Diagnostics</button>
 </mat-menu>

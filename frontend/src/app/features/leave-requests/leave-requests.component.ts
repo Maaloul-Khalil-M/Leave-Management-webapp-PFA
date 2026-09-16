@@ -183,6 +183,7 @@ import { AuthService } from '../../core/auth/auth.service';
                       <th class="pb-3">Duration</th>
                       <th class="pb-3">Status</th>
                       <th class="pb-3">Reason</th>
+                      <th class="pb-3 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-slate-100">
@@ -219,6 +220,20 @@ import { AuthService } from '../../core/auth/auth.service';
                         <td class="max-w-xs truncate py-3 text-xs text-slate-500">
                           {{ req.reason || '—' }}
                         </td>
+                        <td class="py-3 text-right">
+                          @if (req.status === 'DRAFT') {
+                            <button
+                              type="button"
+                              (click)="submitRequest(req.id)"
+                              [disabled]="submittingId() === req.id"
+                              class="rounded bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+                            >
+                              {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
+                            </button>
+                          } @else {
+                            <span class="text-xs text-slate-400">—</span>
+                          }
+                        </td>
                       </tr>
                     }
                   </tbody>
@@ -238,6 +253,7 @@ export class LeaveRequestsComponent implements OnInit {
   readonly requests = signal<LeaveRequestResponse[]>([]);
   readonly loading = signal(false);
   readonly submitting = signal(false);
+  readonly submittingId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
@@ -303,6 +319,26 @@ export class LeaveRequestsComponent implements OnInit {
         this.submitting.set(false);
         this.errorMessage.set(
           err?.error?.message || err?.error?.error?.message || 'Failed to create draft request.'
+        );
+      },
+    });
+  }
+
+  submitRequest(id: string): void {
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.submittingId.set(id);
+
+    this.leaveRequestService.submit(id).subscribe({
+      next: () => {
+        this.submittingId.set(null);
+        this.successMessage.set('Leave request submitted successfully for approval.');
+        this.loadRequests();
+      },
+      error: (err) => {
+        this.submittingId.set(null);
+        this.errorMessage.set(
+          err?.error?.message || err?.error?.error?.message || 'Failed to submit leave request.'
         );
       },
     });

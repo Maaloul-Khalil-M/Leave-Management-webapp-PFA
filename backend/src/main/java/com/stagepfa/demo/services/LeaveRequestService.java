@@ -9,5 +9,13 @@ public interface LeaveRequestService {
 
     LeaveRequest createDraft(CreateLeaveRequest request);
 
+    LeaveRequest submit(String id);
+
+    LeaveRequest approve(String id, String comment);
+
+    LeaveRequest reject(String id, String comment);
+
     List<LeaveRequest> listMine();
+
+    List<LeaveRequest> listPendingTeamRequests();
 }

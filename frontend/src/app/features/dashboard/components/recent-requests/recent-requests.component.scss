@@ -118,12 +118,33 @@
   }
 
   &.pending {
-    background: #fef3c7;
-    color: #d97706;
+    background: #eff6ff;
+    color: #2563eb;
   }
 
   &.draft {
-    background: #f1f5f9;
-    color: #64748b;
+    background: #fef3c7;
+    color: #d97706;
+  }
+}
+
+.submit-mini-btn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--mat-sys-outline-variant, #cbd5e1);
+  background: var(--mat-sys-primary, #0f172a);
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover {
+    opacity: 0.85;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }

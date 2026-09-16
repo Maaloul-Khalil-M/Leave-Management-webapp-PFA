@@ -22,9 +22,9 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Actor-based controllers (`me` / `manager` / `hr` / `admin`) | Partial | Admin, employee, hr, manager packages exist. Not all endpoints implemented. |
 | Reference data (departments, positions, leave types, org settings) | Working | Migrations and endpoints exist for CRUD |
 | Users & Employees separation | Working | MongoDB models `User` and `Employee` exist and link via `employeeId` |
-| Leave ledger (append-only) | Partial | Service exists with `appendMovement` logic, but no leave request triggers it |
-| Leave request state machine | Partial | Draft creation and listing implemented; submit/approve/reject workflows pending |
-| Manager-of authorization | Missing | Not implemented for leave requests |
+| Leave ledger (append-only) | Working | Service with appendMovement logic; leave request approval triggers ledger debits when leave type deducts balance |
+| Leave request state machine | Working | Draft creation, listing, submit (DRAFT → PENDING), and manager decision (PENDING → APPROVED / REJECTED) implemented |
+| Manager-of authorization | Working | Enforced on manager approval and rejection endpoints via Employee.currentManager |
 | Eligibility service | Missing | Does not exist |
 | Domain events → notifications | Missing | No events or notifications implemented |
 | Keycloak JWT resource server | Working | Implemented via `SecurityConfig` and `CurrentUserServiceImpl` |
@@ -41,8 +41,8 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Auth (Keycloak / Google hint) | Unknown | Not verified |
 | Shell / layout / theme | Working | Platana header, responsive dashboard layout, clean routing |
 | Employee Dashboard (`/dashboard`) | Working | Real-data employee first screen. Paid Annual circular gauge + compact cards for Sick/Unpaid/Maternity, balance calculation, recent requests, leave ledger movements, upcoming approved leaves, company holidays (paged at 3), and compact FullCalendar. |
-| Employee leave request UI | Working | `LeaveRequestsComponent` implemented under `/leave-requests` |
-| Manager approval UI | Missing | |
+| Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT (both on /dashboard and /leave-requests), and clear status badges |
+| Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
 | HR screens (employees, policies, adjustments) | Missing | |
 | Pending / ACTIVE gating | Missing | |
 | Two colour systems (lifecycle vs availability) | Missing | |
@@ -68,6 +68,52 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Leave Request Workflow — Slice C (Employee + Manager UI) — 2026-09-16
+- **Backend API**:
+  - Implemented `LeaveRequestService.listPendingTeamRequests()` and exposed `GET /api/manager/leave-requests/pending` on `ManagerLeaveRequestController` returning direct reports' pending requests.
+  - Added unit test in `LeaveRequestDecisionTest` verifying direct report resolution and pending status filtering.
+- **Frontend Employee Experience**:
+  - Extended `LeaveRequestService` with `submit`, `listPendingTeamRequests`, `approve`, and `reject`.
+  - Added direct "Submit" action button on `DRAFT` items within `/leave-requests` and `/dashboard` (Recent Requests widget), dynamically refreshing balances and lists upon submission.
+  - Ensured clear, accessible status indicators for `DRAFT` (amber), `PENDING` (blue), `APPROVED` (emerald), and `REJECTED` (rose).
+- **Frontend Manager Experience**:
+  - Implemented `ManagerApprovalsComponent` at `/manager/approvals`:
+    - Displays pending leave requests submitted by direct reports with employee snapshot metadata, leave details, duration, and reason.
+    - Inline approval workflow with optional comment.
+    - Inline rejection workflow with required comment validation.
+    - Connected to real backend endpoints (`/api/manager/leave-requests/{id}/approve` and `/reject`).
+  - Added "Approvals" navigation entry in header and mobile menus.
+- **Verification**:
+  - Backend tests: 16/16 passed (`BUILD SUCCESS`).
+  - Frontend production build: `npm run build` completed with 0 errors.
+
+### Leave Request Workflow — Slice B (Manager Approve/Reject) — 2026-09-16
+- **Backend Service**:
+  - Implemented `LeaveRequestService.approve(String id, String comment)`:
+    - Enforces manager-of authorization (`requester.getCurrentManager().getEmployeeId().equals(managerEmployeeId)`), forbids self-approval, requires `PENDING` status.
+    - Checks whether `LeaveType.deductsFromBalance` is true. If true, debits leave ledger via `LeaveLedgerService.appendMovement(APPROVED_LEAVE_DEBIT)` and rolls back if `INSUFFICIENT_BALANCE`. If false (e.g. `SICK`), skips ledger debit.
+    - Transitions status to `APPROVED`, records `validatedAt`, `validatedBy`, and `validationComment`, and appends history entry.
+  - Implemented `LeaveRequestService.reject(String id, String comment)`:
+    - Enforces manager-of check, forbids self-rejection, requires `PENDING` status, and requires non-blank comment (`ErrorCode.VALIDATION_ERROR`).
+    - Transitions status to `REJECTED`, records `validationComment`, appends history, and performs no ledger movements.
+- **Backend Controller & DTOs**:
+  - Added `ApproveLeaveRequest` (optional comment) and `RejectLeaveRequest` (`@NotBlank` comment).
+  - Created `ManagerLeaveRequestController` with `POST /api/manager/leave-requests/{id}/approve` and `POST /api/manager/leave-requests/{id}/reject`.
+- **Verification**:
+  - Created `LeaveRequestDecisionTest` covering 10 test scenarios (balance debit on approval, no debit for non-deductible types, manager-of enforcement, self-approval/rejection guards, non-pending status guards, insufficient balance rollback, reject comment requirement, and history auditing). All 18 tests passing.
+
+### Leave Request Workflow — Slice A (Submit DRAFT → PENDING) — 2026-09-16
+- **Backend Service**:
+  - Implemented `LeaveRequestService.submit(String id)`:
+    - Verifies authenticated employee ownership (`BusinessException(ErrorCode.FORBIDDEN)` if unlinked or not owner).
+    - Checks request exists (`ResourceNotFoundException(ErrorCode.RESOURCE_NOT_FOUND)` if not found).
+    - Enforces state transition guard (`leaveRequest.getStatus() == LeaveRequestStatus.DRAFT`, throws `BusinessException(ErrorCode.INVALID_STATUS_TRANSITION)` otherwise).
+    - Sets `status = PENDING`, records `submittedAt = Instant.now()`, and appends a `StatusHistoryEntry` (`fromStatus = DRAFT`, `toStatus = PENDING`, with user ID and timestamp).
+- **Backend Controller**:
+  - Exposed `POST /api/employee/leave-requests/{id}/submit` on `EmployeeLeaveRequestController` returning `200 OK` with `LeaveRequestResponse`.
+- **Verification**:
+  - Added unit test suite `LeaveRequestSubmitTest` covering success, not found, forbidden (non-owner), invalid status transitions, and unlinked user scenarios (5/5 tests passing).
 
 ### Employee Dashboard Alignment & Frontend Cleanup — 2026-09-16
 - **Routing & First Screen**:

@@ -35,6 +35,14 @@ public class EmployeeLeaveRequestController {
                              .body(leaveRequestMapper.toResponse(created));
     }
 
+    @PostMapping("/{id}/submit")
+    @Operation(operationId = "submitLeaveRequest", summary = "Submit a draft leave request")
+    @ApiResponse(responseCode = "200", description = "Leave request submitted successfully")
+    public ResponseEntity<LeaveRequestResponse> submit(@PathVariable String id) {
+        LeaveRequest submitted = leaveRequestService.submit(id);
+        return ResponseEntity.ok(leaveRequestMapper.toResponse(submitted));
+    }
+
     @GetMapping
     @Operation(operationId = "listMyLeaveRequests", summary = "List current employee leave requests")
     public ResponseEntity<PageResponse<LeaveRequestResponse>> listMine() {

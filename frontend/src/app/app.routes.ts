@@ -21,6 +21,14 @@ export const routes: Routes = [
     canActivate: [employeeGuard],
   },
   {
+    path: 'manager/approvals',
+    loadComponent: () =>
+      import('./features/manager-approvals/manager-approvals.component').then(
+        (m) => m.ManagerApprovalsComponent
+      ),
+    canActivate: [employeeGuard],
+  },
+  {
     path: 'dev/auth-test',
     component: HomeComponent,
   },

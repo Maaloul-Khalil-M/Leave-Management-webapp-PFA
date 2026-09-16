@@ -13,9 +13,20 @@ export interface CreateLeaveRequest {
   reason?: string;
 }
 
+export interface EmployeeSnapshot {
+  employeeId?: string;
+  employeeNumber?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  departmentLabel?: string;
+  positionLabel?: string;
+}
+
 export interface LeaveRequestResponse {
   id: string;
   employeeId: string;
+  employeeSnapshot?: EmployeeSnapshot;
   leaveTypeCode: LeaveTypeCode;
   startDate: string;
   endDate: string;
@@ -25,6 +36,9 @@ export interface LeaveRequestResponse {
   status: string;
   reason?: string;
   submittedAt?: string;
+  validatedAt?: string;
+  validatedBy?: string;
+  validationComment?: string;
 }
 
 export interface PageResponse<T> {
@@ -48,9 +62,36 @@ export class LeaveRequestService {
     );
   }
 
+  submit(id: string): Observable<LeaveRequestResponse> {
+    return this.http.post<LeaveRequestResponse>(
+      `${this.apiUrl}/api/employee/leave-requests/${id}/submit`,
+      {}
+    );
+  }
+
   listMine(): Observable<PageResponse<LeaveRequestResponse>> {
     return this.http.get<PageResponse<LeaveRequestResponse>>(
       `${this.apiUrl}/api/employee/leave-requests`
+    );
+  }
+
+  listPendingTeamRequests(): Observable<PageResponse<LeaveRequestResponse>> {
+    return this.http.get<PageResponse<LeaveRequestResponse>>(
+      `${this.apiUrl}/api/manager/leave-requests/pending`
+    );
+  }
+
+  approve(id: string, comment?: string): Observable<LeaveRequestResponse> {
+    return this.http.post<LeaveRequestResponse>(
+      `${this.apiUrl}/api/manager/leave-requests/${id}/approve`,
+      { comment }
+    );
+  }
+
+  reject(id: string, comment: string): Observable<LeaveRequestResponse> {
+    return this.http.post<LeaveRequestResponse>(
+      `${this.apiUrl}/api/manager/leave-requests/${id}/reject`,
+      { comment }
     );
   }
 }
