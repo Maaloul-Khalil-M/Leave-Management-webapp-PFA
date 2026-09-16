@@ -1,0 +1,28 @@
+<mat-card class="section-card">
+  <div class="card-header">
+    <h3>Team On Leave</h3>
+    <span class="count">{{ items().length }}</span>
+  </div>
+
+  @if (items().length === 0) {
+    <p class="empty">Everyone is in today</p>
+  } @else {
+    <div class="team-list">
+      @for (member of items(); track member.id) {
+        <div class="team-item">
+          <div class="avatar-sm">{{ member.avatarInitials }}</div>
+          <div class="member-info">
+            <span class="name">{{ member.name }}</span>
+            <span class="meta">
+              {{ member.leaveType }} ·
+              {{ member.startDate | date: 'MMM d' }}
+              @if (member.startDate !== member.endDate) {
+                – {{ member.endDate | date: 'MMM d' }}
+              }
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</mat-card>

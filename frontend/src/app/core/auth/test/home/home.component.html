@@ -23,6 +23,15 @@
         }
 
         @if (auth.isLoggedIn()) {
+          <a
+            routerLink="/leave-requests"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            Leave requests
+          </a>
+        }
+
+        @if (auth.isLoggedIn()) {
           <button
             type="button"
             (click)="auth.logout()"
@@ -228,6 +237,12 @@
             >
               Call work area
             </button>
+            <a
+              routerLink="/leave-requests"
+              class="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+            >
+              Leave requests
+            </a>
             @if (auth.hasAnyRole('HR', 'ADMIN')) {
               <a
                 routerLink="/hr"

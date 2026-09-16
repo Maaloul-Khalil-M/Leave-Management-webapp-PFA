@@ -1,12 +1,13 @@
 import {Component, inject, OnInit, signal, computed} from '@angular/core';
 import {JsonPipe} from '@angular/common';
+import {RouterLink} from '@angular/router';
 import {MeService, UserResponse} from '../me.service';
 import {AuthService} from '../../auth.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [JsonPipe],
+  imports: [JsonPipe, RouterLink],
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit {

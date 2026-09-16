@@ -1,0 +1,29 @@
+@if (calculation(); as calc) {
+  <mat-expansion-panel class="calc-panel" [expanded]="false">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon class="title-icon">info_outline</mat-icon>
+        How is my balance calculated?
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <div class="calc-rows">
+      <div class="calc-row">
+        <span class="label">Base Accrual</span>
+        <span class="value">{{ calc.baseAccrual }} days</span>
+      </div>
+      <div class="calc-row">
+        <span class="label">Carried Over</span>
+        <span class="value positive">+{{ calc.carriedOver }} days</span>
+      </div>
+      <div class="calc-row">
+        <span class="label">Deductions</span>
+        <span class="value negative">−{{ calc.deductions }} days</span>
+      </div>
+      <div class="calc-row total">
+        <span class="label">Net Entitlement</span>
+        <span class="value">{{ calc.baseAccrual + calc.carriedOver - calc.deductions }} days</span>
+      </div>
+    </div>
+  </mat-expansion-panel>
+}

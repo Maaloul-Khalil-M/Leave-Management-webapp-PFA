@@ -1,0 +1,109 @@
+.section-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  padding: 16px 20px;
+}
+
+.card-header {
+  margin-bottom: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+}
+
+.calendar-container {
+  font-size: 12px;
+
+  ::ng-deep {
+    .fc {
+      --fc-border-color: #e2e8f0;
+      --fc-page-bg-color: transparent;
+      --fc-neutral-bg-color: #f8fafc;
+      --fc-today-bg-color: transparent;
+    }
+
+    .fc-toolbar-title {
+      font-size: 14px !important;
+      font-weight: 600;
+    }
+
+    .fc-button {
+      background: #f1f5f9 !important;
+      border: none !important;
+      color: #475569 !important;
+      box-shadow: none !important;
+      font-size: 12px !important;
+      padding: 4px 8px !important;
+    }
+
+    .fc-daygrid-day.highlight-day {
+      background: #eff6ff !important;
+
+      .fc-daygrid-day-number {
+        background: #3b82f6;
+        color: #fff;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2px;
+      }
+    }
+
+    .fc-daygrid-day-number {
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    .fc-event {
+      opacity: 0.35;
+    }
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+
+  &.annual {
+    background: #3b82f6;
+  }
+
+  &.team {
+    background: #94a3b8;
+  }
+
+  &.holiday {
+    background: #a78bfa;
+  }
+
+  &.today {
+    background: #3b82f6;
+    border-radius: 50%;
+  }
+}

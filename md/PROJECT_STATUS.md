@@ -23,7 +23,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Reference data (departments, positions, leave types, org settings) | Working | Migrations and endpoints exist for CRUD |
 | Users & Employees separation | Working | MongoDB models `User` and `Employee` exist and link via `employeeId` |
 | Leave ledger (append-only) | Partial | Service exists with `appendMovement` logic, but no leave request triggers it |
-| Leave request state machine | Missing | Entity exists, but no Service or Controller logic implemented |
+| Leave request state machine | Partial | Draft creation and listing implemented; submit/approve/reject workflows pending |
 | Manager-of authorization | Missing | Not implemented for leave requests |
 | Eligibility service | Missing | Does not exist |
 | Domain events → notifications | Missing | No events or notifications implemented |
@@ -39,8 +39,8 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Area | Status | Notes |
 |------|--------|-------|
 | Auth (Keycloak / Google hint) | Unknown | Not verified |
-| Shell / layout / theme | Partial | Basic header/theme components exist but routes are empty |
-| Employee leave request UI | Missing | |
+| Shell / layout / theme | Partial | Basic header/theme components exist |
+| Employee leave request UI | Working | `LeaveRequestsComponent` implemented under `/leave-requests` |
 | Manager approval UI | Missing | |
 | HR screens (employees, policies, adjustments) | Missing | |
 | Pending / ACTIVE gating | Missing | |
@@ -67,6 +67,20 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Employee Leave Request Foundation — 2026-09-16
+- **Backend**:
+  - Implemented `CreateLeaveRequest` DTO with validation.
+  - Implemented `LeaveRequestService` and `LeaveRequestServiceImpl`:
+    - `createDraft`: Calculates duration days based on company weekend rules, creates initial `DRAFT` status history, creates `EmployeeSnapshot`, and stores `LeaveRequest` in MongoDB. Does not debit leave ledger.
+    - `listMine`: Returns all leave requests belonging to the authenticated employee.
+  - Implemented `EmployeeLeaveRequestController` with `POST /api/employee/leave-requests` (201 Created) and `GET /api/employee/leave-requests` (PageResponse).
+- **Frontend**:
+  - Implemented `LeaveRequestService` for API calls.
+  - Implemented `LeaveRequestsComponent` featuring a draft creation form and a list of the employee's requests with status and duration badges.
+  - Enabled routing in `app.ts` via `<router-outlet/>` and registered `/leave-requests` with `employeeGuard` in `app.routes.ts`.
+  - Added navigation links from `HomeComponent` header and action panel to `/leave-requests`.
+- **Verification**: Backend compiled and passed tests (`mvnw test`); frontend compiled successfully (`npm run build`).
 
 ### Security Baseline Authorization — 2026-09-16
 - **Endpoint Protection**: Cleaned up `SecurityConfig.java` to remove open `permitAll()` rules on `/api/employee/**`, `/api/calendars/**`, and `/api/test`.

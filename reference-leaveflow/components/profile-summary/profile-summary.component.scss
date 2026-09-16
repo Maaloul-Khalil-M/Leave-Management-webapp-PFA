@@ -1,0 +1,86 @@
+.profile-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  padding: 20px;
+}
+
+.profile-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.avatar-lg {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.id {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.role-chip {
+  font-size: 11px !important;
+  min-height: 24px !important;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  .label {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 1px;
+  }
+
+  .value {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+  }
+}

@@ -1,14 +1,11 @@
 import {Component} from '@angular/core';
-import {Shell} from './core/layout/shell/shell';
-import {HomeComponent} from './core/auth/test/home/home.component';
+import {RouterOutlet} from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [Shell, HomeComponent],
+  imports: [RouterOutlet],
   template: `
-    <app-home/>
-    <!-- <app-shell/> -->
-
+    <router-outlet/>
   `,
   host: {
     class: 'block h-dvh',
