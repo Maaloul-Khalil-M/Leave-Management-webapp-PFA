@@ -1,0 +1,70 @@
+<mat-toolbar class="header-toolbar">
+  <!-- Mobile hamburger menu -->
+  <button
+    class="mobile-menu"
+    matIconButton
+    [matMenuTriggerFor]="menu"
+    aria-label="Open navigation menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <!-- Brand -->
+  <div class="brand" routerLink="/dashboard" style="cursor: pointer;">
+    <img
+      src="/LOGO.png"
+      alt="Platana"
+      class="brand-logo"
+    />
+  </div>
+
+  <!-- Desktop navigation -->
+  <nav class="nav-links">
+    <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <a class="nav-link" routerLink="/leave-requests" routerLinkActive="active">My Requests</a>
+  </nav>
+
+  <!-- Actions -->
+  <div class="header-actions">
+    <!-- Theme Switcher -->
+    <app-theme-switcher />
+
+    <button mat-flat-button class="request-btn" (click)="requestLeave.emit()">
+      <mat-icon>add</mat-icon>
+      Request Leave
+    </button>
+
+    @if (profile(); as p) {
+      <div class="user-block" [matMenuTriggerFor]="userMenu">
+        <div class="avatar">{{ p.name ? p.name.charAt(0) : 'U' }}</div>
+        <div class="user-meta">
+          <span class="user-name">{{ p.name }}</span>
+          <span class="user-title">{{ p.position }}</span>
+        </div>
+        <mat-icon class="chevron">expand_more</mat-icon>
+      </div>
+
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <button mat-menu-item routerLink="/leave-requests">
+          <mat-icon>event_note</mat-icon>
+          My Requests
+        </button>
+        <button mat-menu-item routerLink="/dev/auth-test">
+          <mat-icon>security</mat-icon>
+          Auth & Token Diagnostics
+        </button>
+        <mat-divider></mat-divider>
+        <button mat-menu-item (click)="signOut.emit()">
+          <mat-icon>logout</mat-icon>
+          Sign out
+        </button>
+      </mat-menu>
+    }
+  </div>
+</mat-toolbar>
+
+<!-- Mobile navigation menu -->
+<mat-menu #menu="matMenu">
+  <button mat-menu-item routerLink="/dashboard">Dashboard</button>
+  <button mat-menu-item routerLink="/leave-requests">My Requests</button>
+  <button mat-menu-item routerLink="/dev/auth-test">Auth Diagnostics</button>
+</mat-menu>

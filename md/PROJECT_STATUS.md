@@ -39,7 +39,8 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Area | Status | Notes |
 |------|--------|-------|
 | Auth (Keycloak / Google hint) | Unknown | Not verified |
-| Shell / layout / theme | Partial | Basic header/theme components exist |
+| Shell / layout / theme | Working | Platana header, responsive dashboard layout, clean routing |
+| Employee Dashboard (`/dashboard`) | Working | Real-data employee first screen. Paid Annual circular gauge + compact cards for Sick/Unpaid/Maternity, balance calculation, recent requests, leave ledger movements, upcoming approved leaves, company holidays (paged at 3), and compact FullCalendar. |
 | Employee leave request UI | Working | `LeaveRequestsComponent` implemented under `/leave-requests` |
 | Manager approval UI | Missing | |
 | HR screens (employees, policies, adjustments) | Missing | |
@@ -67,6 +68,20 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Employee Dashboard Alignment & Frontend Cleanup — 2026-09-16
+- **Routing & First Screen**:
+  - Root route (`/`) now redirects authenticated employees straight to `/dashboard` (primary employee landing screen).
+  - Cleaned `employeeGuard` to trigger Keycloak code flow directly without disruptive browser alert popups.
+  - Demoted debug token view to `/dev/auth-test`.
+- **Component Cleanup & Refinements**:
+  - **Leave Balances**: Paid Annual (`PAID_ANNUAL`) features an animated circular SVG gauge showing remaining vs. accrued/max balance; other types (`SICK`, `UNPAID`, `MATERNITY`) render as clean, compact stat cards with policy pills and usage counters.
+  - **Upcoming Approved Leaves**: Strictly displays future approved leave requests from real data.
+  - **Company Holidays**: Paginated at 3 items per page with sleek next/prev controls, pulling real Tunisian holidays.
+  - **Compact FullCalendar**: Configured as a small, compact widget (310px height) merging official holidays, approved leaves, and pending drafts.
+  - **Leave History & Ledger**: Full movements history (accruals, debits, adjustments) from backend ledger.
+  - **Deleted Bloat/Stubs**: Completely removed fake `team-on-leave` (mock members), fake `attendance` toggle, and redundant `leave-utilization` chart.
+- **Verification**: Built and verified production bundle via `npm run build` (0 errors).
 
 ### Employee Leave Request Foundation — 2026-09-16
 - **Backend**:

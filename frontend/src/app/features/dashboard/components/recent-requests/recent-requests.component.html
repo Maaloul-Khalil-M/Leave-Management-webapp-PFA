@@ -1,0 +1,42 @@
+<mat-card class="section-card">
+  <div class="card-header">
+    <div class="title-wrap">
+      <mat-icon class="header-icon">pending_actions</mat-icon>
+      <h3>Recent Requests</h3>
+    </div>
+    <a routerLink="/leave-requests" class="view-all-link">View all &rarr;</a>
+  </div>
+
+  @if (items().length === 0) {
+    <p class="empty-state">No recent leave requests</p>
+  } @else {
+    <div class="request-list">
+      @for (req of items(); track req.id) {
+        <div class="request-row">
+          <div class="left">
+            <span class="type">{{ req.type }}</span>
+            <span class="range">
+              {{ req.startDate | date: 'MMM d' }}
+              @if (req.startDate !== req.endDate) {
+                – {{ req.endDate | date: 'MMM d, y' }}
+              } @else {
+                , {{ req.startDate | date: 'y' }}
+              }
+            </span>
+          </div>
+          <div class="right">
+            <span class="days">{{ req.days }}d</span>
+            <span
+              class="status-chip"
+              [class.approved]="req.status === 'Approved'"
+              [class.rejected]="req.status === 'Rejected'"
+              [class.pending]="req.status === 'Pending'"
+              [class.draft]="req.status === 'Draft'">
+              {{ req.status }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</mat-card>

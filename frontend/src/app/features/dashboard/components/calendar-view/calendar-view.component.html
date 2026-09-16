@@ -1,0 +1,31 @@
+<mat-card class="section-card small-calendar-card">
+  <div class="card-header">
+    <div class="title-wrap">
+      <mat-icon class="header-icon">calendar_month</mat-icon>
+      <h3>Leave & Holiday Calendar</h3>
+    </div>
+  </div>
+
+  <div class="calendar-container">
+    <full-calendar [options]="calendarOptions()"></full-calendar>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <span class="dot holiday"></span>
+      <span>Holidays</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot approved"></span>
+      <span>Approved</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot pending"></span>
+      <span>Pending / Draft</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot today"></span>
+      <span>Today</span>
+    </div>
+  </div>
+</mat-card>

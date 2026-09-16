@@ -1,0 +1,72 @@
+.calc-panel {
+  border-radius: 8px !important;
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  box-shadow: none !important;
+  background: var(--mat-sys-surface, #ffffff);
+
+  ::ng-deep .mat-expansion-panel-header {
+    height: 36px !important;
+    padding: 0 14px !important;
+  }
+
+  ::ng-deep .mat-expansion-panel-header-title {
+    font-size: 12px !important;
+    font-weight: 500;
+    color: var(--mat-sys-on-surface-variant, #64748b);
+  }
+
+  ::ng-deep .mat-expansion-panel-body {
+    padding: 0 14px 10px !important;
+  }
+}
+
+.title-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  color: var(--mat-sys-on-surface-variant, #64748b);
+  vertical-align: middle;
+}
+
+.calc-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.calc-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+
+  .label {
+    color: var(--mat-sys-on-surface-variant, #64748b);
+  }
+
+  .value {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface, #0f172a);
+
+    &.positive {
+      color: #059669;
+    }
+
+    &.negative {
+      color: #dc2626;
+    }
+  }
+
+  &.total {
+    border-top: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+    padding-top: 6px;
+    margin-top: 2px;
+
+    .label,
+    .value {
+      font-weight: 700;
+      color: var(--mat-sys-on-surface, #0f172a);
+    }
+  }
+}

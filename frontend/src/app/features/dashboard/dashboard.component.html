@@ -1,0 +1,47 @@
+<app-header
+  [profile]="state.profile()"
+  (requestLeave)="onRequestLeave()"
+  (signOut)="onSignOut()"
+/>
+
+@if (state.loading()) {
+  <div class="loading-overlay">
+    <mat-spinner diameter="36"></mat-spinner>
+    <p>Loading dashboard…</p>
+  </div>
+} @else if (state.error()) {
+  <div class="error-banner">{{ state.error() }}</div>
+} @else {
+  <main class="dashboard-container">
+    <!-- Top Row: Profile (Left) + Balances & Calculation (Right) -->
+    <section class="top-row">
+      <div class="top-profile">
+        <app-profile-summary [profile]="state.profile()" />
+      </div>
+      <div class="top-balances">
+        <app-leave-balance [balances]="state.leaveBalances()" />
+        <app-balance-calculation [calculation]="state.balanceCalculation()" />
+      </div>
+    </section>
+
+    <!-- Bottom Row: 3-Column Workspace -->
+    <section class="bottom-grid">
+      <!-- Column 1: Requests & Upcoming Approved -->
+      <div class="col-requests">
+        <app-upcoming-leaves [items]="state.upcomingApprovedLeaves()" />
+        <app-recent-requests [items]="state.leaveRequests()" />
+      </div>
+
+      <!-- Column 2: Leave Ledger History -->
+      <div class="col-ledger">
+        <app-leave-ledger [items]="state.leaveLedger()" />
+      </div>
+
+      <!-- Column 3: Calendar & Holidays -->
+      <div class="col-calendar">
+        <app-calendar-view [calendarData]="state.calendarData()" />
+        <app-company-holidays [items]="state.holidays()" />
+      </div>
+    </section>
+  </main>
+}

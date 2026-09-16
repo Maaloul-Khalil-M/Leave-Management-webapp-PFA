@@ -1,0 +1,160 @@
+.section-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: none;
+  padding: 14px 16px;
+  background: #ffffff;
+}
+
+.card-header {
+  margin-bottom: 8px;
+
+  .title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .header-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #3b82f6;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 650;
+      color: #0f172a;
+    }
+  }
+}
+
+.calendar-container {
+  font-size: 11px;
+
+  ::ng-deep {
+    .fc {
+      --fc-border-color: #f1f5f9;
+      --fc-page-bg-color: transparent;
+      --fc-neutral-bg-color: #f8fafc;
+      --fc-today-bg-color: transparent;
+    }
+
+    .fc-toolbar {
+      margin-bottom: 6px !important;
+      padding: 0 4px;
+    }
+
+    .fc-toolbar-title {
+      font-size: 13px !important;
+      font-weight: 650;
+      color: #1e293b;
+    }
+
+    .fc-button {
+      background: #f1f5f9 !important;
+      border: none !important;
+      color: #475569 !important;
+      box-shadow: none !important;
+      font-size: 11px !important;
+      padding: 2px 6px !important;
+      height: 24px;
+      line-height: 20px;
+      border-radius: 4px !important;
+
+      &:hover {
+        background: #e2e8f0 !important;
+      }
+    }
+
+    .fc-col-header-cell {
+      padding: 3px 0;
+      background: #f8fafc;
+      font-size: 10px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .fc-daygrid-day {
+      min-height: 36px !important;
+    }
+
+    .fc-daygrid-day-top {
+      flex-direction: row;
+      justify-content: center;
+    }
+
+    .fc-daygrid-day-number {
+      font-size: 11px;
+      padding: 2px;
+      color: #334155;
+    }
+
+    .fc-daygrid-day.highlight-day {
+      background: #eff6ff !important;
+
+      .fc-daygrid-day-number {
+        background: #3b82f6;
+        color: #ffffff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1px auto;
+        font-weight: 600;
+      }
+    }
+
+    .fc-event {
+      opacity: 0.55;
+      border-radius: 2px;
+      margin: 1px 0;
+    }
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+
+  &.approved {
+    background: #60a5fa;
+  }
+
+  &.pending {
+    background: #fbbf24;
+  }
+
+  &.holiday {
+    background: #f87171;
+  }
+
+  &.today {
+    background: #3b82f6;
+    border-radius: 50%;
+  }
+}

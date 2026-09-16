@@ -9,9 +9,7 @@ export const employeeGuard: CanActivateFn = () => {
   const meService = inject(MeService);
 
   if (!oauth.hasValidAccessToken()) {
-    alert('You are not logged in. Please sign in with Google.');
     oauth.initCodeFlow(undefined, {kc_idp_hint: 'google'});
-
     return false;
   }
 

@@ -1,0 +1,42 @@
+@if (profile(); as p) {
+  <mat-card class="profile-card">
+    <div class="profile-main">
+      <div class="avatar">{{ p.name ? p.name.charAt(0) : 'U' }}</div>
+      <div class="info">
+        <div class="name-id-row">
+          <h3 class="name">{{ p.name }}</h3>
+          <span class="id-badge">{{ p.id }}</span>
+        </div>
+        <div class="role-row">
+          <span class="role-text">{{ p.department }} · {{ p.position }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="meta-strip">
+      <div class="meta-item">
+        <mat-icon>supervisor_account</mat-icon>
+        <div class="meta-text">
+          <span class="label">Manager</span>
+          <span class="val">{{ p.manager }}</span>
+        </div>
+      </div>
+
+      <div class="meta-item">
+        <mat-icon>trending_up</mat-icon>
+        <div class="meta-text">
+          <span class="label">Accrual</span>
+          <span class="val">{{ p.accrualRate }}</span>
+        </div>
+      </div>
+
+      <div class="meta-item">
+        <mat-icon>calendar_today</mat-icon>
+        <div class="meta-text">
+          <span class="label">Fiscal Period</span>
+          <span class="val">{{ p.fiscalPeriod }}</span>
+        </div>
+      </div>
+    </div>
+  </mat-card>
+}

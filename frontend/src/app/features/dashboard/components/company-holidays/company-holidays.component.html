@@ -1,0 +1,53 @@
+<mat-card class="section-card">
+  <div class="card-header">
+    <div class="title-wrap">
+      <mat-icon class="header-icon">celebration</mat-icon>
+      <h3>Company Holidays</h3>
+    </div>
+    <span class="count-tag">{{ items().length }} days</span>
+  </div>
+
+  @if (items().length === 0) {
+    <p class="empty-state">No holidays found</p>
+  } @else {
+    <div class="holiday-list">
+      @for (h of pagedItems(); track h.id) {
+        <div class="holiday-item">
+          <div class="holiday-date-badge">
+            <span class="day">{{ h.date | date: 'd' }}</span>
+            <span class="month">{{ h.date | date: 'MMM' }}</span>
+          </div>
+          <div class="holiday-info">
+            <span class="name">{{ h.name }}</span>
+            <span class="weekday">{{ h.date | date: 'EEEE, y' }}</span>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination controls (Page size 3) -->
+    <div class="pagination-footer">
+      <span class="page-indicator">
+        Page {{ pageIndex() + 1 }} of {{ totalPages() }}
+      </span>
+      <div class="page-buttons">
+        <button
+          mat-icon-button
+          [disabled]="pageIndex() === 0"
+          (click)="prevPage()"
+          aria-label="Previous holidays"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [disabled]="pageIndex() >= totalPages() - 1"
+          (click)="nextPage()"
+          aria-label="Next holidays"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+  }
+</mat-card>

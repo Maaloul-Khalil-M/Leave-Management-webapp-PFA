@@ -24,6 +24,12 @@
 
         @if (auth.isLoggedIn()) {
           <a
+            routerLink="/dashboard"
+            class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+          >
+            Dashboard
+          </a>
+          <a
             routerLink="/leave-requests"
             class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
           >
@@ -237,6 +243,12 @@
             >
               Call work area
             </button>
+            <a
+              routerLink="/dashboard"
+              class="rounded-lg border border-blue-200 bg-blue-50 px-3.5 py-2 text-sm font-semibold text-blue-800 hover:bg-blue-100"
+            >
+              Open Dashboard
+            </a>
             <a
               routerLink="/leave-requests"
               class="rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"

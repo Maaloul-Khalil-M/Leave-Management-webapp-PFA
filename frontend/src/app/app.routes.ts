@@ -3,7 +3,15 @@ import {HomeComponent} from './core/auth/test/home/home.component';
 import {employeeGuard} from './core/auth/employee.guard';
 
 export const routes: Routes = [
-  {path: '', component: HomeComponent},
+  {path: '', pathMatch: 'full', redirectTo: 'dashboard'},
+  {
+    path: 'dashboard',
+    loadComponent: () =>
+      import('./features/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent
+      ),
+    canActivate: [employeeGuard],
+  },
   {
     path: 'leave-requests',
     loadComponent: () =>
@@ -11,5 +19,9 @@ export const routes: Routes = [
         (m) => m.LeaveRequestsComponent
       ),
     canActivate: [employeeGuard],
+  },
+  {
+    path: 'dev/auth-test',
+    component: HomeComponent,
   },
 ];

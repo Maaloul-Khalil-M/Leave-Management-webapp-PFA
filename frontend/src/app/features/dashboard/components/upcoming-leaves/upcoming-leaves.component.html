@@ -1,0 +1,38 @@
+<mat-card class="section-card">
+  <div class="card-header">
+    <div class="title-wrap">
+      <mat-icon class="header-icon">event_available</mat-icon>
+      <h3>Upcoming Approved Leaves</h3>
+    </div>
+    <span class="count-tag">{{ items().length }}</span>
+  </div>
+
+  @if (items().length === 0) {
+    <div class="empty-state">
+      <p>No upcoming approved leaves</p>
+    </div>
+  } @else {
+    <div class="leave-list">
+      @for (item of items(); track item.id) {
+        <div class="leave-item">
+          <div class="leave-dates">
+            <mat-icon class="cal-icon">calendar_month</mat-icon>
+            <span>
+              {{ item.startDate | date: 'MMM d' }}
+              @if (item.startDate !== item.endDate) {
+                – {{ item.endDate | date: 'MMM d, y' }}
+              } @else {
+                , {{ item.startDate | date: 'y' }}
+              }
+            </span>
+          </div>
+          <div class="leave-meta">
+            <span class="leave-type">{{ item.type }}</span>
+            <span class="leave-days">{{ item.days }}d</span>
+            <span class="approved-badge">Approved</span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</mat-card>
