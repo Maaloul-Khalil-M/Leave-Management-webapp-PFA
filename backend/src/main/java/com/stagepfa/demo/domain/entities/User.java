@@ -17,7 +17,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Builder
 @CompoundIndex(name = "identity_provider_subject_unique",
-        def = "{'identity.provider': 1, 'identity.subject': 1}", unique = true)
+        def = "{'identity.provider': 1, 'identity.subject': 1}", unique = true, sparse = true)
 @Document(collection = "users")
 public class User {
 

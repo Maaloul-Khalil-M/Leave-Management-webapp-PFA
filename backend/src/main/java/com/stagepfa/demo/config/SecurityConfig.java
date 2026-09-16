@@ -77,7 +77,7 @@ public class SecurityConfig {
 
                         // Temporary endpoints for testing
                         .requestMatchers("/api/test", "/api/employee/**",
-                                         "/api" + "/calendars/**")
+                                         "/api/calendars/**")
                         .permitAll()
 
                         // Preflight requests never carry auth headers — let them through.
