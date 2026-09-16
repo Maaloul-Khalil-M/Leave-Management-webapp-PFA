@@ -23,7 +23,7 @@ public class OrganizationSettingsController {
     @GetMapping
     @Operation(operationId = "getOrganizationSettings",
             summary = "Get organization settings")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrganizationSettingsResponse> get() {
         return ResponseEntity.ok(
                 organizationSettingsMapper.toResponse(organizationSettingsService.get()));
@@ -32,6 +32,7 @@ public class OrganizationSettingsController {
     @PutMapping
     @Operation(operationId = "updateOrganizationSettings",
             summary = "Update organization settings")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationSettingsResponse> update(
             @Valid @RequestBody UpdateOrganizationSettingsRequest request) {
         var updated = organizationSettingsService.update(request);

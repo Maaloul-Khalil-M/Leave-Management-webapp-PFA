@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,6 +52,7 @@ public class PositionController {
 
     @PostMapping
     @Operation(operationId = "createPosition", summary = "Create a position")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN')")
     public ResponseEntity<PositionResponse> create(
             @Valid @RequestBody CreatePositionRequest request) {
         Position entity = positionMapper.toEntity(request);
@@ -61,6 +63,7 @@ public class PositionController {
 
     @PatchMapping("/{id}")
     @Operation(operationId = "updatePosition", summary = "Update a position")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN')")
     public ResponseEntity<PositionResponse> update(@PathVariable String id,
                                                    @Valid @RequestBody
                                                    UpdatePositionRequest request) {

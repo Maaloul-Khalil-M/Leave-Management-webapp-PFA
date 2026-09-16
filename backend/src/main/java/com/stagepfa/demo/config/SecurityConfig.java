@@ -75,23 +75,21 @@ public class SecurityConfig {
                                          "/api-docs", "/api-docs/**")
                         .permitAll()
 
-                        // Temporary endpoints for testing
-                        .requestMatchers("/api/test", "/api/employee/**",
-                                         "/api/calendars/**")
-                        .permitAll()
-
                         // Preflight requests never carry auth headers — let them through.
                         .requestMatchers(HttpMethod.OPTIONS, "/**")
                         .permitAll()
 
-                        // Previously: anyRequest().permitAll() ← this allowed all requests
-                        // without authentication. Now: anyRequest().authenticated() — every
-                        // other endpoint just requires *a* valid token, not a specific role.
-                        //
-                        // TODO: replace some of these with role-specific rules once roles
-                        // are defined, e.g.:
-                        //   .requestMatchers("/api/v1/hr/**").hasRole("HR")
-                        //   .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // Role-based path rules for major actor namespaces
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/hr/**").hasAnyRole("HR", "ADMIN")
+
+                        // Standard authenticated namespaces and reference data
+                        .requestMatchers("/api/employee/**").authenticated()
+                        .requestMatchers("/api/manager/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/departments/**",
+                                         "/api/positions/**", "/api/calendars/**",
+                                         "/api/organization-settings/**").authenticated()
+
                         .anyRequest()
                         .authenticated())
                 // This is what actually validates the JWT (signature, issuer, expiry)

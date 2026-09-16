@@ -13,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,6 +53,7 @@ public class DepartmentController {
     @PostMapping
     @Operation(operationId = "createDepartment", summary = "Create a department")
     @ApiResponse(responseCode = "201", description = "Department created successfully")
+    @PreAuthorize("hasAnyRole('HR', 'ADMIN')")
     public ResponseEntity<DepartmentResponse> create(
             @Valid @RequestBody CreateDepartmentRequest request) {
         Department entity = departmentMapper.toEntity(request);

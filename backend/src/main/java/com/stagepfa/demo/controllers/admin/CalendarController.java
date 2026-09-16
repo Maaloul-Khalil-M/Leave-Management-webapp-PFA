@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -43,6 +44,7 @@ public class CalendarController {
                     description = "Validation failed or calendar code already exists")})
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CalendarDto> create(@Valid @RequestBody CalendarDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                              .body(calendarService.create(dto));
@@ -94,6 +96,7 @@ public class CalendarController {
             {@ApiResponse(responseCode = "404", description = "Calendar not found")})
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public CalendarDto update(@PathVariable String id,
                               @Valid @RequestBody CalendarDto dto) {
         return calendarService.update(id, dto);
@@ -108,6 +111,7 @@ public class CalendarController {
             {@ApiResponse(responseCode = "404", description = "Calendar not found")})
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         calendarService.delete(id);
         return ResponseEntity.noContent()
@@ -130,6 +134,7 @@ public class CalendarController {
                     @ApiResponse(responseCode = "404",
                             description = "Calendar not found")})
     @PostMapping("/{calendarId}/days")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<CalendarDayDto> createDay(@PathVariable String calendarId,
                                                     @Valid @RequestBody
                                                     CalendarDayDto dto) {
@@ -151,6 +156,7 @@ public class CalendarController {
                             description = "Calendar not found")})
 
     @PostMapping("/{calendarId}/days/bulk")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PageResponse<CalendarDayDto>> createDays(
             @PathVariable String calendarId,
             @Valid @RequestBody List<CalendarDayDto> dtos) {
@@ -205,6 +211,7 @@ public class CalendarController {
             description = "Calendar or day not found")})
 
     @PutMapping("/{calendarId}/days/{dayId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public CalendarDayDto updateDay(@PathVariable String calendarId,
                                     @PathVariable String dayId,
                                     @Valid @RequestBody CalendarDayDto dto) {
@@ -219,6 +226,7 @@ public class CalendarController {
             description = "Calendar or day not found")})
 
     @DeleteMapping("/{calendarId}/days/{dayId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteDay(@PathVariable String calendarId,
                                           @PathVariable String dayId) {
         calendarDayService.delete(calendarId, dayId);
