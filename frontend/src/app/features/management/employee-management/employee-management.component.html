@@ -1,0 +1,610 @@
+<app-header />
+    <div class="min-h-screen bg-slate-50">
+      <!-- Header -->
+      
+
+      <main class="mx-auto max-w-7xl px-6 py-8">
+        <!-- Notification Banners -->
+        @if (errorMessage()) {
+          <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span>{{ errorMessage() }}</span>
+              <button type="button" (click)="errorMessage.set(null)" class="text-rose-500 hover:text-rose-700">&times;</button>
+            </div>
+          </div>
+        }
+
+        @if (successMessage()) {
+          <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span>{{ successMessage() }}</span>
+              <button type="button" (click)="successMessage.set(null)" class="text-emerald-500 hover:text-emerald-700">&times;</button>
+            </div>
+          </div>
+        }
+
+        <!-- Metric Stat Cards -->
+        <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase text-slate-500">Total Workforce</p>
+            <p class="mt-1 text-2xl font-bold text-slate-900">{{ employees().length }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase text-emerald-600">Active Contracts</p>
+            <p class="mt-1 text-2xl font-bold text-emerald-600">{{ activeEmployeesCount() }}</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p class="text-xs font-medium uppercase text-slate-500">Departments Active</p>
+            <p class="mt-1 text-2xl font-bold text-indigo-950">{{ departments().length }}</p>
+          </div>
+        </div>
+
+        <!-- Directory Section -->
+        <section class="app-card p-6">
+          <!-- Search, Filters and Add Button -->
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pb-6">
+            <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+              <div class="relative w-full max-w-xs">
+                <input
+                  type="text"
+                  [(ngModel)]="searchQuery"
+                  placeholder="Search by name, email, or #â€¦"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                />
+              </div>
+
+              <div class="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50/75 p-1 text-xs">
+                <button
+                  type="button"
+                  (click)="selectedStatusFilter.set('ALL')"
+                  [ngClass]="selectedStatusFilter() === 'ALL' ? 'bg-white font-semibold text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="rounded-md px-2.5 py-1 transition"
+                >
+                  All ({{ employees().length }})
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedStatusFilter.set('ACTIVE')"
+                  [ngClass]="selectedStatusFilter() === 'ACTIVE' ? 'bg-white font-semibold text-emerald-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="rounded-md px-2.5 py-1 transition"
+                >
+                  Active ({{ activeEmployeesCount() }})
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedStatusFilter.set('SUSPENDED')"
+                  [ngClass]="selectedStatusFilter() === 'SUSPENDED' ? 'bg-white font-semibold text-amber-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="rounded-md px-2.5 py-1 transition"
+                >
+                  Suspended
+                </button>
+                <button
+                  type="button"
+                  (click)="selectedStatusFilter.set('TERMINATED')"
+                  [ngClass]="selectedStatusFilter() === 'TERMINATED' ? 'bg-white font-semibold text-rose-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                  class="rounded-md px-2.5 py-1 transition"
+                >
+                  Terminated
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="loadEmployees()"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                Refresh
+              </button>
+              <button
+                type="button"
+                (click)="exportCsv()"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                Export CSV
+              </button>
+              <button
+                type="button"
+                (click)="showImportDialog.set(true)"
+                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                Import CSV
+              </button>
+              <button
+                type="button"
+                (click)="openAddEmployee()"
+                class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
+              >
+                + Add Employee
+              </button>
+            </div>
+          </div>
+
+          @if (loading()) {
+            <div class="py-16 text-center text-sm text-slate-400">Loading workforce directoryâ€¦</div>
+          } @else if (filteredEmployees().length === 0) {
+            <div class="rounded-xl border border-dashed border-slate-200 py-16 text-center">
+              <p class="text-sm font-medium text-slate-600">No employees found</p>
+              <p class="mt-1 text-xs text-slate-400">Try adjusting your search criteria or register a new employee.</p>
+            </div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="app-table">
+                <thead>
+                  <tr>
+                    <th class="px-4 py-3">Employee</th>
+                    <th class="px-4 py-3">Department & Position</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Hire Date</th>
+                    <th class="px-4 py-3">Manager</th>
+                    <th class="px-4 py-3">Contact</th>
+                    <th class="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  @for (emp of filteredEmployees(); track emp.id) {
+                    <tr class="hover:bg-slate-50/50 transition">
+                      <!-- Employee Name & Number -->
+                      <td class="px-4 py-3.5">
+                        <div class="flex items-center gap-3">
+                          <div class="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 text-xs font-bold text-slate-700">
+                            {{ getInitials(emp) }}
+                          </div>
+                          <div>
+                            <p class="font-semibold text-slate-900">{{ getFullName(emp) }}</p>
+                            <p class="font-mono text-xs text-slate-400">{{ emp.employeeNumber }}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- Department & Position -->
+                      <td class="px-4 py-3.5">
+                        <div class="space-y-1">
+                          <span class="inline-block rounded bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-900">
+                            {{ emp.currentAssignment?.departmentLabel || 'Unassigned' }}
+                          </span>
+                          <p class="text-xs text-slate-600 font-medium">
+                            {{ emp.currentAssignment?.positionLabel || 'No Title' }}
+                          </p>
+                        </div>
+                      </td>
+
+                      <!-- Contract / Employment Status -->
+                      <td class="px-4 py-3.5">
+                        <app-status-badge [status]="emp.employmentStatus" variant="pill" size="sm" />
+                      </td>
+
+                      <!-- Hire Date -->
+                      <td class="px-4 py-3.5 text-xs text-slate-600">
+                        {{ emp.profile?.hireDate || 'â€”' }}
+                      </td>
+
+                      <!-- Reporting Manager -->
+                      <td class="px-4 py-3.5 text-xs text-slate-700">
+                        {{ emp.currentManager?.name || 'â€”' }}
+                      </td>
+
+                      <!-- Contact Details -->
+                      <td class="px-4 py-3.5">
+                        <p class="text-xs text-slate-700">{{ emp.profile?.email }}</p>
+                        @if (emp.profile?.phone) {
+                          <p class="text-xs text-slate-400">{{ emp.profile?.phone }}</p>
+                        }
+                      </td>
+
+                      <!-- Actions -->
+                      <td class="px-4 py-3.5 text-right">
+                        <button
+                          type="button"
+                          (click)="openEditEmployee(emp)"
+                          class="rounded-lg border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100"
+                        >
+                          Edit / Transfer
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+
+        <!-- MODAL: ADD EMPLOYEE -->
+        @if (showAddModal()) {
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 overflow-y-auto">
+            <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl my-8">
+              <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 class="text-base font-semibold text-slate-900">Add New Employee</h3>
+                  <p class="text-xs text-slate-500">Create employee profile and initial job assignment</p>
+                </div>
+                <button type="button" (click)="showAddModal.set(false)" class="text-slate-400 hover:text-slate-600">&times;</button>
+              </div>
+
+              <form (ngSubmit)="saveNewEmployee()" class="space-y-4 pt-4">
+                <!-- Row 1: Identification -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Employee # *</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="newEmp.employeeNumber"
+                      name="employeeNumber"
+                      required
+                      placeholder="e.g. EMP-020"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">First Name *</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="newEmp.firstName"
+                      name="firstName"
+                      required
+                      placeholder="First name"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Last Name *</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="newEmp.lastName"
+                      name="lastName"
+                      required
+                      placeholder="Last name"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <!-- Row 2: Contact -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Email Address *</label>
+                    <input
+                      type="email"
+                      [(ngModel)]="newEmp.email"
+                      name="email"
+                      required
+                      placeholder="employee@company.com"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Phone</label>
+                    <input
+                      type="tel"
+                      [(ngModel)]="newEmp.phone"
+                      name="phone"
+                      placeholder="+216 55 123 456"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <!-- Row 3: Personal & Dates -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Gender</label>
+                    <select
+                      [(ngModel)]="newEmp.gender"
+                      name="gender"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Birth Date</label>
+                    <input
+                      type="date"
+                      [(ngModel)]="newEmp.birthDate"
+                      name="birthDate"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Hire Date</label>
+                    <input
+                      type="date"
+                      [(ngModel)]="newEmp.hireDate"
+                      name="hireDate"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <!-- Section: Initial Job Assignment -->
+                <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Initial Job Assignment</h4>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Department *</label>
+                      <select
+                        [(ngModel)]="newEmpDeptId"
+                        name="deptId"
+                        (change)="onDepartmentChange()"
+                        required
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                      >
+                        <option value="" disabled>Select Department</option>
+                        @for (dept of departments(); track dept.id) {
+                          <option [value]="dept.id">{{ dept.label }}</option>
+                        }
+                      </select>
+                    </div>
+
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Position *</label>
+                      <select
+                        [(ngModel)]="newEmpPosId"
+                        name="posId"
+                        required
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                      >
+                        <option value="" disabled>Select Position</option>
+                        @for (pos of availablePositionsForDept(); track pos.id) {
+                          <option [value]="pos.id">{{ pos.title }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Assignment Start Date *</label>
+                      <input
+                        type="date"
+                        [(ngModel)]="newEmpAssignmentStartDate"
+                        name="assignmentStart"
+                        required
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Reporting Manager</label>
+                      <select
+                        [(ngModel)]="newEmpManagerId"
+                        name="managerEmployeeId"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                      >
+                        <option value="">None (Top-level / Self)</option>
+                        @for (m of employees(); track m.id) {
+                          <option [value]="m.id">{{ getFullName(m) }} ({{ m.employeeNumber }})</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    (click)="showAddModal.set(false)"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    [disabled]="saving() || !isNewEmployeeValid()"
+                    class="rounded-lg bg-indigo-950 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-900 disabled:opacity-50"
+                  >
+                    {{ saving() ? 'Creatingâ€¦' : 'Create Employee' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- MODAL: EDIT / TRANSFER EMPLOYEE -->
+        @if (showEditModal()) {
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 overflow-y-auto">
+            <div class="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl my-8">
+              <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div>
+                  <h3 class="text-base font-semibold text-slate-900">
+                    Edit Employee & Contract: {{ editingEmployeeName() }}
+                  </h3>
+                  <p class="text-xs text-slate-500">Update status, contact details, or trigger job transfer</p>
+                </div>
+                <button type="button" (click)="showEditModal.set(false)" class="text-slate-400 hover:text-slate-600">&times;</button>
+              </div>
+
+              <form (ngSubmit)="saveEditedEmployee()" class="space-y-4 pt-4">
+                <!-- Status & Tenure -->
+                <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Contract & Status</h4>
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Employment Status</label>
+                      <select
+                        [(ngModel)]="editEmp.employmentStatus"
+                        name="editStatus"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                      >
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="SUSPENDED">SUSPENDED</option>
+                        <option value="TERMINATED">TERMINATED</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Hire Date</label>
+                      <input
+                        type="date"
+                        [(ngModel)]="editEmp.hireDate"
+                        name="editHireDate"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-xs font-medium text-slate-700">Departure Date</label>
+                      <input
+                        type="date"
+                        [(ngModel)]="editEmp.departureDate"
+                        name="editDepartureDate"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Profile Info -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">First Name</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="editEmp.firstName"
+                      name="editFirstName"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Last Name</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="editEmp.lastName"
+                      name="editLastName"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Email</label>
+                    <input
+                      type="email"
+                      [(ngModel)]="editEmp.email"
+                      name="editEmail"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs font-medium text-slate-700">Phone</label>
+                    <input
+                      type="tel"
+                      [(ngModel)]="editEmp.phone"
+                      name="editPhone"
+                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <!-- Reporting Manager -->
+                <div>
+                  <label class="mb-1 block text-xs font-medium text-slate-700">Reporting Manager</label>
+                  <select
+                    [(ngModel)]="editEmp.managerEmployeeId"
+                    name="editManagerId"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                  >
+                    <option value="">Leave unchanged or unassigned</option>
+                    @for (m of employees(); track m.id) {
+                      @if (m.id !== editingEmployeeId()) {
+                        <option [value]="m.id">{{ getFullName(m) }} ({{ m.employeeNumber }})</option>
+                      }
+                    }
+                  </select>
+                </div>
+
+                <!-- Internal Job Transfer Option -->
+                <div class="rounded-xl border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Job Assignment & Transfer</h4>
+                      <p class="text-xs text-slate-500">
+                        Current: {{ currentAssignmentLabel() }}
+                      </p>
+                    </div>
+                    <label class="inline-flex items-center gap-2 text-xs font-medium text-indigo-950 cursor-pointer">
+                      <input type="checkbox" [(ngModel)]="enableTransfer" name="transferToggle" class="rounded border-slate-300" />
+                      Assign New Position / Department
+                    </label>
+                  </div>
+
+                  @if (enableTransfer) {
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
+                      <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-700">New Department</label>
+                        <select
+                          [(ngModel)]="transferDeptId"
+                          name="transferDept"
+                          (change)="onTransferDepartmentChange()"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                        >
+                          <option value="" disabled>Select Department</option>
+                          @for (dept of departments(); track dept.id) {
+                            <option [value]="dept.id">{{ dept.label }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-700">New Position</label>
+                        <select
+                          [(ngModel)]="transferPosId"
+                          name="transferPos"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none bg-white"
+                        >
+                          <option value="" disabled>Select Position</option>
+                          @for (pos of availablePositionsForTransfer(); track pos.id) {
+                            <option [value]="pos.id">{{ pos.title }}</option>
+                          }
+                        </select>
+                      </div>
+                      <div>
+                        <label class="mb-1 block text-xs font-medium text-slate-700">Transfer Effective Date</label>
+                        <input
+                          type="date"
+                          [(ngModel)]="transferStartDate"
+                          name="transferDate"
+                          class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-indigo-950 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                  <button
+                    type="button"
+                    (click)="showEditModal.set(false)"
+                    class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    [disabled]="saving()"
+                    class="rounded-lg bg-indigo-950 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-900 disabled:opacity-50"
+                  >
+                    {{ saving() ? 'Savingâ€¦' : 'Save Changes' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- CSV IMPORT DIALOG -->
+        @if (showImportDialog()) {
+          <app-employee-import-dialog
+            [existingEmployees]="employees()"
+            [departments]="departments()"
+            [positions]="positions()"
+            (close)="showImportDialog.set(false)"
+            (imported)="onImportCompleted($event)"
+          />
+        }
+      </main>
+    </div>

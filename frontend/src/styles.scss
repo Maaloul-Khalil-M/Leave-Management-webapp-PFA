@@ -123,10 +123,48 @@ iframe {
 }
 
 // -----------------------------------------------------------------------------
-// 2. TOKENS
-// The Material M3 theme. `mat.theme()` doesn't paint anything by itself — it
-// only declares CSS custom properties (--mat-sys-*) that components read from.
+// 2. TOKENS & DESIGN SYSTEM CONSTANTS
 // -----------------------------------------------------------------------------
+:root {
+  // Global robust font family with fallback stack
+  --app-font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+  // Standardized application corner radii
+  --app-radius-xs: 4px;
+  --app-radius-sm: 6px;
+  --app-radius-md: 10px;
+  --app-radius-lg: 12px;
+  --app-radius-xl: 16px;
+  --app-radius-pill: 9999px;
+
+  // Semantic Lifecycle Status Tokens (Light Mode per DESIGN-DEV-README)
+  --app-status-approved: #059669;
+  --app-status-approved-bg: #ecfdf5;
+  --app-status-approved-border: #a7f3d0;
+
+  --app-status-pending: #d97706;
+  --app-status-pending-bg: #fffbeb;
+  --app-status-pending-border: #fde68a;
+
+  --app-status-draft: #b45309;
+  --app-status-draft-bg: #fef3c7;
+  --app-status-draft-border: #fcd34d;
+
+  --app-status-rejected: #dc2626;
+  --app-status-rejected-bg: #fef2f2;
+  --app-status-rejected-border: #fca5a5;
+
+  --app-status-cancelled: #64748b;
+  --app-status-cancelled-bg: #f1f5f9;
+  --app-status-cancelled-border: #cbd5e1;
+
+  // Semantic Availability Tokens (Section 1 of DESIGN-DEV-README)
+  --app-avail-office: #059669;
+  --app-avail-remote: #2563eb;
+  --app-avail-on-leave: #7c3aed;
+  --app-avail-neutral: #64748b;
+}
+
 html {
   color-scheme: light;
 
@@ -137,7 +175,7 @@ html {
         tertiary: my-theme.$tertiary-palette,
       ),
       typography: Roboto,
-      density: 0,
+      density: -1,
     )
   );
 
@@ -151,9 +189,35 @@ html {
           tertiary: my-theme.$tertiary-palette,
         ),
         typography: Roboto,
-        density: 0,
+        density: -1,
       )
     );
+
+    // Semantic Lifecycle Status Tokens (Dark Mode)
+    --app-status-approved: #34d399;
+    --app-status-approved-bg: rgba(5, 150, 105, 0.18);
+    --app-status-approved-border: rgba(52, 211, 153, 0.35);
+
+    --app-status-pending: #fbbf24;
+    --app-status-pending-bg: rgba(217, 119, 6, 0.18);
+    --app-status-pending-border: rgba(251, 191, 36, 0.35);
+
+    --app-status-draft: #fde68a;
+    --app-status-draft-bg: rgba(180, 83, 9, 0.18);
+    --app-status-draft-border: rgba(253, 230, 138, 0.35);
+
+    --app-status-rejected: #f87171;
+    --app-status-rejected-bg: rgba(220, 38, 38, 0.18);
+    --app-status-rejected-border: rgba(248, 113, 113, 0.35);
+
+    --app-status-cancelled: #94a3b8;
+    --app-status-cancelled-bg: rgba(100, 116, 139, 0.18);
+    --app-status-cancelled-border: rgba(148, 163, 184, 0.35);
+
+    --app-avail-office: #34d399;
+    --app-avail-remote: #60a5fa;
+    --app-avail-on-leave: #a78bfa;
+    --app-avail-neutral: #94a3b8;
   }
 }
 
@@ -238,13 +302,18 @@ html.dark {
 body {
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
-  font-family: var(--mat-sys-body-medium-font), system-ui;
-  font-size: var(--mat-sys-body-medium-size);
-  line-height: var(--mat-sys-body-medium-line-height);
-  font-weight: var(--mat-sys-body-medium-weight);
-  letter-spacing: var(--mat-sys-body-medium-tracking);
+  font-family: var(--app-font-family);
+  font-size: var(--mat-sys-body-medium-size, 14px);
+  line-height: var(--mat-sys-body-medium-line-height, 20px);
+  font-weight: var(--mat-sys-body-medium-weight, 400);
+  letter-spacing: var(--mat-sys-body-medium-tracking, 0.25px);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:where(input, button, textarea, select) {
+  font-family: var(--app-font-family);
+  color: inherit;
 }
 
 a {
@@ -268,8 +337,8 @@ a {
 
 // -----------------------------------------------------------------------------
 // 4. TYPOGRAPHY
-// Heading scale, mapped straight to Material's type scale so h1–h6 always
-// match whatever typeface/scale mat.theme() is configured with above.
+// Unified heading scale explicitly bound to --app-font-family so headings
+// never fall back to browser serif defaults.
 // -----------------------------------------------------------------------------
 h1,
 h2,
@@ -279,30 +348,96 @@ h5,
 h6 {
   color: var(--mat-sys-on-surface);
   overflow-wrap: break-word;
+  font-family: var(--app-font-family) !important;
 }
 
 h1 {
-  font: var(--mat-sys-headline-large);
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 h2 {
-  font: var(--mat-sys-headline-medium);
+  font-size: 1.375rem;
+  line-height: 1.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 h3 {
-  font: var(--mat-sys-headline-small);
+  font-size: 1.125rem;
+  line-height: 1.5rem;
+  font-weight: 600;
 }
 
 h4 {
-  font: var(--mat-sys-title-large);
+  font-size: 1rem;
+  line-height: 1.375rem;
+  font-weight: 600;
 }
 
 h5 {
-  font: var(--mat-sys-title-medium);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 600;
 }
 
 h6 {
-  font: var(--mat-sys-title-small);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+}
+
+// -----------------------------------------------------------------------------
+// GLOBAL SCROLLBAR (thin, subtle, shown on hover)
+// -----------------------------------------------------------------------------
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover {
+    scrollbar-color: var(--mat-sys-outline-variant, #cbd5e1) transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: var(--app-radius-pill, 9999px);
+  transition: background-color 0.2s ease-in-out;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--mat-sys-outline-variant, #cbd5e1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--mat-sys-outline, #94a3b8) !important;
+}
+
+html.dark {
+  * {
+    &:hover {
+      scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+    }
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(148, 163, 184, 0.35);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 0.6) !important;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -332,6 +467,46 @@ h6 {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+// -----------------------------------------------------------------------------
+// 5b. SHARED UI COMPONENT STYLES
+// -----------------------------------------------------------------------------
+.app-card {
+  border-radius: var(--app-radius-lg, 12px);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  background: var(--mat-sys-surface, #ffffff);
+  box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.05));
+  color: var(--mat-sys-on-surface, #0f172a);
+}
+
+.app-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+
+  th {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--mat-sys-on-surface-variant, #64748b);
+    background: var(--mat-sys-surface-container-low, #f8fafc);
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  }
+
+  td {
+    padding: 0.75rem 0.85rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant, #f1f5f9);
+    color: var(--mat-sys-on-surface, #334155);
+    vertical-align: middle;
+  }
+
+  tr:hover td {
+    background: var(--mat-sys-surface-container, #f8fafc);
+  }
 }
 
 // -----------------------------------------------------------------------------

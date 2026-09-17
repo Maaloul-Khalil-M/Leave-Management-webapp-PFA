@@ -1,17 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+﻿import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from './services/dashboard-state.service';
-import { HeaderComponent } from './components/header/header.component';
-import { ProfileSummaryComponent } from './components/profile-summary/profile-summary.component';
+import { HeaderComponent } from '../../core/layout/header/header.component';
 import { LeaveBalanceComponent } from './components/leave-balance/leave-balance.component';
-import { BalanceCalculationComponent } from './components/balance-calculation/balance-calculation.component';
 import { RecentRequestsComponent } from './components/recent-requests/recent-requests.component';
 import { LeaveLedgerComponent } from './components/leave-ledger/leave-ledger.component';
-import { UpcomingLeavesComponent } from './components/upcoming-leaves/upcoming-leaves.component';
-import { CompanyHolidaysComponent } from './components/company-holidays/company-holidays.component';
 import { CalendarViewComponent } from './components/calendar-view/calendar-view.component';
+import { ScheduleTabsComponent } from './components/schedule-tabs/schedule-tabs.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -19,14 +16,11 @@ import { CalendarViewComponent } from './components/calendar-view/calendar-view.
   imports: [
     MatProgressSpinnerModule,
     HeaderComponent,
-    ProfileSummaryComponent,
     LeaveBalanceComponent,
-    BalanceCalculationComponent,
     RecentRequestsComponent,
     LeaveLedgerComponent,
-    UpcomingLeavesComponent,
-    CompanyHolidaysComponent,
-    CalendarViewComponent
+    CalendarViewComponent,
+    ScheduleTabsComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

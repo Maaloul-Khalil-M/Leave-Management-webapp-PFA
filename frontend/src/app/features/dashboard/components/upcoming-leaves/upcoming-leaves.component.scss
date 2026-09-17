@@ -1,16 +1,16 @@
 .section-card {
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: none;
-  padding: 16px 20px;
-  background: #ffffff;
+  border-radius: var(--app-radius-lg, 12px);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  background: var(--mat-sys-surface, #ffffff);
+  box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.05));
+  padding: 14px 16px;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 
   .title-wrap {
     display: flex;
@@ -18,27 +18,27 @@
     gap: 8px;
 
     .header-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-      color: #059669;
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: var(--app-status-approved, #059669);
     }
 
     h3 {
       margin: 0;
-      font-size: 15px;
-      font-weight: 650;
-      color: #0f172a;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface, #0f172a);
     }
   }
 
   .count-tag {
     font-size: 11px;
     font-weight: 600;
-    color: #059669;
-    background: #ecfdf5;
-    padding: 2px 8px;
-    border-radius: 9999px;
+    color: var(--app-status-approved, #059669);
+    background: var(--app-status-approved-bg, #ecfdf5);
+    padding: 1px 7px;
+    border-radius: var(--app-radius-pill, 9999px);
   }
 }
 

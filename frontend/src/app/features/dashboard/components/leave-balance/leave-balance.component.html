@@ -1,65 +1,96 @@
-<div class="balances-container">
-  <!-- Paid Annual: Circular Gauge Card -->
+﻿<mat-card class="section-card entitlement-card">
   @if (annualBalance(); as annual) {
-    <mat-card class="gauge-card">
-      <div class="card-header-badge">
-        <span class="badge-tag">Accruing Entitlement</span>
-        <span class="type-code">{{ annual.code }}</span>
-      </div>
-      <div class="gauge-content">
-        <div class="ring-wrap">
-          <svg class="progress-ring" viewBox="0 0 80 80">
-            <circle class="ring-bg" cx="40" cy="40" r="36" />
+    <div class="entitlement-main">
+      <!-- Primary Balance: Ring + Context + Accrual & Fiscal Tags -->
+      <div class="primary-balance">
+        <div class="ring-metric">
+          <svg class="progress-ring" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="26" />
             <circle
               class="ring-fg"
-              cx="40"
-              cy="40"
-              r="36"
-              [attr.stroke]="annual.color || '#3b82f6'"
+              cx="32"
+              cy="32"
+              r="26"
+              [attr.stroke]="annual.color || '#2563eb'"
               [attr.stroke-dasharray]="annual.circumference"
               [attr.stroke-dashoffset]="annual.dashOffset"
             />
           </svg>
-          <div class="ring-label">
-            <span class="remaining">{{ annual.remaining | number: '1.0-1' }}</span>
-            <span class="unit">days left</span>
+          <div class="ring-center">
+            <span class="remaining-number">{{ annual.remaining | number: '1.0-1' }}</span>
+            <span class="unit">days</span>
           </div>
         </div>
-        <div class="gauge-info">
-          <h4>{{ annual.type }}</h4>
-          <p class="totals">
-            <strong>{{ annual.used | number: '1.0-1' }}</strong> days used of <strong>{{ annual.total }}</strong> accrued
-          </p>
-          <div class="progress-bar-track">
+
+        <div class="balance-details">
+          <div class="type-headline">
+            <h4>{{ annual.type }}</h4>
+            <span class="policy-chip">Accruing</span>
+            @if (calculation(); as calc) {
+              <button
+                mat-icon-button
+                class="calc-info-btn"
+                [matTooltip]="'Calculation: ' + calc.baseAccrual + 'd base + ' + calc.carriedOver + 'd carried - ' + calc.deductions + 'd used = ' + (calc.baseAccrual + calc.carriedOver - calc.deductions) + 'd available'"
+                matTooltipPosition="above"
+                aria-label="How balance is calculated"
+              >
+                <mat-icon>info_outline</mat-icon>
+              </button>
+            }
+          </div>
+          <div class="progress-context">
+            <span class="stat-meta">
+              <strong>{{ annual.used | number: '1.0-1' }}d</strong> used of <strong>{{ annual.total }}d</strong> accrued
+            </span>
+            <span class="pct-badge">{{ annual.progress | number: '1.0-0' }}% left</span>
+          </div>
+          <div class="progress-track">
             <div
-              class="progress-bar-fill"
+              class="progress-fill"
               [style.width.%]="annual.progress"
-              [style.background-color]="annual.color || '#3b82f6'"
+              [style.background-color]="annual.color || '#2563eb'"
             ></div>
           </div>
         </div>
-      </div>
-    </mat-card>
-  }
 
-  <!-- Other Leave Types: Simple, sleek stat cards -->
-  <div class="other-cards-grid">
-    @for (card of otherBalances(); track card.code) {
-      <mat-card class="simple-stat-card">
-        <div class="stat-top">
-          <div class="stat-icon-wrap" [style.color]="card.color" [style.background-color]="card.color + '18'">
-            <mat-icon>{{ card.icon }}</mat-icon>
-          </div>
-          <span class="policy-pill">{{ card.policyNote }}</span>
+        <!-- Accrual Rate & Fiscal Period Badges -->
+        <div class="meta-strip">
+          @if (accrualRate()) {
+            <div class="meta-chip">
+              <mat-icon>trending_up</mat-icon>
+              <div class="chip-text">
+                <span class="chip-label">Accrual</span>
+                <span class="chip-val">{{ accrualRate() }}</span>
+              </div>
+            </div>
+          }
+          @if (fiscalPeriod()) {
+            <div class="meta-chip">
+              <mat-icon>calendar_today</mat-icon>
+              <div class="chip-text">
+                <span class="chip-label">Period</span>
+                <span class="chip-val">{{ fiscalPeriod() }}</span>
+              </div>
+            </div>
+          }
         </div>
-        <div class="stat-body">
-          <span class="stat-type">{{ card.type }}</span>
-          <div class="stat-numbers">
-            <span class="stat-val">{{ card.used | number: '1.0-1' }}</span>
-            <span class="stat-desc">days taken</span>
-          </div>
+      </div>
+
+      <!-- Secondary Leave Types Pill Cluster -->
+      <div class="secondary-types">
+        <span class="secondary-title">Other Allocations</span>
+        <div class="pills-row">
+          @for (card of otherBalances(); track card.code) {
+            <div class="type-pill">
+              <mat-icon class="pill-icon" [style.color]="card.color">{{ card.icon }}</mat-icon>
+              <div class="pill-data">
+                <span class="pill-name">{{ card.type }}</span>
+                <span class="pill-count"><strong>{{ card.used | number: '1.0-1' }}d</strong> taken</span>
+              </div>
+            </div>
+          }
         </div>
-      </mat-card>
-    }
-  </div>
-</div>
+      </div>
+    </div>
+  }
+</mat-card>

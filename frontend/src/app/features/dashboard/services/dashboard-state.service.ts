@@ -270,9 +270,9 @@ export class DashboardStateService {
         ledgerEntries.sort((a, b) => b.date.localeCompare(a.date));
         this.leaveLedger.set(ledgerEntries);
 
-        // 6. Company Holidays
+        // 6. Company Holidays (scoped strictly to the active fiscal year)
         const mappedHolidays: Holiday[] = holidayDays
-          .filter((d) => d.dayType === 'PUBLIC_HOLIDAY')
+          .filter((d) => d.dayType === 'PUBLIC_HOLIDAY' && d.date.startsWith(String(currentYear)))
           .sort((a, b) => a.date.localeCompare(b.date))
           .map((d) => ({
             id: d.id,

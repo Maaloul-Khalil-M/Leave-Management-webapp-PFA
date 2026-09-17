@@ -1,0 +1,135 @@
+﻿<mat-toolbar class="header-toolbar">
+  <!-- Mobile hamburger menu -->
+  <button
+    class="mobile-menu"
+    matIconButton
+    [matMenuTriggerFor]="mobileMenu"
+    aria-label="Open navigation menu">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <!-- Brand Logo -->
+  <div class="brand" routerLink="/dashboard" style="cursor: pointer;">
+    <img
+      src="/LOGO.png"
+      alt="Platana"
+      class="brand-logo"
+    />
+  </div>
+
+  <!-- Desktop navigation -->
+  <nav class="nav-links">
+    <a class="nav-link" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      Dashboard
+    </a>
+    <a class="nav-link" routerLink="/leave-requests" routerLinkActive="active">
+      My Requests
+    </a>
+    <a class="nav-link" routerLink="/manager/approvals" routerLinkActive="active">
+      Approvals
+    </a>
+    @if (auth.hasAnyRole('HR', 'ADMIN')) {
+      <a class="nav-link" routerLink="/management/employees" routerLinkActive="active">
+        Employees
+      </a>
+      <a class="nav-link" routerLink="/management/organization" routerLinkActive="active">
+        Organization
+      </a>
+    }
+  </nav>
+
+  <!-- Header Actions -->
+  <div class="header-actions">
+    <!-- Notifications Bell -->
+    <app-notification-bell
+      [notifications]="notifications"
+      (notificationClick)="onNotificationClick($event)"
+      (seeAll)="onSeeAll()"
+    />
+
+    <!-- Theme Switcher -->
+    <app-theme-switcher />
+
+    <!-- Request Leave CTA -->
+    <button mat-flat-button class="request-btn" (click)="onRequestLeave()">
+      <mat-icon>add</mat-icon>
+      Request Leave
+    </button>
+
+    <!-- User Profile Block -->
+    <div class="user-block" [matMenuTriggerFor]="userMenu">
+      <div class="avatar">{{ avatarLetter() }}</div>
+      <div class="user-meta">
+        <span class="user-name">{{ displayName() }}</span>
+        <span class="user-title">{{ displayTitle() }}</span>
+      </div>
+      <mat-icon class="chevron">expand_more</mat-icon>
+    </div>
+
+    <!-- User Profile Dropdown Menu -->
+    <mat-menu #userMenu="matMenu" xPosition="before">
+      <button mat-menu-item routerLink="/leave-requests">
+        <mat-icon>event_note</mat-icon>
+        <span>My Requests</span>
+      </button>
+      <button mat-menu-item routerLink="/manager/approvals">
+        <mat-icon>rule</mat-icon>
+        <span>Team Approvals</span>
+      </button>
+      @if (auth.hasAnyRole('HR', 'ADMIN')) {
+        <button mat-menu-item routerLink="/management/employees">
+          <mat-icon>badge</mat-icon>
+          <span>Employees Directory</span>
+        </button>
+        <button mat-menu-item routerLink="/management/organization">
+          <mat-icon>domain</mat-icon>
+          <span>Organization Master Data</span>
+        </button>
+      }
+      <button mat-menu-item routerLink="/dev/auth-test">
+        <mat-icon>security</mat-icon>
+        <span>Auth Diagnostics</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="onSignOut()">
+        <mat-icon>logout</mat-icon>
+        <span>Sign out</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+
+<!-- Mobile Navigation Menu -->
+<mat-menu #mobileMenu="matMenu">
+  <button mat-menu-item routerLink="/dashboard">
+    <mat-icon>dashboard</mat-icon>
+    <span>Dashboard</span>
+  </button>
+  <button mat-menu-item routerLink="/leave-requests">
+    <mat-icon>event_note</mat-icon>
+    <span>My Requests</span>
+  </button>
+  <button mat-menu-item routerLink="/manager/approvals">
+    <mat-icon>rule</mat-icon>
+    <span>Team Approvals</span>
+  </button>
+  @if (auth.hasAnyRole('HR', 'ADMIN')) {
+    <button mat-menu-item routerLink="/management/employees">
+      <mat-icon>badge</mat-icon>
+      <span>Employees Directory</span>
+    </button>
+    <button mat-menu-item routerLink="/management/organization">
+      <mat-icon>domain</mat-icon>
+      <span>Organization Master Data</span>
+    </button>
+  }
+  <button mat-menu-item routerLink="/dev/auth-test">
+    <mat-icon>security</mat-icon>
+    <span>Auth Diagnostics</span>
+  </button>
+  <mat-divider></mat-divider>
+  <button mat-menu-item (click)="onSignOut()">
+    <mat-icon>logout</mat-icon>
+    <span>Sign out</span>
+  </button>
+</mat-menu>

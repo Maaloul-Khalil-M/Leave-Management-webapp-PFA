@@ -1,24 +1,35 @@
-import { Component, input, computed } from '@angular/core';
+﻿import { Component, input, computed } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DecimalPipe } from '@angular/common';
-import { LeaveBalance } from '../../models';
+import { LeaveBalance, BalanceCalculation } from '../../models';
 
 @Component({
   selector: 'app-leave-balance',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, DecimalPipe],
+  imports: [
+    MatCardModule,
+    MatIconModule,
+    MatButtonModule,
+    MatTooltipModule,
+    DecimalPipe
+  ],
   templateUrl: './leave-balance.component.html',
   styleUrl: './leave-balance.component.scss'
 })
 export class LeaveBalanceComponent {
   readonly balances = input<LeaveBalance[]>([]);
+  readonly accrualRate = input<string | undefined>();
+  readonly fiscalPeriod = input<string | undefined>();
+  readonly calculation = input<BalanceCalculation | null>(null);
 
   readonly annualBalance = computed(() => {
     const list = this.balances();
     const annual = list.find((b) => b.code === 'PAID_ANNUAL') || list[0];
     if (!annual) return null;
-    const circ = 2 * Math.PI * 36;
+    const circ = 2 * Math.PI * 28;
     const pct = annual.total > 0 ? annual.remaining / annual.total : 0;
     return {
       ...annual,

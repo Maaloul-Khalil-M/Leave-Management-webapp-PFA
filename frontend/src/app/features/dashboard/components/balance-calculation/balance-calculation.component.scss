@@ -1,5 +1,5 @@
 .calc-panel {
-  border-radius: 8px !important;
+  border-radius: var(--app-radius-lg, 12px) !important;
   border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
   box-shadow: none !important;
   background: var(--mat-sys-surface, #ffffff);

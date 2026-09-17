@@ -1,0 +1,200 @@
+﻿.section-card {
+  border-radius: var(--app-radius-lg, 12px);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  background: var(--mat-sys-surface, #ffffff);
+  box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.04));
+  padding: 6px 12px 10px;
+}
+
+.schedule-tabs-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.compact-tab-group {
+  ::ng-deep {
+    .mat-mdc-tab-header {
+      border-bottom-color: var(--mat-sys-outline-variant, #f1f5f9);
+    }
+
+    .mat-mdc-tab {
+      height: 36px;
+      padding: 0 12px;
+    }
+
+    .mat-mdc-tab-body-wrapper {
+      padding-top: 8px;
+    }
+  }
+}
+
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+
+  .tab-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+
+    &.leave-icon {
+      color: #059669;
+    }
+
+    &.holiday-icon {
+      color: #dc2626;
+    }
+  }
+
+  .badge-count {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 9999px;
+    background: #eff6ff;
+    color: #2563eb;
+
+    &.empty {
+      background: #f1f5f9;
+      color: #94a3b8;
+    }
+  }
+}
+
+.tab-body {
+  min-height: 130px;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: #94a3b8;
+  font-size: 12px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 155px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.leave-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--mat-sys-surface-container-low, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--mat-sys-outline-variant, #f1f5f9);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  .item-left {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+
+    .item-dates {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface, #0f172a);
+    }
+
+    .item-type {
+      font-size: 10.5px;
+      color: var(--mat-sys-on-surface-variant, #64748b);
+    }
+  }
+
+  .item-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+
+    .days-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--mat-sys-on-surface, #334155);
+    }
+  }
+}
+
+.holiday-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  background: var(--mat-sys-surface-container-low, #f8fafc);
+  border-radius: 8px;
+  border: 1px solid var(--mat-sys-outline-variant, #f1f5f9);
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  .holiday-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    padding: 2px 4px;
+    background: #ffffff;
+    border-radius: 5px;
+    border: 1px solid #e2e8f0;
+    line-height: 1;
+
+    .day {
+      font-size: 12px;
+      font-weight: 700;
+      color: #ef4444;
+    }
+
+    .month {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      margin-top: 1px;
+    }
+  }
+
+  .holiday-details {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+
+    .holiday-name {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--mat-sys-on-surface, #0f172a);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .holiday-weekday {
+      font-size: 10px;
+      color: var(--mat-sys-on-surface-variant, #64748b);
+    }
+  }
+}

@@ -1,4 +1,4 @@
-<app-header
+﻿<app-header
   [profile]="state.profile()"
   (requestLeave)="onRequestLeave()"
   (signOut)="onSignOut()"
@@ -13,34 +13,31 @@
   <div class="error-banner">{{ state.error() }}</div>
 } @else {
   <main class="dashboard-container">
-    <!-- Top Row: Profile (Left) + Balances & Calculation (Right) -->
+    <!-- Top Row: Full-Width Consolidated Entitlement Hub -->
     <section class="top-row">
-      <div class="top-profile">
-        <app-profile-summary [profile]="state.profile()" />
-      </div>
-      <div class="top-balances">
-        <app-leave-balance [balances]="state.leaveBalances()" />
-        <app-balance-calculation [calculation]="state.balanceCalculation()" />
-      </div>
+      <app-leave-balance
+        [balances]="state.leaveBalances()"
+        [accrualRate]="state.profile()?.accrualRate"
+        [fiscalPeriod]="state.profile()?.fiscalPeriod"
+        [calculation]="state.balanceCalculation()"
+      />
     </section>
 
-    <!-- Bottom Row: 3-Column Workspace -->
-    <section class="bottom-grid">
-      <!-- Column 1: Requests & Upcoming Approved -->
-      <div class="col-requests">
-        <app-upcoming-leaves [items]="state.upcomingApprovedLeaves()" />
+    <!-- Operational Dual-Pane Workspace (60% / 40% Split) -->
+    <section class="workspace-grid">
+      <!-- Left / Primary Workspace: Leave Ledger & Recent Requests -->
+      <div class="col-primary">
+        <app-leave-ledger [items]="state.leaveLedger()" />
         <app-recent-requests [items]="state.leaveRequests()" />
       </div>
 
-      <!-- Column 2: Leave Ledger History -->
-      <div class="col-ledger">
-        <app-leave-ledger [items]="state.leaveLedger()" />
-      </div>
-
-      <!-- Column 3: Calendar & Holidays -->
-      <div class="col-calendar">
+      <!-- Right / Secondary Workspace: Calendar & Unified Schedule Tabs (Upcoming + Holidays) -->
+      <div class="col-secondary">
         <app-calendar-view [calendarData]="state.calendarData()" />
-        <app-company-holidays [items]="state.holidays()" />
+        <app-schedule-tabs
+          [upcomingLeaves]="state.upcomingApprovedLeaves()"
+          [holidays]="state.holidays()"
+        />
       </div>
     </section>
   </main>

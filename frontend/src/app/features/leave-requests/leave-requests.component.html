@@ -1,43 +1,6 @@
+<app-header />
+
 <div class="leave-page-container">
-  <!-- ── Top Header ─────────────────────────────────────────── -->
-  <header class="app-header">
-    <div class="header-content">
-      <div class="brand">
-        <img
-          src="/LOGO.png"
-          alt="Platana"
-          class="brand-logo"
-          (error)="logoError = true"
-          [style.display]="logoError ? 'none' : 'block'"
-        />
-        @if (logoError) {
-          <div class="brand-icon-fallback">LR</div>
-        }
-        <div>
-          <h1>Leave Requests</h1>
-          <p class="subtitle">Employee Self-Service</p>
-        </div>
-      </div>
-
-      <nav class="nav-actions">
-        <a routerLink="/dashboard" class="nav-link">
-          <mat-icon>dashboard</mat-icon>
-          <span>Dashboard</span>
-        </a>
-        <a routerLink="/manager/approvals" class="nav-link">
-          <mat-icon>rule</mat-icon>
-          <span>Approvals</span>
-        </a>
-        @if (auth.isLoggedIn()) {
-          <button type="button" (click)="auth.logout()" class="signout-btn">
-            <mat-icon>logout</mat-icon>
-            <span>Sign out</span>
-          </button>
-        }
-      </nav>
-    </div>
-  </header>
-
   <!-- ── Main Content Area ──────────────────────────────────── -->
   <main class="main-content">
     <!-- View Switcher -->
@@ -433,9 +396,7 @@
                       <p class="days">
                         {{ res.durationDays }} working day{{ res.durationDays === 1 ? '' : 's' }}
                       </p>
-                      <div class="status-pill" [attr.data-status]="res.status">
-                        {{ res.status }}
-                      </div>
+                      <app-status-badge [status]="res.status" variant="pill" size="md" />
                     </div>
                   }
 
@@ -483,7 +444,7 @@
           </div>
         } @else {
           <div class="table-responsive">
-            <table class="requests-table">
+            <table class="app-table">
               <thead>
                 <tr>
                   <th>Type</th>
@@ -512,18 +473,7 @@
                       {{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}
                     </td>
                     <td>
-                      <span
-                        class="status-badge"
-                        [ngClass]="{
-                          'status-draft': req.status === 'DRAFT',
-                          'status-pending': req.status === 'PENDING',
-                          'status-approved': req.status === 'APPROVED',
-                          'status-rejected': req.status === 'REJECTED',
-                          'status-cancelled': req.status === 'CANCELLED'
-                        }"
-                      >
-                        {{ req.status }}
-                      </span>
+                      <app-status-badge [status]="req.status" variant="pill" size="sm" />
                     </td>
                     <td style="max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                       {{ req.reason || '—' }}

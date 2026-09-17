@@ -1,30 +1,58 @@
-<mat-card class="section-card small-calendar-card">
-  <div class="card-header">
-    <div class="title-wrap">
+﻿<mat-card class="section-card calendar-card">
+  <div class="calendar-card-header">
+    <div class="title-cluster">
       <mat-icon class="header-icon">calendar_month</mat-icon>
-      <h3>Leave & Holiday Calendar</h3>
+      <h3 class="month-title">{{ activeMonthTitle() || 'Calendar' }}</h3>
+    </div>
+    <div class="calendar-nav-actions">
+      <button
+        mat-stroked-button
+        class="today-btn"
+        (click)="today()"
+        aria-label="Go to today"
+      >
+        Today
+      </button>
+      <div class="nav-arrows">
+        <button
+          mat-icon-button
+          class="nav-btn"
+          (click)="prev()"
+          aria-label="Previous month"
+        >
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          class="nav-btn"
+          (click)="next()"
+          aria-label="Next month"
+        >
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="calendar-container">
-    <full-calendar [options]="calendarOptions()"></full-calendar>
+  <div class="calendar-wrapper">
+    <full-calendar #fullCalendar [options]="calendarOptions()"></full-calendar>
   </div>
 
-  <div class="legend">
+  <div class="legend-bar">
     <div class="legend-item">
-      <span class="dot holiday"></span>
-      <span>Holidays</span>
-    </div>
-    <div class="legend-item">
-      <span class="dot approved"></span>
+      <span class="pip approved"></span>
       <span>Approved</span>
     </div>
     <div class="legend-item">
-      <span class="dot pending"></span>
-      <span>Pending / Draft</span>
+      <span class="pip pending"></span>
+      <span>Pending</span>
     </div>
     <div class="legend-item">
-      <span class="dot today"></span>
+      <span class="pip holiday"></span>
+      <span>Holiday</span>
+    </div>
+    <div class="legend-item">
+      <span class="pip today-pip"></span>
       <span>Today</span>
     </div>
   </div>

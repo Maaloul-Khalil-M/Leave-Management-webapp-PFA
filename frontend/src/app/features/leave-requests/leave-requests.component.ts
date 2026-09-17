@@ -8,7 +8,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -73,6 +72,9 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
   },
 ];
 
+import { HeaderComponent } from '../../core/layout/header/header.component';
+import { StatusBadgeComponent } from '../../shared/ui/status-badge';
+
 @Component({
   selector: 'app-leave-requests',
   standalone: true,
@@ -80,7 +82,8 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
+    HeaderComponent,
+    StatusBadgeComponent,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,

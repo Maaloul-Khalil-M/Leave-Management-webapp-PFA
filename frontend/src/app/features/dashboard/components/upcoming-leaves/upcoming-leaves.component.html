@@ -1,4 +1,4 @@
-<mat-card class="section-card">
+﻿<mat-card class="section-card">
   <div class="card-header">
     <div class="title-wrap">
       <mat-icon class="header-icon">event_available</mat-icon>
@@ -29,7 +29,7 @@
           <div class="leave-meta">
             <span class="leave-type">{{ item.type }}</span>
             <span class="leave-days">{{ item.days }}d</span>
-            <span class="approved-badge">Approved</span>
+            <app-status-badge status="Approved" variant="pill" size="sm" />
           </div>
         </div>
       }

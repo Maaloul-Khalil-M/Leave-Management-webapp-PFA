@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.request-card {
+  border-radius: var(--app-radius-lg, 12px);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  background: var(--mat-sys-surface, #ffffff);
+  transition: all 150ms ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+    box-shadow: var(--mat-sys-level1, 0 1px 3px rgba(0, 0, 0, 0.04));
+  }
+}
+
+.decision-form {
+  border-radius: var(--app-radius-md, 10px);
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  background: var(--mat-sys-surface-container-low, #f8fafc);
+  padding: 0.85rem 1rem;
+}

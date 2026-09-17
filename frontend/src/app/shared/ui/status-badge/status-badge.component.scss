@@ -1,0 +1,132 @@
+:host {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.app-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--app-font-family);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+
+  // Variants
+  &.variant-pill {
+    border-radius: var(--app-radius-pill, 9999px);
+    border: 1px solid transparent;
+  }
+
+  &.variant-chip {
+    border-radius: var(--app-radius-sm, 6px);
+    border: 1px solid transparent;
+  }
+
+  &.variant-dot {
+    border-radius: var(--app-radius-pill, 9999px);
+    border: 1px solid transparent;
+  }
+
+  // Sizes
+  &.size-sm {
+    font-size: 11px;
+    padding: 2px 7px;
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+    }
+  }
+
+  &.size-md {
+    font-size: 12px;
+    padding: 3px 10px;
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+    }
+  }
+
+  .status-dot {
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  // Categories mapping to M3 design tokens
+  &.category-approved,
+  &.category-active {
+    background-color: var(--app-status-approved-bg, #ecfdf5);
+    color: var(--app-status-approved, #059669);
+    border-color: var(--app-status-approved-border, #a7f3d0);
+
+    .status-dot {
+      background-color: var(--app-status-approved, #059669);
+    }
+  }
+
+  &.category-pending,
+  &.category-suspended {
+    background-color: var(--app-status-pending-bg, #fffbeb);
+    color: var(--app-status-pending, #d97706);
+    border-color: var(--app-status-pending-border, #fde68a);
+
+    .status-dot {
+      background-color: var(--app-status-pending, #d97706);
+    }
+  }
+
+  &.category-draft {
+    background-color: var(--app-status-draft-bg, #fef3c7);
+    color: var(--app-status-draft, #b45309);
+    border-color: var(--app-status-draft-border, #fcd34d);
+
+    .status-dot {
+      background-color: var(--app-status-draft, #b45309);
+    }
+  }
+
+  &.category-rejected,
+  &.category-terminated {
+    background-color: var(--app-status-rejected-bg, #fef2f2);
+    color: var(--app-status-rejected, #dc2626);
+    border-color: var(--app-status-rejected-border, #fca5a5);
+
+    .status-dot {
+      background-color: var(--app-status-rejected, #dc2626);
+    }
+  }
+
+  &.category-cancelled {
+    background-color: var(--app-status-cancelled-bg, #f1f5f9);
+    color: var(--app-status-cancelled, #64748b);
+    border-color: var(--app-status-cancelled-border, #cbd5e1);
+
+    .status-dot {
+      background-color: var(--app-status-cancelled, #64748b);
+    }
+  }
+
+  &.category-holiday {
+    background-color: rgba(124, 58, 237, 0.08);
+    color: #7c3aed;
+    border-color: rgba(124, 58, 237, 0.25);
+
+    .status-dot {
+      background-color: #7c3aed;
+    }
+  }
+
+  &.category-neutral {
+    background-color: var(--mat-sys-surface-container, #f1f5f9);
+    color: var(--mat-sys-on-surface-variant, #64748b);
+    border-color: var(--mat-sys-outline-variant, #e2e8f0);
+
+    .status-dot {
+      background-color: var(--mat-sys-on-surface-variant, #64748b);
+    }
+  }
+}

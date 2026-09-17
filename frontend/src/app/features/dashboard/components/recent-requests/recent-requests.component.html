@@ -1,4 +1,4 @@
-<mat-card class="section-card">
+﻿<mat-card class="section-card requests-card">
   <div class="card-header">
     <div class="title-wrap">
       <mat-icon class="header-icon">pending_actions</mat-icon>
@@ -26,33 +26,29 @@
           </div>
           <div class="right">
             <span class="days">{{ req.days }}d</span>
-            <span
-              class="status-chip"
-              [class.approved]="req.status === 'Approved'"
-              [class.rejected]="req.status === 'Rejected'"
-              [class.pending]="req.status === 'Pending'"
-              [class.draft]="req.status === 'Draft'"
-              [class.cancelled]="req.status === 'Cancelled'">
-              {{ req.status }}
-            </span>
+            <app-status-badge [status]="req.status" variant="pill" size="sm" />
             @if (req.status === 'Draft') {
               <button
-                type="button"
-                class="submit-mini-btn"
+                mat-icon-button
+                class="action-btn submit-action"
                 (click)="submitDraft(req.id)"
                 [disabled]="submittingId() === req.id || cancellingId() === req.id"
-                title="Submit request for approval">
-                {{ submittingId() === req.id ? '…' : 'Submit' }}
+                matTooltip="Submit for approval"
+                aria-label="Submit for approval"
+              >
+                <mat-icon>send</mat-icon>
               </button>
             }
             @if (req.status === 'Draft' || req.status === 'Pending' || req.status === 'Approved') {
               <button
-                type="button"
-                class="cancel-mini-btn"
+                mat-icon-button
+                class="action-btn cancel-action"
                 (click)="cancelRequest(req.id)"
                 [disabled]="submittingId() === req.id || cancellingId() === req.id"
-                title="Cancel leave request">
-                {{ cancellingId() === req.id ? '…' : 'Cancel' }}
+                matTooltip="Cancel request"
+                aria-label="Cancel request"
+              >
+                <mat-icon>close</mat-icon>
               </button>
             }
           </div>

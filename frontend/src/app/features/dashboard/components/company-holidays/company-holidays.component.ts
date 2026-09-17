@@ -1,4 +1,4 @@
-import { Component, input, signal, computed } from '@angular/core';
+﻿import { Component, input, signal, computed } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,11 +17,22 @@ export class CompanyHolidaysComponent {
   readonly pageIndex = signal(0);
   readonly pageSize = 3;
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.items().length / this.pageSize)));
+  readonly displayList = computed(() => {
+    const all = [...this.items()];
+    if (all.length === 0) return [];
+    all.sort((a, b) => a.date.localeCompare(b.date));
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const upcoming = all.filter((h) => h.date >= todayStr);
+    return upcoming.length > 0 ? upcoming : all;
+  });
+
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.displayList().length / this.pageSize)));
 
   readonly pagedItems = computed(() => {
+    const list = this.displayList();
     const start = this.pageIndex() * this.pageSize;
-    return this.items().slice(start, start + this.pageSize);
+    return list.slice(start, start + this.pageSize);
   });
 
   prevPage(): void {

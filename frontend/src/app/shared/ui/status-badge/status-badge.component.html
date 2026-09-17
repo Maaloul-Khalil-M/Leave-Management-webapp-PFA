@@ -1,0 +1,15 @@
+<span
+  class="app-status-badge"
+  [ngClass]="[
+    'variant-' + variant(),
+    'size-' + size(),
+    'category-' + category()
+  ]"
+  role="status"
+  [attr.aria-label]="displayLabel()"
+>
+  @if (variant() === 'dot') {
+    <span class="status-dot" aria-hidden="true"></span>
+  }
+  <span class="status-text">{{ displayLabel() }}</span>
+</span>

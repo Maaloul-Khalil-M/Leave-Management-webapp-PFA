@@ -1,0 +1,82 @@
+﻿<mat-card class="section-card schedule-tabs-card">
+  <mat-tab-group animationDuration="150ms" class="compact-tab-group">
+    <!-- Tab 1: Upcoming Leaves -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="tab-label">
+          <mat-icon class="tab-icon leave-icon">event_available</mat-icon>
+          <span>Upcoming Leaves</span>
+          <span class="badge-count" [class.empty]="upcomingLeaves().length === 0">
+            {{ upcomingLeaves().length }}
+          </span>
+        </div>
+      </ng-template>
+
+      <div class="tab-body">
+        @if (upcomingLeaves().length === 0) {
+          <div class="empty-state">
+            <p>No upcoming approved leaves</p>
+          </div>
+        } @else {
+          <div class="items-list">
+            @for (item of upcomingLeaves(); track item.id) {
+              <div class="leave-item">
+                <div class="item-left">
+                  <span class="item-dates">
+                    {{ item.startDate | date: 'MMM d' }}
+                    @if (item.startDate !== item.endDate) {
+                      – {{ item.endDate | date: 'MMM d, y' }}
+                    } @else {
+                      , {{ item.startDate | date: 'y' }}
+                    }
+                  </span>
+                  <span class="item-type">{{ item.type }}</span>
+                </div>
+                <div class="item-right">
+                  <span class="days-count">{{ item.days }}d</span>
+                  <app-status-badge status="Approved" variant="pill" size="sm" />
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Tab 2: Company Holidays -->
+    <mat-tab>
+      <ng-template mat-tab-label>
+        <div class="tab-label">
+          <mat-icon class="tab-icon holiday-icon">celebration</mat-icon>
+          <span>Company Holidays</span>
+          <span class="badge-count" [class.empty]="holidays().length === 0">
+            {{ holidays().length }}
+          </span>
+        </div>
+      </ng-template>
+
+      <div class="tab-body">
+        @if (holidays().length === 0) {
+          <div class="empty-state">
+            <p>No holidays found for this period</p>
+          </div>
+        } @else {
+          <div class="items-list">
+            @for (h of holidays(); track h.id) {
+              <div class="holiday-item">
+                <div class="holiday-badge">
+                  <span class="day">{{ h.date | date: 'd' }}</span>
+                  <span class="month">{{ h.date | date: 'MMM' }}</span>
+                </div>
+                <div class="holiday-details">
+                  <span class="holiday-name">{{ h.name }}</span>
+                  <span class="holiday-weekday">{{ h.date | date: 'EEEE, y' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-card>

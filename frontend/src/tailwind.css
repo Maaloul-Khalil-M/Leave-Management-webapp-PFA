@@ -1,1 +1,12 @@
-@import 'tailwindcss';
+/* =============================================================================
+ * tailwind.css — Scoped layout utilities
+ * -----------------------------------------------------------------------------
+ * Angular Material M3 is the PRIMARY design system for this application.
+ * Tailwind is strictly scoped to layout utilities (flex, grid, gap, spacing,
+ * alignment, sizing).
+ * Preflight is deliberately excluded so it never conflicts with or overrides
+ * Angular Material typography, component tokens, or reset rules.
+ * ============================================================================= */
+
+@import 'tailwindcss/theme.css';
+@import 'tailwindcss/utilities.css';

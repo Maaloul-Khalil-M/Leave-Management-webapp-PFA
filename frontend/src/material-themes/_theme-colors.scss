@@ -136,8 +136,45 @@ $_rest: (
 $primary-palette: map.merge(map.get($_palettes, primary), $_rest);
 $tertiary-palette: map.merge(map.get($_palettes, tertiary), $_rest);
 
-//add
+// Additional generated palettes
 $secondary-palette: map.merge(map.get($_palettes, secondary), $_rest);
 $error-palette: map.merge(map.get($_palettes, error), $_rest);
+
+// =============================================================================
+// Standardized Application Radii & Semantic Status Tokens
+// =============================================================================
+$radius-xs: 4px;
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-pill: 9999px;
+
+// Request Lifecycle Status Colors (Section 1 & 2 of DESIGN-DEV-README)
+$status-approved: #059669;
+$status-approved-bg: #ecfdf5;
+$status-approved-border: #a7f3d0;
+
+$status-pending: #d97706;
+$status-pending-bg: #fffbeb;
+$status-pending-border: #fde68a;
+
+$status-draft: #b45309;
+$status-draft-bg: #fef3c7;
+$status-draft-border: #fcd34d;
+
+$status-rejected: #dc2626;
+$status-rejected-bg: #fef2f2;
+$status-rejected-border: #fca5a5;
+
+$status-cancelled: #64748b;
+$status-cancelled-bg: #f1f5f9;
+$status-cancelled-border: #cbd5e1;
+
+// Availability Tokens (Section 1 of DESIGN-DEV-README)
+$avail-office: #059669;
+$avail-remote: #2563eb;
+$avail-on-leave: #7c3aed;
+$avail-neutral: #64748b;
 
 

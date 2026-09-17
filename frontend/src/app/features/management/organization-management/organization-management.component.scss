@@ -1,0 +1,44 @@
+:host {
+  display: block;
+}
+
+.mgmt-tab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  margin-bottom: 1.5rem;
+}
+
+.mgmt-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--mat-sys-on-surface-variant, #64748b);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 150ms ease;
+
+  &:hover {
+    color: var(--mat-sys-on-surface, #0f172a);
+  }
+
+  &.active {
+    color: var(--mat-sys-primary, #0f172a);
+    border-bottom-color: var(--mat-sys-primary, #0f172a);
+    font-weight: 600;
+  }
+
+  .tab-count {
+    font-size: 0.72rem;
+    padding: 1px 6px;
+    border-radius: var(--app-radius-pill, 9999px);
+    background: var(--mat-sys-surface-container, #f1f5f9);
+    color: var(--mat-sys-on-surface-variant, #64748b);
+  }
+}
