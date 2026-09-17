@@ -41,6 +41,9 @@ class LeaveRequestSubmitTest {
     @Mock
     private LeavePolicyService leavePolicyService;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private LeaveRequestServiceImpl leaveRequestService;
 

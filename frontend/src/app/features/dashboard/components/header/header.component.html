@@ -26,6 +26,13 @@
 
   <!-- Actions -->
   <div class="header-actions">
+    <!-- Notifications Bell -->
+    <app-notification-bell
+      [notifications]="notifications"
+      (notificationClick)="onNotificationClick($event)"
+      (seeAll)="onSeeAll()"
+    />
+
     <!-- Theme Switcher -->
     <app-theme-switcher />
 

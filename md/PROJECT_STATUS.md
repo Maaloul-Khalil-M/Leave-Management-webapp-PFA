@@ -26,7 +26,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Leave request state machine | Working | Draft creation, listing, submit (DRAFT → PENDING), and manager decision (PENDING → APPROVED / REJECTED) implemented |
 | Manager-of authorization | Working | Enforced on manager approval and rejection endpoints via Employee.currentManager |
 | Eligibility service | Missing | Does not exist |
-| Domain events → notifications | Missing | No events or notifications implemented |
+| Domain events → notifications | Working | LeaveRequestEvent triggers in-app Notification persistence and MailHog HTML email delivery for submit/approve/reject |
 | Keycloak JWT resource server | Working | Implemented via `SecurityConfig` and `CurrentUserServiceImpl` |
 | Global exception handler + error envelope | Working | Present in `exception/` |
 | Migrations (Mongock / Flamingock) | Working | Present under `migrations/` |
@@ -43,6 +43,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Employee Dashboard (`/dashboard`) | Working | Real-data employee first screen. Paid Annual circular gauge + compact cards for Sick/Unpaid/Maternity, balance calculation, recent requests, leave ledger movements, upcoming approved leaves, company holidays (paged at 3), and compact FullCalendar. |
 | Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT (both on /dashboard and /leave-requests), and clear status badges |
 | Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
+| In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
 | HR screens (employees, policies, adjustments) | Missing | |
 | Pending / ACTIVE gating | Missing | |
 | Two colour systems (lifecycle vs availability) | Missing | |
@@ -68,6 +69,42 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Notifications — Slice N2 (In-App Notification Bell & Dropdown UI) — 2026-09-17
+- **Component Architecture**:
+  - Implemented `NotificationBellComponent` at `frontend/src/app/core/layout/notification-bell/`:
+    - Material icon bell button with `matBadge` (warn red badge displaying unread count when > 0) and `matTooltip`.
+    - Dropdown overlay panel using `mat-menu` with custom 360px panel styling.
+    - Notification list rows with status-themed icons (`check_circle` for success, `cancel` for error, `info` for info, `schedule` for pending).
+    - Unread indicator styling with distinct background tint.
+    - Relative timestamp pipe (`RelativeTimePipe`) providing relative time labels ("Just now", "5m ago", "2h ago", "Yesterday").
+    - Clean empty state ("You're all caught up.") when no notifications are present.
+    - Footer button "See all activity" routing to `/leave-requests`.
+- **Frontend Service & API Integration**:
+  - Created `NotificationService` in `frontend/src/app/core/services/notification.service.ts` wired to `GET http://localhost:8080/api/notifications` and `POST http://localhost:8080/api/notifications/{id}/read`.
+  - Type mappings between backend `NotificationResponse` and UI `NotificationItem`.
+- **Header Integration**:
+  - Embedded `app-notification-bell` in `HeaderComponent` (`frontend/src/app/features/dashboard/components/header/header.component.html`) inside `.header-actions`.
+  - Auto-loads notifications on header initialization; clicking an unread item immediately calls the backend to mark it read and decreases the badge count.
+- **Verification**:
+  - Angular production build (`ng build`) completed with 0 errors.
+  - Backend unit tests (`mvnw test -Dtest=NotificationServiceTest`) 7/7 tests passing.
+
+### Notifications (In-App Persistence & MailHog Formatted Email) — 2026-09-17
+- **Domain Event Architecture**:
+  - Defined `LeaveRequestEvent` domain record published by `LeaveRequestServiceImpl` on `submit`, `approve`, and `reject`.
+  - Created `LeaveRequestNotificationListener` that handles events asynchronously/decoupled, ensuring failures in notifications or mail never disrupt the leave transaction.
+- **In-App Notification Storage**:
+  - Implemented `Notification` entity (`recipientUserId`, `recipientEmployeeId`, `title`, `message`, `type`, `read`, `leaveRequestId`, `createdAt`).
+  - Added `NotificationRepository` and `NotificationService` supporting in-app persistence, listing for the authenticated user (`listMyNotifications`), and marking notifications as read (`markAsRead`).
+  - Exposed `GET /api/notifications` and `POST /api/notifications/{id}/read` in `NotificationController`.
+- **MailHog Formatted HTML Emails**:
+  - Implemented `EmailService` using Spring Boot's `JavaMailSender` and MIME multipart HTML templates.
+  - Sends branded emails with detailed event summaries (employee, leave type, period, duration, status badge, and notes/reasons) to MailHog SMTP at `localhost:1025`.
+  - Supports clean fallbacks: if an employee or manager lacks an email address or unassigned manager, email delivery is cleanly skipped and logged.
+- **Verification**:
+  - Added unit test suite `NotificationServiceTest` covering submit, approve, reject, unassigned manager, mark-as-read, and security ownership checks (7/7 tests passing).
+  - All 27 backend tests across the application passing (`BUILD SUCCESS`).
 
 ### Leave Request Workflow — Slice C (Employee + Manager UI) — 2026-09-16
 - **Backend API**:

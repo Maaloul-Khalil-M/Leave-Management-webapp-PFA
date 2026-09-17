@@ -1,0 +1,53 @@
+<button
+  mat-icon-button
+  type="button"
+  [matMenuTriggerFor]="notificationMenu"
+  [matBadge]="unreadCount > 0 ? unreadCount : null"
+  matBadgeColor="warn"
+  matBadgeSize="small"
+  matTooltip="Notifications"
+  aria-label="Notifications">
+  <mat-icon>notifications</mat-icon>
+</button>
+
+<mat-menu #notificationMenu="matMenu" class="notification-panel" xPosition="before">
+  <div class="notification-panel__header" (click)="$event.stopPropagation()">
+    <span class="notification-panel__title">Notifications</span>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="notification-panel__list" (click)="$event.stopPropagation()">
+    <ng-container *ngIf="notifications.length; else empty">
+      <div
+        class="notification-row"
+        *ngFor="let item of notifications"
+        [class.notification-row--unread]="!item.read"
+        (click)="onNotificationClick(item)">
+        <mat-icon
+          class="notification-row__status"
+          [ngClass]="'notification-row__status--' + item.status">
+          {{ statusIcon(item.status) }}
+        </mat-icon>
+
+        <div class="notification-row__body">
+          <span class="notification-row__title">{{ item.title }}</span>
+          <span class="notification-row__detail" *ngIf="item.detail">{{ item.detail }}</span>
+          <span class="notification-row__timestamp">{{ item.timestamp | relativeTime }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #empty>
+      <div class="notification-panel__empty">You're all caught up.</div>
+    </ng-template>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="notification-panel__footer" (click)="$event.stopPropagation()">
+    <button mat-stroked-button color="primary" (click)="seeAll.emit()">
+      See all activity
+    </button>
+  </div>
+</mat-menu>

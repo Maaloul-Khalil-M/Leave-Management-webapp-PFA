@@ -13,6 +13,7 @@ import com.stagepfa.demo.domain.enums.AccrualUnit;
 import com.stagepfa.demo.domain.enums.CountryCode;
 import com.stagepfa.demo.domain.enums.LedgerMovementType;
 import com.stagepfa.demo.domain.enums.LeaveRequestStatus;
+import com.stagepfa.demo.domain.events.LeaveRequestEvent;
 import com.stagepfa.demo.exception.BusinessException;
 import com.stagepfa.demo.exception.ErrorCode;
 import com.stagepfa.demo.exception.ResourceNotFoundException;
@@ -25,6 +26,7 @@ import com.stagepfa.demo.services.LeavePolicyService;
 import com.stagepfa.demo.services.LeaveRequestService;
 import com.stagepfa.demo.services.OrganizationSettingsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +48,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final LeavePolicyService leavePolicyService;
     private final LeaveLedgerService leaveLedgerService;
     private final LeaveTypeRepository leaveTypeRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -165,7 +168,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .build();
         leaveRequest.getStatusHistory().add(entry);
 
-        return leaveRequestRepository.save(leaveRequest);
+        LeaveRequest saved = leaveRequestRepository.save(leaveRequest);
+        eventPublisher.publishEvent(new LeaveRequestEvent(saved, LeaveRequestStatus.DRAFT, LeaveRequestStatus.PENDING, user.getId(), null));
+        return saved;
     }
 
     @Override
@@ -235,7 +240,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .build();
         leaveRequest.getStatusHistory().add(entry);
 
-        return leaveRequestRepository.save(leaveRequest);
+        LeaveRequest saved = leaveRequestRepository.save(leaveRequest);
+        eventPublisher.publishEvent(new LeaveRequestEvent(saved, LeaveRequestStatus.PENDING, LeaveRequestStatus.APPROVED, user.getId(), comment));
+        return saved;
     }
 
     @Override
@@ -288,7 +295,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .build();
         leaveRequest.getStatusHistory().add(entry);
 
-        return leaveRequestRepository.save(leaveRequest);
+        LeaveRequest saved = leaveRequestRepository.save(leaveRequest);
+        eventPublisher.publishEvent(new LeaveRequestEvent(saved, LeaveRequestStatus.PENDING, LeaveRequestStatus.REJECTED, user.getId(), comment));
+        return saved;
     }
 
     @Override

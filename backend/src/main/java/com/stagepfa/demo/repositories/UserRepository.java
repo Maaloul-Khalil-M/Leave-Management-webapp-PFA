@@ -18,4 +18,5 @@ public interface UserRepository extends MongoRepository<User, String> {
     // First-login helpers
     Optional<User> findByEmailIgnoreCase(String email);
 
+    Optional<User> findByEmployeeId(String employeeId);
 }

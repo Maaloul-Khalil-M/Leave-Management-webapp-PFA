@@ -1,0 +1,103 @@
+:host {
+  display: inline-block;
+}
+
+// The mat-menu overlay panel is created outside this component's element,
+// so panel-level sizing needs ::ng-deep + the mat-mdc-menu-panel class.
+::ng-deep .notification-panel.mat-mdc-menu-panel {
+  width: 360px;
+  max-width: 90vw;
+}
+
+.notification-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.notification-panel__title {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.notification-panel__list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-panel__empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 13px;
+}
+
+.notification-row {
+  display: flex;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  &--unread {
+    background: rgba(25, 103, 210, 0.05);
+  }
+}
+
+.notification-row__status {
+  flex: none;
+  margin-top: 2px;
+
+  &--success {
+    color: #188038;
+  }
+
+  &--error {
+    color: #d93025;
+  }
+
+  &--warning {
+    color: #f9ab00;
+  }
+
+  &--info {
+    color: #1a73e8;
+  }
+
+  &--pending {
+    color: #5f6368;
+  }
+}
+
+.notification-row__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.notification-row__title {
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(0, 0, 0, 0.87);
+}
+
+.notification-row__detail {
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.notification-row__timestamp {
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-top: 2px;
+}
+
+.notification-panel__footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px 12px;
+}
