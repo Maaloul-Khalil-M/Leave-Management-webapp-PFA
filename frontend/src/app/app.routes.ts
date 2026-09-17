@@ -6,6 +6,11 @@ import {hrGuard} from './core/auth/hr.guard';
 export const routes: Routes = [
   {path: '', pathMatch: 'full', redirectTo: 'dashboard'},
   {
+    path: 'login',
+    loadComponent: () =>
+      import('./core/auth/login/login.component').then((m) => m.LoginComponent),
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then(

@@ -40,7 +40,12 @@ export class AuthService {
   }
 
   logout(): void {
-    this.oauthService.logOut();
+    const idToken = this.oauthService.getIdToken();
+    if (idToken) {
+      this.oauthService.logOut({ id_token_hint: idToken });
+    } else {
+      this.oauthService.logOut({ client_id: this.oauthService.clientId || 'angular-app' });
+    }
   }
 
   get accessToken(): string {

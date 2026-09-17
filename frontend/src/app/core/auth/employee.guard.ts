@@ -1,15 +1,16 @@
 import {inject} from '@angular/core';
-import {CanActivateFn} from '@angular/router';
+import {CanActivateFn, Router} from '@angular/router';
 import {map, catchError, of} from 'rxjs';
 import {OAuthService} from 'angular-oauth2-oidc';
 import {MeService} from './test/me.service';
 
 export const employeeGuard: CanActivateFn = () => {
   const oauth = inject(OAuthService);
+  const router = inject(Router);
   const meService = inject(MeService);
 
   if (!oauth.hasValidAccessToken()) {
-    oauth.initCodeFlow(undefined, {kc_idp_hint: 'google'});
+    router.navigate(['/login']);
     return false;
   }
 

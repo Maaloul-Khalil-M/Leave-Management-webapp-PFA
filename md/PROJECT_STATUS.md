@@ -38,7 +38,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 
 | Area | Status | Notes |
 |------|--------|-------|
-| Auth (Keycloak / Google hint) | Unknown | Not verified |
+| Auth (Keycloak / Google hint) | Working | Centralized minimal login at `/login`, Google OIDC code flow, and RP-initiated logout with `id_token_hint` / `client_id` fallback |
 | Shell / layout / theme | Working | Platana header, responsive dashboard layout, clean routing |
 | Employee Dashboard (`/dashboard`) | Working | Real-data employee first screen. Paid Annual circular gauge + compact cards for Sick/Unpaid/Maternity, balance calculation, recent requests, leave ledger movements, upcoming approved leaves, company holidays (paged at 3), and compact FullCalendar. |
 | Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT, cancel action on DRAFT/PENDING/APPROVED (both on /dashboard and /leave-requests), and clear status badges |
@@ -70,6 +70,19 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Centralized Login Screen & Sign-Out Bugfix — 2026-09-17
+- **Centralized Login Experience**:
+  - Implemented standalone `LoginComponent` at `/login` with embedded `<app-header />`, clean brand card, and a single "Continue with Google" button triggering `auth.loginWithGoogle()`.
+  - Automatically redirects authenticated users accessing `/login` straight to `/dashboard`.
+  - Updated `employeeGuard` and `hrGuard` to redirect unauthenticated visitors cleanly to `/login` rather than executing immediate `initCodeFlow` redirects in route guards.
+- **Header Auth-Aware Integration**:
+  - Updated `HeaderComponent` template to gate navigation links, notification bell, request leave action, and user profile menu with `@if (auth.isLoggedIn())`, while preserving brand logo and theme switcher.
+- **Sign-Out Fix (`id_token_hint`)**:
+  - Corrected `AuthService.logout()` to supply `{ id_token_hint: idToken }` when present and `{ client_id: clientId }` as fallback, satisfying Keycloak 26.5 RP-Initiated Logout specification requirements and resolving `Missing parameters: id_token_hint`.
+- **Verification**:
+  - Added unit test suite `auth.service.spec.ts` (32/32 tests passing across suite).
+  - Production build completed with 0 errors.
 
 ### Leave Request Cancellation — 2026-09-17
 - **Backend Service & State Machine**:

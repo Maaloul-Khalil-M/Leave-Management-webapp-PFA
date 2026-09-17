@@ -29,7 +29,7 @@ export const appConfig: ApplicationConfig = {
         strictDiscoveryDocumentValidation: false,
         useSilentRefresh: false,
       });
-      return oauth.loadDiscoveryDocumentAndTryLogin();
+      return oauth.loadDiscoveryDocumentAndTryLogin({ disableNonceCheck: true });
     }),
     provideBrowserGlobalErrorListeners()
   ]

@@ -9,7 +9,7 @@ export const hrGuard: CanActivateFn = () => {
   const router = inject(Router);
 
   if (!oauth.hasValidAccessToken()) {
-    oauth.initCodeFlow(undefined, { kc_idp_hint: 'google' });
+    router.navigate(['/login']);
     return false;
   }
 
