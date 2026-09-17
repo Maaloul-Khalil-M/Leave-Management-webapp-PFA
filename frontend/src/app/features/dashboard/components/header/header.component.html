@@ -22,6 +22,10 @@
     <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
     <a class="nav-link" routerLink="/leave-requests" routerLinkActive="active">My Requests</a>
     <a class="nav-link" routerLink="/manager/approvals" routerLinkActive="active">Approvals</a>
+    @if (auth.hasAnyRole('HR', 'ADMIN')) {
+      <a class="nav-link" routerLink="/management/employees" routerLinkActive="active">Employees</a>
+      <a class="nav-link" routerLink="/management/organization" routerLinkActive="active">Organization</a>
+    }
   </nav>
 
   <!-- Actions -->
@@ -60,6 +64,16 @@
           <mat-icon>rule</mat-icon>
           Team Approvals
         </button>
+        @if (auth.hasAnyRole('HR', 'ADMIN')) {
+          <button mat-menu-item routerLink="/management/employees">
+            <mat-icon>badge</mat-icon>
+            Employees Directory
+          </button>
+          <button mat-menu-item routerLink="/management/organization">
+            <mat-icon>domain</mat-icon>
+            Organization Master Data
+          </button>
+        }
         <button mat-menu-item routerLink="/dev/auth-test">
           <mat-icon>security</mat-icon>
           Auth & Token Diagnostics
@@ -79,5 +93,9 @@
   <button mat-menu-item routerLink="/dashboard">Dashboard</button>
   <button mat-menu-item routerLink="/leave-requests">My Requests</button>
   <button mat-menu-item routerLink="/manager/approvals">Team Approvals</button>
+  @if (auth.hasAnyRole('HR', 'ADMIN')) {
+    <button mat-menu-item routerLink="/management/employees">Employees Directory</button>
+    <button mat-menu-item routerLink="/management/organization">Organization Master Data</button>
+  }
   <button mat-menu-item routerLink="/dev/auth-test">Auth Diagnostics</button>
 </mat-menu>

@@ -1,6 +1,7 @@
 import {Routes} from '@angular/router';
 import {HomeComponent} from './core/auth/test/home/home.component';
 import {employeeGuard} from './core/auth/employee.guard';
+import {hrGuard} from './core/auth/hr.guard';
 
 export const routes: Routes = [
   {path: '', pathMatch: 'full', redirectTo: 'dashboard'},
@@ -27,6 +28,22 @@ export const routes: Routes = [
         (m) => m.ManagerApprovalsComponent
       ),
     canActivate: [employeeGuard],
+  },
+  {
+    path: 'management/employees',
+    loadComponent: () =>
+      import(
+        './features/management/employee-management/employee-management.component'
+      ).then((m) => m.EmployeeManagementComponent),
+    canActivate: [hrGuard],
+  },
+  {
+    path: 'management/organization',
+    loadComponent: () =>
+      import(
+        './features/management/organization-management/organization-management.component'
+      ).then((m) => m.OrganizationManagementComponent),
+    canActivate: [hrGuard],
   },
   {
     path: 'dev/auth-test',

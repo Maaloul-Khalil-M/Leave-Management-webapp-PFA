@@ -1,0 +1,200 @@
+<div class="overlay" role="presentation" (click)="onClose()">
+  <div
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="import-dialog-title"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Dialog header -->
+    <header class="dialog__header">
+      <div>
+        <h2 id="import-dialog-title">Import employees</h2>
+        <p class="dialog__step-indicator">
+          <span [class.active]="step() === 'upload'">1. Upload</span>
+          <span class="divider">›</span>
+          <span [class.active]="step() === 'review'">2. Review</span>
+          <span class="divider">›</span>
+          <span [class.active]="step() === 'success'">3. Done</span>
+        </p>
+      </div>
+      <button type="button" class="icon-button" aria-label="Close dialog" (click)="onClose()">✕</button>
+    </header>
+
+    <div class="dialog__body">
+      <!-- ===================== STEP 1: UPLOAD ===================== -->
+      @if (step() === 'upload') {
+        <section aria-labelledby="upload-heading">
+          <p id="upload-heading">Upload a CSV file using the Employee Import Template.</p>
+
+          <div class="template-row">
+            <button type="button" class="btn btn--secondary" (click)="onDownloadTemplate()">
+              Download template
+            </button>
+            <span class="hint">Includes the required columns and a few example rows.</span>
+          </div>
+
+          <div
+            class="dropzone"
+            [class.dropzone--active]="isDragging()"
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onDrop($event)"
+          >
+            @if (isParsing()) {
+              <div class="dropzone__loading">
+                <span class="spinner" aria-hidden="true"></span>
+                <p>Reading and validating your file…</p>
+              </div>
+            } @else {
+              <p class="dropzone__icon" aria-hidden="true">⬆</p>
+              <p class="dropzone__title">Drag and drop your CSV file here</p>
+              <p class="dropzone__subtitle">or</p>
+              <label class="btn btn--primary file-label">
+                Choose CSV file
+                <input
+                  type="file"
+                  accept=".csv"
+                  class="visually-hidden"
+                  (change)="onFileInputChange($event)"
+                  aria-label="Choose CSV file to import"
+                />
+              </label>
+            }
+          </div>
+
+          @if (parseError()) {
+            <p class="form-error" role="alert">{{ parseError() }}</p>
+          }
+        </section>
+      }
+
+      <!-- ===================== STEP 2: REVIEW ===================== -->
+      @if (step() === 'review' && draft(); as d) {
+        <section aria-labelledby="review-heading">
+          <h3 id="review-heading" class="visually-hidden">Import validation</h3>
+
+          <div class="summary-card" [class.summary-card--all-valid]="d.invalidRows === 0">
+            <p class="summary-card__title">Import validation</p>
+            <p class="summary-card__count">{{ d.totalRows }} row{{ d.totalRows === 1 ? '' : 's' }} found</p>
+            <div class="summary-card__stats">
+              <span class="stat stat--valid">✓ {{ d.validRows }} valid</span>
+              <span class="stat stat--invalid">✕ {{ d.invalidRows }} error{{ d.invalidRows === 1 ? '' : 's' }}</span>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="preview-table">
+              <thead>
+                <tr>
+                  <th scope="col">Row</th>
+                  <th scope="col">Employee ID</th>
+                  <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Department</th>
+                  <th scope="col">Job title</th>
+                  <th scope="col">Start date</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Validation</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of visibleRows; track trackByRow($index, row)) {
+                  <tr [class.row--invalid]="!row.valid">
+                    <td>{{ row.rowNumber }}</td>
+                    <td>{{ row.data.employeeId || '—' }}</td>
+                    <td>{{ row.data.firstName }} {{ row.data.lastName }}</td>
+                    <td>{{ row.data.email || '—' }}</td>
+                    <td>{{ row.data.department || '—' }}</td>
+                    <td>{{ row.data.jobTitle || '—' }}</td>
+                    <td>{{ row.data.startDate || '—' }}</td>
+                    <td>{{ row.data.status || '—' }}</td>
+                    <td>
+                      @if (row.valid) {
+                        <span class="badge badge--valid">✓ Valid</span>
+                      } @else {
+                        <span class="badge badge--invalid">✕ Invalid</span>
+                        <ul class="row-errors">
+                          @for (err of row.errors; track err.field) {
+                            <li><strong>{{ err.field }}:</strong> {{ err.message }}</li>
+                          }
+                        </ul>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (hiddenRowCount > 0) {
+            <div class="more-rows">
+              <p>Showing the first {{ previewLimit }} rows. {{ hiddenRowCount }} more row{{ hiddenRowCount === 1 ? '' : 's' }} in this file.</p>
+              <button type="button" class="btn btn--link" (click)="onShowAllRows()">Show all rows</button>
+            </div>
+          }
+
+          <div class="confirm-panel">
+            @if (d.invalidRows > 0) {
+              <p class="confirm-panel__message">
+                <strong>{{ d.invalidRows }} row{{ d.invalidRows === 1 ? ' has' : 's have' }} errors.</strong><br />
+                Fix the errors in your CSV and upload it again, or continue with the {{ d.validRows }} valid row{{ d.validRows === 1 ? '' : 's' }}.
+              </p>
+            }
+
+            <div class="confirm-panel__actions">
+              <button type="button" class="btn btn--secondary" (click)="onChooseDifferentFile()" [disabled]="isImporting()">
+                Choose a different file
+              </button>
+              <button
+                type="button"
+                class="btn btn--primary"
+                (click)="onConfirmImport()"
+                [disabled]="d.validRows === 0 || isImporting()"
+              >
+                @if (isImporting()) {
+                  <span class="spinner spinner--inline" aria-hidden="true"></span>
+                  Importing…
+                } @else {
+                  Import {{ d.validRows }} employee{{ d.validRows === 1 ? '' : 's' }}
+                }
+              </button>
+            </div>
+          </div>
+        </section>
+      }
+
+      <!-- ===================== STEP 3: SUCCESS ===================== -->
+      @if (step() === 'success' && result(); as r) {
+        <section class="success" aria-labelledby="success-heading">
+          <p class="success__icon" aria-hidden="true">✓</p>
+          <h3 id="success-heading">Import completed</h3>
+          <p class="success__subtitle">{{ r.importedCount }} employee{{ r.importedCount === 1 ? ' is' : 's are' }} ready to be added.</p>
+
+          <div class="success__summary">
+            <p class="success__batch">Import batch<br /><strong>#{{ r.batchId }}</strong></p>
+            <dl class="success__stats">
+              <div>
+                <dt>Rows processed</dt>
+                <dd>{{ r.totalRows }}</dd>
+              </div>
+              <div>
+                <dt>Imported</dt>
+                <dd>{{ r.importedCount }}</dd>
+              </div>
+              <div>
+                <dt>Skipped</dt>
+                <dd>{{ r.skippedCount }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="success__actions">
+            <button type="button" class="btn btn--secondary" (click)="onClose()">Close</button>
+            <button type="button" class="btn btn--primary" (click)="onViewEmployees()">View employees</button>
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</div>

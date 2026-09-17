@@ -9,6 +9,7 @@ import { ThemeSwitcher } from '../../../../core/layout/theme-switcher/theme-swit
 import { NotificationBellComponent } from '../../../../core/layout/notification-bell/notification-bell.component';
 import { NotificationItem } from '../../../../core/layout/notification-bell/notification.model';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { AuthService } from '../../../../core/auth/auth.service';
 import { Profile } from '../../models';
 
 @Component({
@@ -31,6 +32,7 @@ import { Profile } from '../../models';
 export class HeaderComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
 
   readonly profile = input<Profile | null>(null);
 

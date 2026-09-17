@@ -1,0 +1,330 @@
+<div class="page">
+  <!-- Charts -->
+  <section class="charts-row">
+    <mat-card class="chart-card">
+      <mat-card-header>
+        <mat-card-title>Employees by department</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div echarts [options]="deptChartOption()" class="chart"></div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="chart-card chart-card--status">
+      <mat-card-header>
+        <mat-card-title>Employee status</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div echarts [options]="statusChartOption()" class="chart chart--pie"></div>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  @if (lastImportNotice()) {
+    <div class="notice" role="status">{{ lastImportNotice() }}</div>
+  }
+
+  @if (newlyCreatedId()) {
+    <mat-card class="login-prompt">
+      <mat-card-content>
+        Employee created successfully. This person doesn't have login access yet.
+        <button mat-button color="primary" (click)="createLogin(newlyCreatedId()!, employees().find(e => e.employeeId === newlyCreatedId())!.email)">
+          Create login →
+        </button>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <h1>Employees</h1>
+    <div class="toolbar-filters">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search employees...</mat-label>
+        <input matInput [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+          <mat-option value="">All</mat-option>
+          <mat-option value="active">Active</mat-option>
+          <mat-option value="inactive">Inactive</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Department</mat-label>
+        <mat-select [ngModel]="departmentFilter()" (ngModelChange)="departmentFilter.set($event)">
+          <mat-option value="">All</mat-option>
+          @for (d of departments(); track d.id) {
+            <mat-option [value]="d.name">{{ d.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+    <div class="toolbar-actions">
+      <button mat-stroked-button (click)="onOpenImport()">
+        <mat-icon>upload_file</mat-icon>
+        Import employees
+      </button>
+      <button mat-raised-button color="primary" (click)="openNewEmployee()">
+        <mat-icon>person_add</mat-icon>
+        New Employee
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <table mat-table [dataSource]="filteredEmployees()" class="employee-table">
+      <ng-container matColumnDef="employeeId">
+        <th mat-header-cell *matHeaderCellDef>Employee ID</th>
+        <td mat-cell *matCellDef="let row">{{ row.employeeId }}</td>
+      </ng-container>
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let row">{{ row.firstName }} {{ row.lastName }}</td>
+      </ng-container>
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let row">{{ row.email }}</td>
+      </ng-container>
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let row">{{ row.phone || '—' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="department">
+        <th mat-header-cell *matHeaderCellDef>Department</th>
+        <td mat-cell *matCellDef="let row">{{ row.department }}</td>
+      </ng-container>
+      <ng-container matColumnDef="jobTitle">
+        <th mat-header-cell *matHeaderCellDef>Job Title</th>
+        <td mat-cell *matCellDef="let row">{{ row.jobTitle }}</td>
+      </ng-container>
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef>Status</th>
+        <td mat-cell *matCellDef="let row">
+          <mat-chip [highlighted]="row.status === 'active'">{{ row.status }}</mat-chip>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef>Actions</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button [matMenuTriggerFor]="menu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="openEdit(row)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit</span>
+            </button>
+            <button mat-menu-item (click)="openReassign(row)">
+              <mat-icon>swap_horiz</mat-icon>
+              <span>Reassign</span>
+            </button>
+            <button mat-menu-item (click)="openChangeManager(row)">
+              <mat-icon>supervisor_account</mat-icon>
+              <span>Change manager</span>
+            </button>
+            <button mat-menu-item (click)="openContracts(row)">
+              <mat-icon>description</mat-icon>
+              <span>View contracts</span>
+            </button>
+            <button mat-menu-item (click)="confirmDelete(row)">
+              <mat-icon color="warn">delete</mat-icon>
+              <span>Delete</span>
+            </button>
+          </mat-menu>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+    @if (filteredEmployees().length === 0) {
+      <div class="empty">No employees match the current filters.</div>
+    }
+  </div>
+</div>
+
+<!-- New / Edit form overlay -->
+@if (formOpen()) {
+  <div class="overlay" (click)="closeForm()">
+    <div class="dialog-panel" (click)="$event.stopPropagation()">
+      <h2>{{ formIsNew() ? 'New Employee' : 'Edit Employee' }}</h2>
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Employee ID</mat-label>
+          <input matInput [ngModel]="formModel().employeeId" (ngModelChange)="formModel.set({ ...formModel(), employeeId: $event })" [disabled]="!formIsNew()" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>First name</mat-label>
+          <input matInput [ngModel]="formModel().firstName" (ngModelChange)="formModel.set({ ...formModel(), firstName: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Last name</mat-label>
+          <input matInput [ngModel]="formModel().lastName" (ngModelChange)="formModel.set({ ...formModel(), lastName: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput [ngModel]="formModel().email" (ngModelChange)="formModel.set({ ...formModel(), email: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Phone</mat-label>
+          <input matInput [ngModel]="formModel().phone" (ngModelChange)="formModel.set({ ...formModel(), phone: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Department</mat-label>
+          <mat-select [ngModel]="formModel().department" (ngModelChange)="formModel.set({ ...formModel(), department: $event })">
+            @for (d of departments(); track d.id) {
+              <mat-option [value]="d.name">{{ d.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Job title</mat-label>
+          <input matInput [ngModel]="formModel().jobTitle" (ngModelChange)="formModel.set({ ...formModel(), jobTitle: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Start date</mat-label>
+          <input matInput type="date" [ngModel]="formModel().startDate" (ngModelChange)="formModel.set({ ...formModel(), startDate: $event })" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [ngModel]="formModel().status" (ngModelChange)="formModel.set({ ...formModel(), status: $event })">
+            <mat-option value="active">Active</mat-option>
+            <mat-option value="inactive">Inactive</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="dialog-actions">
+        <button mat-button (click)="closeForm()">Cancel</button>
+        <button mat-raised-button color="primary" (click)="saveEmployee()">Save</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Reassign -->
+@if (reassignOpen()) {
+  <div class="overlay" (click)="reassignOpen.set(false)">
+    <div class="dialog-panel" (click)="$event.stopPropagation()">
+      <h2>Reassign employee</h2>
+      <p>{{ reassignTarget()?.firstName }} {{ reassignTarget()?.lastName }}</p>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>New department</mat-label>
+        <mat-select [ngModel]="reassignDept()" (ngModelChange)="reassignDept.set($event)">
+          @for (d of departments(); track d.id) {
+            <mat-option [value]="d.name">{{ d.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>New position / job title</mat-label>
+        <input matInput [ngModel]="reassignPos()" (ngModelChange)="reassignPos.set($event)" />
+      </mat-form-field>
+      <div class="dialog-actions">
+        <button mat-button (click)="reassignOpen.set(false)">Cancel</button>
+        <button mat-raised-button color="primary" (click)="confirmReassign()">Confirm reassign</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Change manager -->
+@if (managerOpen()) {
+  <div class="overlay" (click)="managerOpen.set(false)">
+    <div class="dialog-panel" (click)="$event.stopPropagation()">
+      <h2>Change manager</h2>
+      <p>{{ managerTarget()?.firstName }} {{ managerTarget()?.lastName }}</p>
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Manager</mat-label>
+        <mat-select [ngModel]="selectedManagerId()" (ngModelChange)="selectedManagerId.set($event)">
+          <mat-option [value]="null">— None —</mat-option>
+          @for (e of employees(); track e.employeeId) {
+            @if (e.employeeId !== managerTarget()?.employeeId) {
+              <mat-option [value]="e.employeeId">{{ e.firstName }} {{ e.lastName }} ({{ e.employeeId }})</mat-option>
+            }
+          }
+        </mat-select>
+      </mat-form-field>
+      <div class="dialog-actions">
+        <button mat-button (click)="managerOpen.set(false)">Cancel</button>
+        <button mat-raised-button color="primary" (click)="confirmChangeManager()">Confirm</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Contracts -->
+@if (contractsOpen()) {
+  <div class="overlay" (click)="contractsOpen.set(false)">
+    <div class="dialog-panel dialog-panel--wide" (click)="$event.stopPropagation()">
+      <h2>Contracts — {{ contractsEmployee()?.firstName }} {{ contractsEmployee()?.lastName }}</h2>
+      <button mat-stroked-button (click)="openNewContract()" style="margin-bottom:12px">
+        <mat-icon>add</mat-icon> Add contract
+      </button>
+      @if (contractFormOpen()) {
+        <div class="form-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Type</mat-label>
+            <mat-select [ngModel]="contractForm().type" (ngModelChange)="contractForm.set({ ...contractForm(), type: $event })">
+              <mat-option value="permanent">Permanent</mat-option>
+              <mat-option value="fixed-term">Fixed-term</mat-option>
+              <mat-option value="internship">Internship</mat-option>
+              <mat-option value="contractor">Contractor</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Start date</mat-label>
+            <input matInput type="date" [ngModel]="contractForm().startDate" (ngModelChange)="contractForm.set({ ...contractForm(), startDate: $event })" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End date</mat-label>
+            <input matInput type="date" [ngModel]="contractForm().endDate" (ngModelChange)="contractForm.set({ ...contractForm(), endDate: $event })" />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Status</mat-label>
+            <mat-select [ngModel]="contractForm().status" (ngModelChange)="contractForm.set({ ...contractForm(), status: $event })">
+              <mat-option value="active">Active</mat-option>
+              <mat-option value="expired">Expired</mat-option>
+              <mat-option value="pending">Pending</mat-option>
+              <mat-option value="terminated">Terminated</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="dialog-actions">
+          <button mat-button (click)="contractFormOpen.set(false)">Cancel</button>
+          <button mat-raised-button color="primary" (click)="saveContract()">Save contract</button>
+        </div>
+      }
+      <table class="simple-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of contractsList(); track c.id) {
+            <tr>
+              <td>{{ c.type }}</td>
+              <td>{{ c.startDate }}</td>
+              <td>{{ c.endDate || '—' }}</td>
+              <td>{{ c.status }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4">No contracts yet.</td></tr>
+          }
+        </tbody>
+      </table>
+      <div class="dialog-actions">
+        <button mat-button (click)="contractsOpen.set(false)">Close</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (isImportOpen()) {
+  <app-employee-import (closed)="onImportClosed()" (imported)="onImported($event)" />
+}

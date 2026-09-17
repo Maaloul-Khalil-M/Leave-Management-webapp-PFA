@@ -44,7 +44,8 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT (both on /dashboard and /leave-requests), and clear status badges |
 | Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
 | In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
-| HR screens (employees, policies, adjustments) | Missing | |
+| HR screens (employees, departments, positions) | Working | Employee directory, create/edit/transfer, and department/position master data at /management/employees and /management/organization |
+| HR screens (policies, adjustments) | Missing | Leave policies and balance adjustments UI |
 | Pending / ACTIVE gating | Missing | |
 | Two colour systems (lifecycle vs availability) | Missing | |
 
@@ -69,6 +70,45 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Employee CSV Support — Slice M2 (CSV Export & 3-Step Import Wizard) — 2026-09-17
+- **CSV Utilities & Engine**:
+  - Implemented zero-dependency, RFC 4180 compliant CSV parser and stringifier (`csv-parser.ts`) handling quoted cells, embedded commas, newlines, and escaped quotes. Covered with 5/5 passing unit tests.
+  - Implemented `EmployeeCsvService` (`employee-csv.service.ts`):
+    - `buildTemplateCsv`: Generates import template pre-populated with live system departments and job positions.
+    - `exportEmployeesCsv`: Exports current or filtered workforce directory into clean CSV format.
+    - `parseAndValidate`: Performs multi-tier validation (column presence, email regex, date formats, internal CSV uniqueness, and database uniqueness against loaded employees).
+    - `executeImport`: Progressively posts validated employees to `/api/hr/employees` via `EmployeeAdminService.createEmployee`.
+- **UI & UX Flow (`/management/employees`)**:
+  - Added "Export CSV" and "Import CSV" actions to the directory toolbar.
+  - Implemented `EmployeeImportDialogComponent` featuring the 3-step wizard:
+    - **Step 1 (Upload)**: Drag-and-drop dropzone, file input, and single-click template download.
+    - **Step 2 (Review)**: Summary card (valid count vs. error count), preview table capped at 20 rows with toggle, and itemized inline error badges per row.
+    - **Step 3 (Success)**: Batch summary reporting imported count, skipped count, and server-side errors, with direct return to the refreshed employee directory.
+- **Verification**:
+  - `npx vitest run` passed 11/11 tests across the frontend suite.
+  - `ng build` completed successfully with 0 errors.
+
+### Higher-Level Management UI — Slice M1 (Employees, Departments, Positions CRUD) — 2026-09-17
+- **Route Guarding & Permissions**:
+  - Implemented `hrGuard` (`frontend/src/app/core/auth/hr.guard.ts`) restricting `/management/**` routes to users with `HR` or `ADMIN` roles.
+  - Header navigation dynamically displays "Employees" and "Organization" links only when authenticated user holds `HR` or `ADMIN` roles.
+- **Organization Master Data (`/management/organization`)**:
+  - Implemented `OrganizationService` wired to `/api/departments` and `/api/positions`.
+  - Implemented `OrganizationManagementComponent` featuring:
+    - Tabbed view for Departments and Job Positions.
+    - Department creation modal (`POST /api/departments`).
+    - Position creation and editing modals (`POST /api/positions`, `PATCH /api/positions/{id}`) with department selector.
+- **Employee Directory & Contract/Tenure Management (`/management/employees`)**:
+  - Implemented `EmployeeAdminService` wired to `/api/hr/employees` (`GET /`, `GET /{id}`, `POST /`, `PATCH /{id}`).
+  - Implemented `EmployeeManagementComponent` featuring:
+    - Summary metrics (total workforce, active contracts, departments count).
+    - Status filtering (`ALL`, `ACTIVE`, `SUSPENDED`, `TERMINATED`) and multi-attribute search (name, email, employee number, position).
+    - New employee creation modal with profile data, initial assignment (department/position selector and start date), and manager selection.
+    - Employee edit and contract transfer modal: update employment status, contact details, manager, and assign new position/department with audit trail.
+- **Verification**:
+  - Production build `ng build` succeeded with 0 errors.
+  - All 27 backend tests passing.
 
 ### Notifications — Slice N2 (In-App Notification Bell & Dropdown UI) — 2026-09-17
 - **Component Architecture**:
