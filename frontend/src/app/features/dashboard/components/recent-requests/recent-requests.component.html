@@ -31,7 +31,8 @@
               [class.approved]="req.status === 'Approved'"
               [class.rejected]="req.status === 'Rejected'"
               [class.pending]="req.status === 'Pending'"
-              [class.draft]="req.status === 'Draft'">
+              [class.draft]="req.status === 'Draft'"
+              [class.cancelled]="req.status === 'Cancelled'">
               {{ req.status }}
             </span>
             @if (req.status === 'Draft') {
@@ -39,9 +40,19 @@
                 type="button"
                 class="submit-mini-btn"
                 (click)="submitDraft(req.id)"
-                [disabled]="submittingId() === req.id"
+                [disabled]="submittingId() === req.id || cancellingId() === req.id"
                 title="Submit request for approval">
                 {{ submittingId() === req.id ? '…' : 'Submit' }}
+              </button>
+            }
+            @if (req.status === 'Draft' || req.status === 'Pending' || req.status === 'Approved') {
+              <button
+                type="button"
+                class="cancel-mini-btn"
+                (click)="cancelRequest(req.id)"
+                [disabled]="submittingId() === req.id || cancellingId() === req.id"
+                title="Cancel leave request">
+                {{ cancellingId() === req.id ? '…' : 'Cancel' }}
               </button>
             }
           </div>

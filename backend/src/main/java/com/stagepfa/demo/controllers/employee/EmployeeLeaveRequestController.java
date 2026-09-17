@@ -43,6 +43,17 @@ public class EmployeeLeaveRequestController {
         return ResponseEntity.ok(leaveRequestMapper.toResponse(submitted));
     }
 
+    @PostMapping("/{id}/cancel")
+    @Operation(operationId = "cancelLeaveRequest", summary = "Cancel a leave request")
+    @ApiResponse(responseCode = "200", description = "Leave request cancelled successfully")
+    public ResponseEntity<LeaveRequestResponse> cancel(
+            @PathVariable String id,
+            @RequestBody(required = false) com.stagepfa.demo.domain.dtos.request.CancelLeaveRequest request) {
+        String reason = request != null ? request.getReason() : null;
+        LeaveRequest cancelled = leaveRequestService.cancel(id, reason);
+        return ResponseEntity.ok(leaveRequestMapper.toResponse(cancelled));
+    }
+
     @GetMapping
     @Operation(operationId = "listMyLeaveRequests", summary = "List current employee leave requests")
     public ResponseEntity<PageResponse<LeaveRequestResponse>> listMine() {

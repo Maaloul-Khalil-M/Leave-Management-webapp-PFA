@@ -117,6 +117,7 @@ export class LeaveRequestsComponent implements OnInit {
   readonly submitting = signal(false);
   readonly submitMode = signal<'draft' | 'submit' | null>(null);
   readonly submittingId = signal<string | null>(null);
+  readonly cancellingId = signal<string | null>(null);
   readonly lastCreatedRequest = signal<LeaveRequestResponse | null>(null);
 
   // Data & Message state
@@ -400,6 +401,31 @@ export class LeaveRequestsComponent implements OnInit {
         this.submittingId.set(null);
         this.errorMessage.set(
           err?.error?.message || err?.error?.error?.message || 'Failed to submit leave request.'
+        );
+      },
+    });
+  }
+
+  cancelRequest(id: string): void {
+    if (!confirm('Are you sure you want to cancel this leave request?')) {
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.cancellingId.set(id);
+
+    this.leaveRequestService.cancel(id).subscribe({
+      next: () => {
+        this.cancellingId.set(null);
+        this.successMessage.set('Leave request cancelled successfully.');
+        this.loadRequests();
+        this.dashboardState.loadDashboard();
+      },
+      error: (err) => {
+        this.cancellingId.set(null);
+        this.errorMessage.set(
+          err?.error?.message || err?.error?.error?.message || 'Failed to cancel leave request.'
         );
       },
     });

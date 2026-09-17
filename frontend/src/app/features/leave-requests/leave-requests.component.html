@@ -528,20 +528,32 @@
                     <td style="max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                       {{ req.reason || '—' }}
                     </td>
-                    <td style="text-align: right;">
-                      @if (req.status === 'DRAFT') {
-                        <button
-                          mat-flat-button
-                          class="primary-btn"
-                          style="min-width: 80px; height: 32px; font-size: 0.75rem;"
-                          [disabled]="submittingId() === req.id"
-                          (click)="submitExistingDraft(req.id)"
-                        >
-                          {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
-                        </button>
-                      } @else {
-                        <span style="color: #94a3b8; font-size: 0.8rem;">—</span>
-                      }
+                    <td style="text-align: right; white-space: nowrap;">
+                      <div style="display: inline-flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">
+                        @if (req.status === 'DRAFT') {
+                          <button
+                            mat-flat-button
+                            class="primary-btn"
+                            style="min-width: 72px; height: 32px; font-size: 0.75rem;"
+                            [disabled]="submittingId() === req.id || cancellingId() === req.id"
+                            (click)="submitExistingDraft(req.id)"
+                          >
+                            {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
+                          </button>
+                        }
+                        @if (req.status === 'DRAFT' || req.status === 'PENDING' || req.status === 'APPROVED') {
+                          <button
+                            mat-stroked-button
+                            style="min-width: 72px; height: 32px; font-size: 0.75rem; color: #dc2626; border-color: #fca5a5;"
+                            [disabled]="submittingId() === req.id || cancellingId() === req.id"
+                            (click)="cancelRequest(req.id)"
+                          >
+                            {{ cancellingId() === req.id ? 'Cancelling…' : 'Cancel' }}
+                          </button>
+                        } @else {
+                          <span style="color: #94a3b8; font-size: 0.8rem;">—</span>
+                        }
+                      </div>
                     </td>
                   </tr>
                 }

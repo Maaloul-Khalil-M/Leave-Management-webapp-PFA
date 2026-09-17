@@ -1,23 +1,42 @@
+import '@angular/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LeaveRequestsComponent } from './leave-requests.component';
-import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { of } from 'rxjs';
 import { LeaveRequestService } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
 
 describe('LeaveRequestsComponent Stepper Reactivity', () => {
   let component: LeaveRequestsComponent;
+  let leaveRequestServiceMock: {
+    listMine: ReturnType<typeof vi.fn>;
+    createDraft: ReturnType<typeof vi.fn>;
+    submit: ReturnType<typeof vi.fn>;
+    cancel: ReturnType<typeof vi.fn>;
+  };
+  let dashboardStateMock: {
+    profile: ReturnType<typeof vi.fn>;
+    leaveBalances: ReturnType<typeof vi.fn>;
+    loadDashboard: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [LeaveRequestsComponent],
+    leaveRequestServiceMock = {
+      listMine: vi.fn().mockReturnValue(of({ data: [] })),
+      createDraft: vi.fn(),
+      submit: vi.fn(),
+      cancel: vi.fn().mockReturnValue(of({ id: 'req-1', status: 'CANCELLED' })),
+    };
+
+    dashboardStateMock = {
+      profile: vi.fn().mockReturnValue(null),
+      leaveBalances: vi.fn().mockReturnValue([]),
+      loadDashboard: vi.fn(),
+    };
+
+    const injector = Injector.create({
       providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideRouter([]),
         {
           provide: AuthService,
           useValue: {
@@ -27,17 +46,16 @@ describe('LeaveRequestsComponent Stepper Reactivity', () => {
         },
         {
           provide: LeaveRequestService,
-          useValue: {
-            listMine: vi.fn().mockReturnValue(of({ data: [] })),
-            createDraft: vi.fn(),
-            submit: vi.fn(),
-          },
+          useValue: leaveRequestServiceMock,
+        },
+        {
+          provide: DashboardStateService,
+          useValue: dashboardStateMock,
         },
       ],
     });
 
-    const fixture = TestBed.createComponent(LeaveRequestsComponent);
-    component = fixture.componentInstance;
+    component = runInInjectionContext(injector, () => new LeaveRequestsComponent());
   });
 
   it('should initially have 0 calculated duration and invalid step 2', () => {
@@ -89,5 +107,17 @@ describe('LeaveRequestsComponent Stepper Reactivity', () => {
 
     expect(component.calculatedDuration()).toBe(0);
     expect(component.step2Valid()).toBe(false);
+  });
+
+  it('should call leaveRequestService.cancel on cancelRequest when confirmed', () => {
+    globalThis.confirm = vi.fn().mockReturnValue(true);
+    component.cancelRequest('req-1');
+    expect(leaveRequestServiceMock.cancel).toHaveBeenCalledWith('req-1');
+  });
+
+  it('should not call leaveRequestService.cancel if confirm is cancelled', () => {
+    globalThis.confirm = vi.fn().mockReturnValue(false);
+    component.cancelRequest('req-1');
+    expect(leaveRequestServiceMock.cancel).not.toHaveBeenCalled();
   });
 });

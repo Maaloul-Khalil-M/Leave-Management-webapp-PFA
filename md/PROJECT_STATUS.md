@@ -23,10 +23,10 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Reference data (departments, positions, leave types, org settings) | Working | Migrations and endpoints exist for CRUD |
 | Users & Employees separation | Working | MongoDB models `User` and `Employee` exist and link via `employeeId` |
 | Leave ledger (append-only) | Working | Service with appendMovement logic; leave request approval triggers ledger debits when leave type deducts balance |
-| Leave request state machine | Working | Draft creation, listing, submit (DRAFT → PENDING), and manager decision (PENDING → APPROVED / REJECTED) implemented |
+| Leave request state machine | Working | Draft creation, listing, submit (DRAFT → PENDING), manager decision (PENDING → APPROVED / REJECTED), and employee cancellation (DRAFT/PENDING/APPROVED → CANCELLED with compensating ledger credit for deductible leaves) implemented |
 | Manager-of authorization | Working | Enforced on manager approval and rejection endpoints via Employee.currentManager |
 | Eligibility service | Missing | Does not exist |
-| Domain events → notifications | Working | LeaveRequestEvent triggers in-app Notification persistence and MailHog HTML email delivery for submit/approve/reject |
+| Domain events → notifications | Working | LeaveRequestEvent triggers in-app Notification persistence and MailHog HTML email delivery for submit/approve/reject/cancel |
 | Keycloak JWT resource server | Working | Implemented via `SecurityConfig` and `CurrentUserServiceImpl` |
 | Global exception handler + error envelope | Working | Present in `exception/` |
 | Migrations (Mongock / Flamingock) | Working | Present under `migrations/` |
@@ -41,7 +41,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Auth (Keycloak / Google hint) | Unknown | Not verified |
 | Shell / layout / theme | Working | Platana header, responsive dashboard layout, clean routing |
 | Employee Dashboard (`/dashboard`) | Working | Real-data employee first screen. Paid Annual circular gauge + compact cards for Sick/Unpaid/Maternity, balance calculation, recent requests, leave ledger movements, upcoming approved leaves, company holidays (paged at 3), and compact FullCalendar. |
-| Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT (both on /dashboard and /leave-requests), and clear status badges |
+| Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT, cancel action on DRAFT/PENDING/APPROVED (both on /dashboard and /leave-requests), and clear status badges |
 | Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
 | In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
 | HR & Admin screens (employees, departments, positions, calendars, settings) | Working | Complete workforce directory, CSV import/export, master data, calendar & special days CRUD, and company settings at /management/** |
@@ -70,6 +70,34 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Leave Request Cancellation — 2026-09-17
+- **Backend Service & State Machine**:
+  - Implemented `LeaveRequestService.cancel(String id, String reason)`:
+    - Enforces owner-only authorization via `currentUserService.requireLinkedUser()` matching `leaveRequest.getEmployeeId()`.
+    - Allows transitions from `DRAFT`, `PENDING`, and `APPROVED` to `CANCELLED`.
+    - Rejects invalid transitions (e.g., from `REJECTED` or `CANCELLED`) with `BusinessException(ErrorCode.INVALID_STATUS_TRANSITION)`.
+    - When cancelling an `APPROVED` request whose `LeaveType` has `deductsFromBalance = true`, appends a compensating `LedgerMovement` of type `CANCELLED_LEAVE_CREDIT` via `LeaveLedgerService.appendMovement(...)`.
+    - Updates `LeaveLedgerServiceImpl.applyCredit` to reduce `consumedBalance` and credit `availableBalance` upon `CANCELLED_LEAVE_CREDIT`.
+    - Appends `StatusHistoryEntry` (`fromStatus`, `toStatus = CANCELLED`, `byUserId`, `comment`).
+    - Dispatches domain event `LeaveRequestEvent`.
+- **Backend Controller & DTOs**:
+  - Added `CancelLeaveRequest` DTO with optional `reason`.
+  - Exposed `POST /api/employee/leave-requests/{id}/cancel` in `EmployeeLeaveRequestController`.
+- **Notifications & Email**:
+  - Extended `NotificationType` with `LEAVE_CANCELLED`.
+  - Added `EmailService` status color for `CANCELLED`.
+  - Updated `NotificationServiceImpl` to notify managers (in-app and via MailHog HTML email) when an employee cancels a `PENDING` or `APPROVED` request.
+- **Frontend Integration**:
+  - Extended `LeaveRequestService` (`leave-request.service.ts`) with `cancel(id, reason)`.
+  - In `LeaveRequestsComponent` (`/leave-requests`): added "Cancel" action button in the requests history table for items in `DRAFT`, `PENDING`, or `APPROVED` status with confirmation and error handling.
+  - In `RecentRequestsComponent` (`/dashboard`): added compact "Cancel" button for requests in `Draft`, `Pending`, or `Approved` status, with automatic dashboard state and balance refresh. Added `.status-chip.cancelled` badge styling.
+- **Verification**:
+  - Added unit test suite `LeaveRequestCancelTest` (9/9 tests passing) and `LeaveLedgerServiceTest` (1/1 test passing).
+  - Extended `NotificationServiceTest` covering cancellation event handling (8/8 tests passing).
+  - All 38 backend tests passing (`BUILD SUCCESS`).
+  - Frontend test suite passing 18/18 tests (`npx vitest run`).
+  - Angular production build (`npm run build`) completed with 0 errors.
 
 ### Organization Settings & Work Calendars — Slice M3 (Settings & Calendar Days CRUD) — 2026-09-17
 - **Services & Backend Integration**:

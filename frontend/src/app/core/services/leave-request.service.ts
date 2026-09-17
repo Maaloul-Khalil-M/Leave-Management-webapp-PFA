@@ -69,6 +69,13 @@ export class LeaveRequestService {
     );
   }
 
+  cancel(id: string, reason?: string): Observable<LeaveRequestResponse> {
+    return this.http.post<LeaveRequestResponse>(
+      `${this.apiUrl}/api/employee/leave-requests/${id}/cancel`,
+      { reason }
+    );
+  }
+
   listMine(): Observable<PageResponse<LeaveRequestResponse>> {
     return this.http.get<PageResponse<LeaveRequestResponse>>(
       `${this.apiUrl}/api/employee/leave-requests`

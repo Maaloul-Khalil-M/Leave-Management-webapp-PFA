@@ -5,6 +5,7 @@ import com.stagepfa.demo.domain.entities.Employee;
 import com.stagepfa.demo.domain.entities.LeaveRequest;
 import com.stagepfa.demo.domain.entities.Notification;
 import com.stagepfa.demo.domain.entities.User;
+import com.stagepfa.demo.domain.enums.LeaveRequestStatus;
 import com.stagepfa.demo.domain.enums.NotificationType;
 import com.stagepfa.demo.domain.events.LeaveRequestEvent;
 import com.stagepfa.demo.exception.BusinessException;
@@ -78,6 +79,7 @@ public class NotificationServiceImpl implements NotificationService {
             case PENDING -> handleSubmitted(request, event);
             case APPROVED -> handleApproved(request, event);
             case REJECTED -> handleRejected(request, event);
+            case CANCELLED -> handleCancelled(request, event);
             default -> log.debug("No notification handled for transition to {}", event.toStatus());
         }
     }
@@ -232,6 +234,75 @@ public class NotificationServiceImpl implements NotificationService {
             );
         } else {
             log.info("Requester {} has no email configured. Skipped email delivery.", request.getEmployeeId());
+        }
+    }
+
+    private void handleCancelled(LeaveRequest request, LeaveRequestEvent event) {
+        if (event.fromStatus() != LeaveRequestStatus.PENDING && event.fromStatus() != LeaveRequestStatus.APPROVED) {
+            log.debug("Skipping manager notification for cancelled request from status {}", event.fromStatus());
+            return;
+        }
+
+        Employee requester = employeeRepository.findById(request.getEmployeeId()).orElse(null);
+        if (requester == null || requester.getCurrentManager() == null) {
+            log.info("Requester or currentManager not found for employee {}. Skipping manager notification.", request.getEmployeeId());
+            return;
+        }
+
+        String managerEmpId = requester.getCurrentManager().getEmployeeId();
+        if (managerEmpId == null || managerEmpId.isBlank()) {
+            log.info("currentManager employeeId is empty for employee {}. Skipping manager notification.", request.getEmployeeId());
+            return;
+        }
+
+        Employee manager = employeeRepository.findById(managerEmpId).orElse(null);
+        User managerUser = userRepository.findByEmployeeId(managerEmpId).orElse(null);
+
+        String managerName = (requester.getCurrentManager().getName() != null && !requester.getCurrentManager().getName().isBlank())
+                ? requester.getCurrentManager().getName()
+                : (manager != null && manager.getProfile() != null
+                ? (manager.getProfile().getFirstName() + " " + manager.getProfile().getLastName()).trim()
+                : "Manager");
+
+        String managerEmail = (manager != null && manager.getProfile() != null && manager.getProfile().getEmail() != null)
+                ? manager.getProfile().getEmail()
+                : (managerUser != null ? managerUser.getEmail() : null);
+
+        String requesterName = formatEmployeeName(requester, request);
+        String reason = event.comment() != null ? event.comment() : "";
+
+        // 1. In-App Notification
+        Notification notification = Notification.builder()
+                .recipientUserId(managerUser != null ? managerUser.getId() : null)
+                .recipientEmployeeId(managerEmpId)
+                .title("Leave Request Cancelled")
+                .message(requesterName + " has cancelled their " + formatLeaveType(request) + " request for "
+                        + request.getStartDate() + " to " + request.getEndDate() + " (" + request.getDurationDays() + " days)."
+                        + (!reason.isBlank() ? " Reason: \"" + reason + "\"" : ""))
+                .type(NotificationType.LEAVE_CANCELLED)
+                .read(false)
+                .leaveRequestId(request.getId())
+                .createdAt(Instant.now())
+                .build();
+        notificationRepository.save(notification);
+
+        // 2. Email Notification
+        if (managerEmail != null && !managerEmail.isBlank()) {
+            emailService.sendLeaveNotification(
+                    managerEmail,
+                    managerName,
+                    "[Leave Request Cancelled] " + requesterName + " - " + formatLeaveType(request),
+                    "A leave request has been cancelled by " + requesterName + ".",
+                    requesterName,
+                    formatLeaveType(request),
+                    request.getStartDate().toString(),
+                    request.getEndDate().toString(),
+                    request.getDurationDays(),
+                    "CANCELLED",
+                    reason
+            );
+        } else {
+            log.info("Manager {} has no email configured. Skipped email delivery.", managerEmpId);
         }
     }
 

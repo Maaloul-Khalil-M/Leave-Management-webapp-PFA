@@ -321,4 +321,46 @@ class NotificationServiceTest {
         assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
         verify(notificationRepository, never()).save(any());
     }
+
+    @Test
+    void testHandleLeaveRequestEvent_Cancelled_NotifiesManager() {
+        when(employeeRepository.findById("emp-1")).thenReturn(Optional.of(requester));
+        when(employeeRepository.findById("mgr-1")).thenReturn(Optional.of(manager));
+        when(userRepository.findByEmployeeId("mgr-1")).thenReturn(Optional.of(managerUser));
+
+        LeaveRequestEvent event = new LeaveRequestEvent(
+                leaveRequest,
+                LeaveRequestStatus.PENDING,
+                LeaveRequestStatus.CANCELLED,
+                "user-emp-1",
+                "Plans changed"
+        );
+
+        notificationService.handleLeaveRequestEvent(event);
+
+        ArgumentCaptor<Notification> notifCaptor = ArgumentCaptor.forClass(Notification.class);
+        verify(notificationRepository).save(notifCaptor.capture());
+
+        Notification saved = notifCaptor.getValue();
+        assertEquals("user-mgr-1", saved.getRecipientUserId());
+        assertEquals("mgr-1", saved.getRecipientEmployeeId());
+        assertEquals("Leave Request Cancelled", saved.getTitle());
+        assertEquals(NotificationType.LEAVE_CANCELLED, saved.getType());
+        assertTrue(saved.getMessage().contains("Ahmed Trabelsi"));
+        assertTrue(saved.getMessage().contains("Plans changed"));
+
+        verify(emailService).sendLeaveNotification(
+                eq("salma@acme.tn"),
+                eq("Salma Mansour"),
+                contains("[Leave Request Cancelled]"),
+                anyString(),
+                eq("Ahmed Trabelsi"),
+                eq("PAID ANNUAL"),
+                eq("2026-08-10"),
+                eq("2026-08-14"),
+                eq(5.0),
+                eq("CANCELLED"),
+                eq("Plans changed")
+        );
+    }
 }

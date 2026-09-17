@@ -197,6 +197,10 @@ public class LeaveLedgerServiceImpl implements LeaveLedgerService {
             ledger.setCarriedOver(ledger.getCarriedOver() + amount);
         }
 
+        if (type == LedgerMovementType.CANCELLED_LEAVE_CREDIT) {
+            ledger.setConsumedBalance(Math.max(0, ledger.getConsumedBalance() - amount));
+        }
+
         ledger.setAvailableBalance(ledger.getAvailableBalance() + amount);
     }
 

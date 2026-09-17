@@ -301,6 +301,74 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
+    @Transactional
+    public LeaveRequest cancel(String id, String reason) {
+        User user = currentUserService.requireLinkedUser();
+        String employeeId = user.getEmployeeId();
+        if (employeeId == null || employeeId.isBlank()) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "Account is not linked to an employee");
+        }
+
+        LeaveRequest leaveRequest = leaveRequestRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("LeaveRequest", id));
+
+        if (!employeeId.equals(leaveRequest.getEmployeeId())) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "You are not authorized to cancel this leave request");
+        }
+
+        LeaveRequestStatus currentStatus = leaveRequest.getStatus();
+        if (currentStatus != LeaveRequestStatus.DRAFT
+                && currentStatus != LeaveRequestStatus.PENDING
+                && currentStatus != LeaveRequestStatus.APPROVED) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Cannot cancel a leave request with status: " + currentStatus);
+        }
+
+        if (currentStatus == LeaveRequestStatus.APPROVED) {
+            LeaveType leaveType = leaveTypeRepository.findByCode(leaveRequest.getLeaveTypeCode().name())
+                    .orElseThrow(() -> new ResourceNotFoundException("LeaveType", leaveRequest.getLeaveTypeCode().name()));
+
+            if (leaveType.isDeductsFromBalance()) {
+                LedgerMovement movement = LedgerMovement.builder()
+                        .date(Instant.now())
+                        .type(LedgerMovementType.CANCELLED_LEAVE_CREDIT)
+                        .amount(leaveRequest.getDurationDays())
+                        .note(reason != null && !reason.isBlank() ? reason : "Leave request cancelled: " + leaveRequest.getId())
+                        .leaveRequestId(leaveRequest.getId())
+                        .actorUserId(user.getId())
+                        .build();
+
+                leaveLedgerService.appendMovement(
+                        leaveRequest.getEmployeeId(),
+                        leaveRequest.getLeaveTypeCode().name(),
+                        leaveRequest.getStartDate().getYear(),
+                        movement
+                );
+            }
+        }
+
+        Instant now = Instant.now();
+        leaveRequest.setStatus(LeaveRequestStatus.CANCELLED);
+
+        if (leaveRequest.getStatusHistory() == null) {
+            leaveRequest.setStatusHistory(new ArrayList<>());
+        }
+
+        StatusHistoryEntry entry = StatusHistoryEntry.builder()
+                .fromStatus(currentStatus)
+                .toStatus(LeaveRequestStatus.CANCELLED)
+                .at(now)
+                .byUserId(user.getId())
+                .comment(reason != null && !reason.isBlank() ? reason : "Cancelled by employee")
+                .build();
+        leaveRequest.getStatusHistory().add(entry);
+
+        LeaveRequest saved = leaveRequestRepository.save(leaveRequest);
+        eventPublisher.publishEvent(new LeaveRequestEvent(saved, currentStatus, LeaveRequestStatus.CANCELLED, user.getId(), reason));
+        return saved;
+    }
+
+    @Override
     public List<LeaveRequest> listMine() {
         User user = currentUserService.requireLinkedUser();
         String employeeId = user.getEmployeeId();

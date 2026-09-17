@@ -20,6 +20,7 @@ export class RecentRequestsComponent {
 
   readonly items = input<LeaveRequest[]>([]);
   readonly submittingId = signal<string | null>(null);
+  readonly cancellingId = signal<string | null>(null);
 
   submitDraft(id: string): void {
     this.submittingId.set(id);
@@ -31,6 +32,23 @@ export class RecentRequestsComponent {
       error: (err) => {
         this.submittingId.set(null);
         console.error('Failed to submit leave request from dashboard', err);
+      }
+    });
+  }
+
+  cancelRequest(id: string): void {
+    if (!confirm('Are you sure you want to cancel this leave request?')) {
+      return;
+    }
+    this.cancellingId.set(id);
+    this.leaveRequestService.cancel(id).subscribe({
+      next: () => {
+        this.cancellingId.set(null);
+        this.dashboardStateService.loadDashboard();
+      },
+      error: (err) => {
+        this.cancellingId.set(null);
+        console.error('Failed to cancel leave request from dashboard', err);
       }
     });
   }

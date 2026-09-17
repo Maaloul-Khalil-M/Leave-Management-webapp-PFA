@@ -15,6 +15,8 @@ public interface LeaveRequestService {
 
     LeaveRequest reject(String id, String comment);
 
+    LeaveRequest cancel(String id, String reason);
+
     List<LeaveRequest> listMine();
 
     List<LeaveRequest> listPendingTeamRequests();

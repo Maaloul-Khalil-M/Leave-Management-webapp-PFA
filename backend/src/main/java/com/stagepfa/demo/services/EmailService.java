@@ -101,6 +101,7 @@ public class EmailService {
             case "APPROVED" -> "#059669";
             case "REJECTED" -> "#dc2626";
             case "PENDING" -> "#2563eb";
+            case "CANCELLED" -> "#64748b";
             default -> "#475569";
         };
 
