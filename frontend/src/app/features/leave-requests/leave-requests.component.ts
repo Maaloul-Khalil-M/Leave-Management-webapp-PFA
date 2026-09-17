@@ -30,7 +30,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
 import { calculateWorkingDays, formatDisplayDate } from './leave-calculator';
 
-interface LeaveTypeItem {
+export interface LeaveTypeItem {
   code: LeaveTypeCode;
   title: string;
   icon: string;
@@ -38,7 +38,7 @@ interface LeaveTypeItem {
   policyHint: string;
 }
 
-const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
+export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
   {
     code: 'PAID_ANNUAL',
     title: 'Paid Annual',
@@ -102,7 +102,6 @@ export class LeaveRequestsComponent implements OnInit {
 
   readonly stepper = viewChild(MatStepper);
 
-  // Stepper Definition
   readonly steps = [
     { index: 0, label: 'Leave Type', icon: 'category' },
     { index: 1, label: 'Leave Details', icon: 'event' },
@@ -128,15 +127,13 @@ export class LeaveRequestsComponent implements OnInit {
 
   logoError = false;
 
-  // Form model strictly conforming to CreateLeaveRequest
-  form: CreateLeaveRequest = {
-    leaveTypeCode: 'PAID_ANNUAL',
-    startDate: '',
-    endDate: '',
-    halfDayStart: false,
-    halfDayEnd: false,
-    reason: '',
-  };
+  // Fully reactive Form signals
+  readonly leaveTypeCode = signal<LeaveTypeCode>('PAID_ANNUAL');
+  readonly startDate = signal<string>('');
+  readonly endDate = signal<string>('');
+  readonly halfDayStart = signal<boolean>(false);
+  readonly halfDayEnd = signal<boolean>(false);
+  readonly reason = signal<string>('');
 
   // Profile and balance info from DashboardState
   readonly employeeName = computed(() => {
@@ -161,28 +158,31 @@ export class LeaveRequestsComponent implements OnInit {
   });
 
   readonly currentTypeMeta = computed<LeaveTypeItem>(() => {
+    const code = this.leaveTypeCode();
     return (
-      LEAVE_TYPES_METADATA.find((m) => m.code === this.form.leaveTypeCode) ||
+      LEAVE_TYPES_METADATA.find((m) => m.code === code) ||
       LEAVE_TYPES_METADATA[0]
     );
   });
 
   readonly calculatedDuration = computed(() => {
     return calculateWorkingDays(
-      this.form.startDate,
-      this.form.endDate,
-      this.form.halfDayStart,
-      this.form.halfDayEnd
+      this.startDate(),
+      this.endDate(),
+      this.halfDayStart(),
+      this.halfDayEnd()
     );
   });
 
-  readonly step1Valid = computed(() => !!this.form.leaveTypeCode);
+  readonly step1Valid = computed(() => !!this.leaveTypeCode());
 
   readonly step2Valid = computed(() => {
-    if (!this.form.startDate || !this.form.endDate) return false;
-    if (this.form.endDate < this.form.startDate) return false;
+    const start = this.startDate();
+    const end = this.endDate();
+    if (!start || !end) return false;
+    if (end < start) return false;
     if (this.calculatedDuration() <= 0) return false;
-    if (this.form.leaveTypeCode === 'UNPAID' && !this.form.reason?.trim()) {
+    if (this.leaveTypeCode() === 'UNPAID' && !this.reason().trim()) {
       return false;
     }
     return true;
@@ -220,7 +220,7 @@ export class LeaveRequestsComponent implements OnInit {
 
   // ─── Stepper Navigation ───────────────────────────────────
   selectLeaveType(code: LeaveTypeCode): void {
-    this.form.leaveTypeCode = code;
+    this.leaveTypeCode.set(code);
   }
 
   goNext(): void {
@@ -267,29 +267,29 @@ export class LeaveRequestsComponent implements OnInit {
     this.activeStep.set(index);
   }
 
-  onFormValuesChanged(): void {
-    // triggers reactivity
-  }
-
   // ─── Date Picker Helpers ──────────────────────────────────
   startDateAsDate(): Date | null {
-    if (!this.form.startDate) return null;
-    const [y, m, d] = this.form.startDate.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    const s = this.startDate();
+    if (!s) return null;
+    const parts = s.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
   }
 
   endDateAsDate(): Date | null {
-    if (!this.form.endDate) return null;
-    const [y, m, d] = this.form.endDate.split('-').map(Number);
-    return new Date(y, m - 1, d);
+    const s = this.endDate();
+    if (!s) return null;
+    const parts = s.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
   }
 
   onStartDateChange(d: Date | null): void {
-    this.form.startDate = this.toIsoDate(d);
+    this.startDate.set(this.toIsoDate(d));
   }
 
   onEndDateChange(d: Date | null): void {
-    this.form.endDate = this.toIsoDate(d);
+    this.endDate.set(this.toIsoDate(d));
   }
 
   private toIsoDate(d: Date | null): string {
@@ -298,6 +298,17 @@ export class LeaveRequestsComponent implements OnInit {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  private buildPayload(): CreateLeaveRequest {
+    return {
+      leaveTypeCode: this.leaveTypeCode(),
+      startDate: this.startDate(),
+      endDate: this.endDate(),
+      halfDayStart: this.halfDayStart(),
+      halfDayEnd: this.halfDayEnd(),
+      reason: this.reason().trim() || undefined,
+    };
   }
 
   // ─── Submissions ──────────────────────────────────────────
@@ -309,7 +320,7 @@ export class LeaveRequestsComponent implements OnInit {
     this.submitting.set(true);
     this.submitMode.set('draft');
 
-    this.leaveRequestService.createDraft(this.form).subscribe({
+    this.leaveRequestService.createDraft(this.buildPayload()).subscribe({
       next: (created) => {
         this.submitting.set(false);
         this.submitMode.set(null);
@@ -338,8 +349,7 @@ export class LeaveRequestsComponent implements OnInit {
     this.submitting.set(true);
     this.submitMode.set('submit');
 
-    // First create the draft, then immediately submit it
-    this.leaveRequestService.createDraft(this.form).subscribe({
+    this.leaveRequestService.createDraft(this.buildPayload()).subscribe({
       next: (created) => {
         this.leaveRequestService.submit(created.id).subscribe({
           next: (submitted) => {
@@ -355,7 +365,6 @@ export class LeaveRequestsComponent implements OnInit {
           error: (submitErr) => {
             this.submitting.set(false);
             this.submitMode.set(null);
-            // Even if submit step fails, draft was created
             this.lastCreatedRequest.set(created);
             this.errorMessage.set(
               `Draft was created, but submission for approval failed: ${
@@ -397,14 +406,12 @@ export class LeaveRequestsComponent implements OnInit {
   }
 
   resetAndCreateAnother(): void {
-    this.form = {
-      leaveTypeCode: 'PAID_ANNUAL',
-      startDate: '',
-      endDate: '',
-      halfDayStart: false,
-      halfDayEnd: false,
-      reason: '',
-    };
+    this.leaveTypeCode.set('PAID_ANNUAL');
+    this.startDate.set('');
+    this.endDate.set('');
+    this.halfDayStart.set(false);
+    this.halfDayEnd.set(false);
+    this.reason.set('');
     this.submitted.set(false);
     this.lastCreatedRequest.set(null);
     this.activeStep.set(0);

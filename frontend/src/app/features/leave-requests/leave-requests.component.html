@@ -142,8 +142,8 @@
                     type="button"
                     class="leave-type-card"
                     role="radio"
-                    [attr.aria-checked]="form.leaveTypeCode === type.code"
-                    [class.selected]="form.leaveTypeCode === type.code"
+                    [attr.aria-checked]="leaveTypeCode() === type.code"
+                    [class.selected]="leaveTypeCode() === type.code"
                     (click)="selectLeaveType(type.code)"
                   >
                     <div class="card-icon">
@@ -153,7 +153,7 @@
                       <span class="card-title">{{ type.title }}</span>
                       <span class="card-desc">{{ type.description }}</span>
                     </div>
-                    @if (form.leaveTypeCode === type.code) {
+                    @if (leaveTypeCode() === type.code) {
                       <mat-icon class="check-badge">check_circle</mat-icon>
                     }
                   </button>
@@ -169,7 +169,7 @@
                   </div>
                   <div class="policy-body">
                     <p class="policy-note">{{ meta.policyHint }}</p>
-                    @if (form.leaveTypeCode === 'PAID_ANNUAL') {
+                    @if (leaveTypeCode() === 'PAID_ANNUAL') {
                       <div class="balance-row">
                         <div class="balance-item">
                           <span class="label">Available Annual Balance</span>
@@ -214,6 +214,7 @@
                     [matDatepicker]="startPicker"
                     [value]="startDateAsDate()"
                     (dateChange)="onStartDateChange($event.value)"
+                    (dateInput)="onStartDateChange($event.value)"
                     placeholder="Choose start date"
                   />
                   <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
@@ -227,6 +228,7 @@
                     [matDatepicker]="endPicker"
                     [value]="endDateAsDate()"
                     (dateChange)="onEndDateChange($event.value)"
+                    (dateInput)="onEndDateChange($event.value)"
                     placeholder="Choose end date"
                   />
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
@@ -239,14 +241,14 @@
                 <span class="group-label">Half-day options</span>
                 <div class="checkboxes">
                   <mat-checkbox
-                    [(ngModel)]="form.halfDayStart"
-                    (change)="onFormValuesChanged()"
+                    [checked]="halfDayStart()"
+                    (change)="halfDayStart.set($event.checked)"
                   >
                     Half day on start date
                   </mat-checkbox>
                   <mat-checkbox
-                    [(ngModel)]="form.halfDayEnd"
-                    (change)="onFormValuesChanged()"
+                    [checked]="halfDayEnd()"
+                    (change)="halfDayEnd.set($event.checked)"
                   >
                     Half day on end date
                   </mat-checkbox>
@@ -264,26 +266,27 @@
 
               <!-- Reason Input -->
               <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Reason {{ form.leaveTypeCode === 'UNPAID' ? '(Required)' : '(Optional)' }}</mat-label>
+                <mat-label>Reason {{ leaveTypeCode() === 'UNPAID' ? '(Required)' : '(Optional)' }}</mat-label>
                 <textarea
                   matInput
                   rows="3"
-                  [(ngModel)]="form.reason"
+                  [value]="reason()"
+                  (input)="reason.set($any($event.target).value)"
                   placeholder="e.g. Annual summer holiday, medical checkup, personal event"
                 ></textarea>
-                @if (form.leaveTypeCode === 'UNPAID' && !form.reason?.trim()) {
+                @if (leaveTypeCode() === 'UNPAID' && !reason().trim()) {
                   <mat-hint class="text-amber-600">A reason is required for unpaid leave requests.</mat-hint>
                 }
               </mat-form-field>
 
               <!-- Validation Hints -->
-              @if (form.startDate && form.endDate && form.endDate < form.startDate) {
+              @if (startDate() && endDate() && endDate() < startDate()) {
                 <div class="notice notice-error">
                   <mat-icon>error</mat-icon>
                   <span>End date cannot be earlier than start date.</span>
                 </div>
               }
-              @if (form.startDate && form.endDate && form.endDate >= form.startDate && calculatedDuration() <= 0) {
+              @if (startDate() && endDate() && endDate() >= startDate() && calculatedDuration() <= 0) {
                 <div class="notice notice-warn">
                   <mat-icon>warning</mat-icon>
                   <span>The selected date range contains no working days (e.g. falls entirely on weekends).</span>
@@ -331,16 +334,16 @@
                     <h4>Leave Request Summary</h4>
                     <p class="review-name">{{ currentTypeMeta().title }}</p>
                     <div class="date-range">
-                      <span>{{ formatDisplayDate(form.startDate) }}</span>
+                      <span>{{ formatDisplayDate(startDate()) }}</span>
                       <mat-icon>arrow_forward</mat-icon>
-                      <span>{{ formatDisplayDate(form.endDate) }}</span>
+                      <span>{{ formatDisplayDate(endDate()) }}</span>
                     </div>
 
-                    @if (form.halfDayStart || form.halfDayEnd) {
+                    @if (halfDayStart() || halfDayEnd()) {
                       <p class="review-meta">
-                        {{ form.halfDayStart ? '½ Day on start date' : '' }}
-                        {{ form.halfDayStart && form.halfDayEnd ? ' · ' : '' }}
-                        {{ form.halfDayEnd ? '½ Day on end date' : '' }}
+                        {{ halfDayStart() ? '½ Day on start date' : '' }}
+                        {{ halfDayStart() && halfDayEnd() ? ' · ' : '' }}
+                        {{ halfDayEnd() ? '½ Day on end date' : '' }}
                       </p>
                     }
 
@@ -348,8 +351,8 @@
                       {{ calculatedDuration() }} working day{{ calculatedDuration() === 1 ? '' : 's' }}
                     </span>
 
-                    @if (form.reason) {
-                      <p class="review-reason">"{{ form.reason }}"</p>
+                    @if (reason()) {
+                      <p class="review-reason">"{{ reason() }}"</p>
                     }
                   </div>
                 </div>

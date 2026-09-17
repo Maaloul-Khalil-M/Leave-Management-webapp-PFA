@@ -14,8 +14,9 @@ export function calculateWorkingDays(
   const [sy, sm, sd] = startDateStr.split('-').map(Number);
   const [ey, em, ed] = endDateStr.split('-').map(Number);
 
-  const start = new Date(sy, sm - 1, sd);
-  const end = new Date(ey, em - 1, ed);
+  // Use noon (12:00:00) to avoid any DST or timezone midnight shifts
+  const start = new Date(sy, sm - 1, sd, 12, 0, 0);
+  const end = new Date(ey, em - 1, ed, 12, 0, 0);
 
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
 
@@ -66,8 +67,10 @@ export function calculateWorkingDays(
 
 export function formatDisplayDate(dateStr: string): string {
   if (!dateStr) return '—';
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
+  const parts = dateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return dateStr;
+  const [y, m, d] = parts;
+  const date = new Date(y, m - 1, d, 12, 0, 0);
   if (isNaN(date.getTime())) return dateStr;
   return date.toLocaleDateString('en-US', {
     month: 'short',
