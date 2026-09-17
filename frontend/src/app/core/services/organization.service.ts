@@ -12,6 +12,23 @@ export interface CreateDepartmentRequest {
   label: string;
 }
 
+export type CountryCode = 'TN' | 'FR';
+
+export interface OrganizationSettingsResponse {
+  id: string;
+  companyName: string;
+  country: CountryCode;
+  weekendDays: number[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UpdateOrganizationSettingsRequest {
+  companyName: string;
+  country: CountryCode;
+  weekendDays: number[];
+}
+
 export interface PositionResponse {
   id: string;
   title: string;
@@ -53,5 +70,14 @@ export class OrganizationService {
 
   updatePosition(id: string, request: UpdatePositionRequest): Observable<PositionResponse> {
     return this.http.patch<PositionResponse>(`${this.apiUrl}/api/positions/${id}`, request);
+  }
+
+  // Organization Settings
+  getSettings(): Observable<OrganizationSettingsResponse> {
+    return this.http.get<OrganizationSettingsResponse>(`${this.apiUrl}/api/organization-settings`);
+  }
+
+  updateSettings(request: UpdateOrganizationSettingsRequest): Observable<OrganizationSettingsResponse> {
+    return this.http.put<OrganizationSettingsResponse>(`${this.apiUrl}/api/organization-settings`, request);
   }
 }

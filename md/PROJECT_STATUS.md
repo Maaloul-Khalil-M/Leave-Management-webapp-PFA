@@ -44,7 +44,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT (both on /dashboard and /leave-requests), and clear status badges |
 | Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
 | In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
-| HR screens (employees, departments, positions) | Working | Employee directory, create/edit/transfer, and department/position master data at /management/employees and /management/organization |
+| HR & Admin screens (employees, departments, positions, calendars, settings) | Working | Complete workforce directory, CSV import/export, master data, calendar & special days CRUD, and company settings at /management/** |
 | HR screens (policies, adjustments) | Missing | Leave policies and balance adjustments UI |
 | Pending / ACTIVE gating | Missing | |
 | Two colour systems (lifecycle vs availability) | Missing | |
@@ -70,6 +70,24 @@ Update this file when something moves from Incomplete → Working, or when a new
 ---
 
 ## Recently changed
+
+### Organization Settings & Work Calendars — Slice M3 (Settings & Calendar Days CRUD) — 2026-09-17
+- **Services & Backend Integration**:
+  - Implemented `CalendarAdminService` (`calendar-admin.service.ts`) wired to all `/api/calendars` and nested `/api/calendars/{calendarId}/days` endpoints for full CRUD (create, read, update, delete).
+  - Extended `OrganizationService` (`organization.service.ts`) with `getSettings()` (`GET /api/organization-settings`) and `updateSettings(req)` (`PUT /api/organization-settings`).
+- **UI & UX Flow (`/management/organization`)**:
+  - Expanded `OrganizationManagementComponent` to 4 clean tabs: **Departments**, **Job Positions**, **Work Calendars**, and **Company Settings**.
+  - **Work Calendars & Special Days Tab**:
+    - Calendar cards listing code, country jurisdiction, year, and name.
+    - Calendar CRUD modals: Add Calendar, Edit Calendar, and Delete Calendar (with cascade warning).
+    - Selected calendar schedule view: DayType filter (`ALL`, `PUBLIC_HOLIDAY`, `SPECIAL_NON_WORKING_DAY`, `SPECIAL_WORKING_DAY`), special days table with type indicators.
+    - Day CRUD modals: Add Special Day/Holiday, Edit Day, and Delete Day.
+  - **Company Settings Tab**:
+    - Settings overview card displaying company name, jurisdiction, weekend schedule badges, and metadata.
+    - Edit Settings modal with company name input, country selector (`TN` / `FR`), and day-of-week checkboxes (Monday=1 to Sunday=7).
+- **Verification**:
+  - Production build `ng build` completed successfully with 0 errors.
+  - Test suite `npx vitest run` passing 11/11 tests.
 
 ### Employee CSV Support — Slice M2 (CSV Export & 3-Step Import Wizard) — 2026-09-17
 - **CSV Utilities & Engine**:
