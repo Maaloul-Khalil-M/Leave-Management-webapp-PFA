@@ -1,0 +1,552 @@
+<div class="leave-page-container">
+  <!-- ── Top Header ─────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="brand">
+        <img
+          src="/LOGO.png"
+          alt="Platana"
+          class="brand-logo"
+          (error)="logoError = true"
+          [style.display]="logoError ? 'none' : 'block'"
+        />
+        @if (logoError) {
+          <div class="brand-icon-fallback">LR</div>
+        }
+        <div>
+          <h1>Leave Requests</h1>
+          <p class="subtitle">Employee Self-Service</p>
+        </div>
+      </div>
+
+      <nav class="nav-actions">
+        <a routerLink="/dashboard" class="nav-link">
+          <mat-icon>dashboard</mat-icon>
+          <span>Dashboard</span>
+        </a>
+        <a routerLink="/manager/approvals" class="nav-link">
+          <mat-icon>rule</mat-icon>
+          <span>Approvals</span>
+        </a>
+        @if (auth.isLoggedIn()) {
+          <button type="button" (click)="auth.logout()" class="signout-btn">
+            <mat-icon>logout</mat-icon>
+            <span>Sign out</span>
+          </button>
+        }
+      </nav>
+    </div>
+  </header>
+
+  <!-- ── Main Content Area ──────────────────────────────────── -->
+  <main class="main-content">
+    <!-- View Switcher -->
+    <div class="view-tabs">
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'new'"
+        (click)="setActiveTab('new')"
+      >
+        <mat-icon>add_circle_outline</mat-icon>
+        <span>New Request</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'history'"
+        (click)="setActiveTab('history')"
+      >
+        <mat-icon>history</mat-icon>
+        <span>My Requests</span>
+        <span class="count-badge">{{ requests().length }}</span>
+      </button>
+    </div>
+
+    <!-- Error Banner -->
+    @if (errorMessage()) {
+      <div class="feedback-banner error">
+        <div class="banner-body">
+          <mat-icon>error</mat-icon>
+          <span>{{ errorMessage() }}</span>
+        </div>
+        <button type="button" class="close-btn" (click)="errorMessage.set(null)">&times;</button>
+      </div>
+    }
+
+    <!-- Success Banner -->
+    @if (successMessage()) {
+      <div class="feedback-banner success">
+        <div class="banner-body">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ successMessage() }}</span>
+        </div>
+        <button type="button" class="close-btn" (click)="successMessage.set(null)">&times;</button>
+      </div>
+    }
+
+    <!-- ── TAB 1: NEW LEAVE REQUEST STEPPER ─────────────────── -->
+    @if (activeTab() === 'new') {
+      <div class="stepper-shell">
+        <!-- Custom Stepper Progress Indicator -->
+        <nav class="premium-steps" aria-label="Leave request progress">
+          @for (step of steps; track step.index) {
+            <button
+              type="button"
+              class="step-item"
+              [class.active]="activeStep() === step.index"
+              [class.completed]="activeStep() > step.index || submitted()"
+              [class.clickable]="isStepClickable(step.index)"
+              [disabled]="!isStepClickable(step.index) && activeStep() !== step.index"
+              (click)="onStepClick(step.index)"
+            >
+              <span class="step-circle">
+                @if (activeStep() > step.index || submitted()) {
+                  <mat-icon>check</mat-icon>
+                } @else {
+                  <mat-icon>{{ step.icon }}</mat-icon>
+                }
+              </span>
+              <span class="step-label">{{ step.label }}</span>
+            </button>
+
+            @if (step.index < 2) {
+              <div
+                class="step-connector"
+                [class.filled]="activeStep() > step.index || submitted()"
+              ></div>
+            }
+          }
+        </nav>
+
+        <!-- Under-the-hood Angular Material Stepper -->
+        <mat-stepper
+          [linear]="true"
+          [selectedIndex]="activeStep()"
+          (selectionChange)="onStepperSelectionChange($event.selectedIndex)"
+          class="hidden-stepper-chrome"
+          #stepper
+        >
+          <!-- ─── STEP 1: LEAVE TYPE ───────────────────────────── -->
+          <mat-step [completed]="step1Valid()" [editable]="!submitted()">
+            <ng-template matStepLabel>Leave Type</ng-template>
+
+            <section class="step-panel">
+              <h2 class="section-title">What type of leave do you need?</h2>
+              <p class="section-subtitle">Select the category that best matches your time off</p>
+
+              <div class="leave-type-grid" role="radiogroup" aria-label="Leave type">
+                @for (type of leaveTypesList; track type.code) {
+                  <button
+                    type="button"
+                    class="leave-type-card"
+                    role="radio"
+                    [attr.aria-checked]="form.leaveTypeCode === type.code"
+                    [class.selected]="form.leaveTypeCode === type.code"
+                    (click)="selectLeaveType(type.code)"
+                  >
+                    <div class="card-icon">
+                      <mat-icon>{{ type.icon }}</mat-icon>
+                    </div>
+                    <div class="card-body">
+                      <span class="card-title">{{ type.title }}</span>
+                      <span class="card-desc">{{ type.description }}</span>
+                    </div>
+                    @if (form.leaveTypeCode === type.code) {
+                      <mat-icon class="check-badge">check_circle</mat-icon>
+                    }
+                  </button>
+                }
+              </div>
+
+              <!-- Contextual Policy Preview -->
+              @if (currentTypeMeta(); as meta) {
+                <div class="policy-preview">
+                  <div class="policy-header">
+                    <mat-icon>info</mat-icon>
+                    <span>{{ meta.title }} Information</span>
+                  </div>
+                  <div class="policy-body">
+                    <p class="policy-note">{{ meta.policyHint }}</p>
+                    @if (form.leaveTypeCode === 'PAID_ANNUAL') {
+                      <div class="balance-row">
+                        <div class="balance-item">
+                          <span class="label">Available Annual Balance</span>
+                          <span class="value">{{ availableAnnualBalance() }} days</span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Step 1 Actions -->
+              <div class="step-actions">
+                <span></span>
+                <button
+                  mat-flat-button
+                  class="action-btn primary-btn"
+                  [disabled]="!step1Valid()"
+                  (click)="goNext()"
+                >
+                  Next
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </section>
+          </mat-step>
+
+          <!-- ─── STEP 2: LEAVE DETAILS ────────────────────────── -->
+          <mat-step [completed]="step2Valid()" [editable]="!submitted()">
+            <ng-template matStepLabel>Leave Details</ng-template>
+
+            <section class="step-panel">
+              <h2 class="section-title">{{ currentTypeMeta().title }} Details</h2>
+              <p class="section-subtitle">Specify your dates and optional reason</p>
+
+              <!-- Date Picker Fields -->
+              <div class="form-grid">
+                <mat-form-field appearance="outline" class="date-field">
+                  <mat-label>Start date</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="startPicker"
+                    [value]="startDateAsDate()"
+                    (dateChange)="onStartDateChange($event.value)"
+                    placeholder="Choose start date"
+                  />
+                  <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #startPicker></mat-datepicker>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="date-field">
+                  <mat-label>End date</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="endPicker"
+                    [value]="endDateAsDate()"
+                    (dateChange)="onEndDateChange($event.value)"
+                    placeholder="Choose end date"
+                  />
+                  <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+                  <mat-datepicker #endPicker></mat-datepicker>
+                </mat-form-field>
+              </div>
+
+              <!-- Half Day Toggles -->
+              <div class="half-day-group">
+                <span class="group-label">Half-day options</span>
+                <div class="checkboxes">
+                  <mat-checkbox
+                    [(ngModel)]="form.halfDayStart"
+                    (change)="onFormValuesChanged()"
+                  >
+                    Half day on start date
+                  </mat-checkbox>
+                  <mat-checkbox
+                    [(ngModel)]="form.halfDayEnd"
+                    (change)="onFormValuesChanged()"
+                  >
+                    Half day on end date
+                  </mat-checkbox>
+                </div>
+              </div>
+
+              <!-- Requested Working Days Chip -->
+              <div class="duration-chip">
+                <mat-icon>schedule</mat-icon>
+                <span>
+                  Calculated Duration:
+                  <strong>{{ calculatedDuration() }} working day{{ calculatedDuration() === 1 ? '' : 's' }}</strong>
+                </span>
+              </div>
+
+              <!-- Reason Input -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Reason {{ form.leaveTypeCode === 'UNPAID' ? '(Required)' : '(Optional)' }}</mat-label>
+                <textarea
+                  matInput
+                  rows="3"
+                  [(ngModel)]="form.reason"
+                  placeholder="e.g. Annual summer holiday, medical checkup, personal event"
+                ></textarea>
+                @if (form.leaveTypeCode === 'UNPAID' && !form.reason?.trim()) {
+                  <mat-hint class="text-amber-600">A reason is required for unpaid leave requests.</mat-hint>
+                }
+              </mat-form-field>
+
+              <!-- Validation Hints -->
+              @if (form.startDate && form.endDate && form.endDate < form.startDate) {
+                <div class="notice notice-error">
+                  <mat-icon>error</mat-icon>
+                  <span>End date cannot be earlier than start date.</span>
+                </div>
+              }
+              @if (form.startDate && form.endDate && form.endDate >= form.startDate && calculatedDuration() <= 0) {
+                <div class="notice notice-warn">
+                  <mat-icon>warning</mat-icon>
+                  <span>The selected date range contains no working days (e.g. falls entirely on weekends).</span>
+                </div>
+              }
+
+              <!-- Step 2 Actions -->
+              <div class="step-actions">
+                <button mat-stroked-button class="action-btn" type="button" (click)="goBack()">
+                  <mat-icon>arrow_back</mat-icon>
+                  Back
+                </button>
+                <button
+                  mat-flat-button
+                  class="action-btn primary-btn"
+                  [disabled]="!step2Valid()"
+                  (click)="goNext()"
+                >
+                  Next
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
+            </section>
+          </mat-step>
+
+          <!-- ─── STEP 3: REVIEW & SUBMISSION ──────────────────── -->
+          <mat-step [completed]="submitted()" [editable]="!submitted()">
+            <ng-template matStepLabel>Review</ng-template>
+
+            <section class="step-panel">
+              @if (!submitted()) {
+                <h2 class="section-title">Review Request</h2>
+                <p class="section-subtitle">Please verify your leave details before saving or submitting</p>
+
+                <div class="review-cards-container">
+                  <!-- Employee Card -->
+                  <div class="review-card">
+                    <h4>Employee Information</h4>
+                    <p class="review-name">{{ employeeName() }}</p>
+                    <p class="review-meta">{{ employeePosition() }} · {{ employeeDepartment() }}</p>
+                  </div>
+
+                  <!-- Leave Details Card -->
+                  <div class="review-card">
+                    <h4>Leave Request Summary</h4>
+                    <p class="review-name">{{ currentTypeMeta().title }}</p>
+                    <div class="date-range">
+                      <span>{{ formatDisplayDate(form.startDate) }}</span>
+                      <mat-icon>arrow_forward</mat-icon>
+                      <span>{{ formatDisplayDate(form.endDate) }}</span>
+                    </div>
+
+                    @if (form.halfDayStart || form.halfDayEnd) {
+                      <p class="review-meta">
+                        {{ form.halfDayStart ? '½ Day on start date' : '' }}
+                        {{ form.halfDayStart && form.halfDayEnd ? ' · ' : '' }}
+                        {{ form.halfDayEnd ? '½ Day on end date' : '' }}
+                      </p>
+                    }
+
+                    <span class="days-badge">
+                      {{ calculatedDuration() }} working day{{ calculatedDuration() === 1 ? '' : 's' }}
+                    </span>
+
+                    @if (form.reason) {
+                      <p class="review-reason">"{{ form.reason }}"</p>
+                    }
+                  </div>
+                </div>
+
+                <!-- Validation Status Banner -->
+                <div
+                  class="validation-banner"
+                  [class.success]="isReadyToSubmit()"
+                  [class.error]="!isReadyToSubmit()"
+                >
+                  <mat-icon>{{ isReadyToSubmit() ? 'check_circle' : 'error' }}</mat-icon>
+                  <div>
+                    <strong>{{ isReadyToSubmit() ? 'Request is ready' : 'Incomplete request' }}</strong>
+                    <p>
+                      {{
+                        isReadyToSubmit()
+                          ? 'You can save this request as a draft or submit it directly for manager approval.'
+                          : 'Please check your dates or required fields before proceeding.'
+                      }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Step 3 Actions: Dual Submission -->
+                <div class="step-actions">
+                  <button mat-stroked-button class="action-btn" type="button" (click)="goBack()">
+                    <mat-icon>arrow_back</mat-icon>
+                    Back
+                  </button>
+
+                  <div class="right-buttons">
+                    <button
+                      mat-stroked-button
+                      class="action-btn"
+                      type="button"
+                      [disabled]="submitting() || !isReadyToSubmit()"
+                      (click)="saveDraft()"
+                    >
+                      <mat-icon>save</mat-icon>
+                      {{ submitting() && submitMode() === 'draft' ? 'Saving…' : 'Save as Draft' }}
+                    </button>
+
+                    <button
+                      mat-flat-button
+                      class="action-btn primary-btn"
+                      type="button"
+                      [disabled]="submitting() || !isReadyToSubmit()"
+                      (click)="submitForApproval()"
+                    >
+                      <mat-icon>send</mat-icon>
+                      {{ submitting() && submitMode() === 'submit' ? 'Submitting…' : 'Submit for Approval' }}
+                    </button>
+                  </div>
+                </div>
+              } @else {
+                <!-- ─── SUCCESS SCREEN ───────────────────────────── -->
+                <div class="success-screen">
+                  <div class="success-icon">
+                    <mat-icon>check_circle</mat-icon>
+                  </div>
+                  <h2>
+                    {{
+                      lastCreatedRequest()?.status === 'DRAFT'
+                        ? 'Draft Saved Successfully'
+                        : 'Leave Request Submitted'
+                    }}
+                  </h2>
+                  <p class="success-id">
+                    Request ID: <strong>{{ lastCreatedRequest()?.id }}</strong>
+                  </p>
+
+                  @if (lastCreatedRequest(); as res) {
+                    <div class="success-summary">
+                      <p class="type">{{ formatType(res.leaveTypeCode) }}</p>
+                      <p class="dates">
+                        {{ formatDisplayDate(res.startDate) }} → {{ formatDisplayDate(res.endDate) }}
+                      </p>
+                      <p class="days">
+                        {{ res.durationDays }} working day{{ res.durationDays === 1 ? '' : 's' }}
+                      </p>
+                      <div class="status-pill" [attr.data-status]="res.status">
+                        {{ res.status }}
+                      </div>
+                    </div>
+                  }
+
+                  <div class="success-actions">
+                    <button mat-flat-button class="action-btn primary-btn" (click)="resetAndCreateAnother()">
+                      <mat-icon>add</mat-icon>
+                      Create Another Request
+                    </button>
+                    <button mat-stroked-button class="action-btn" (click)="setActiveTab('history')">
+                      <mat-icon>list</mat-icon>
+                      View My Requests
+                    </button>
+                  </div>
+                </div>
+              }
+            </section>
+          </mat-step>
+        </mat-stepper>
+      </div>
+    }
+
+    <!-- ── TAB 2: MY REQUESTS HISTORY ────────────────────────── -->
+    @if (activeTab() === 'history') {
+      <div class="requests-panel">
+        <div class="panel-header">
+          <div>
+            <h2>My Leave Requests</h2>
+            <p>Track current status, pending approvals, and historical leaves</p>
+          </div>
+          <button type="button" class="refresh-btn" (click)="loadRequests()">
+            <mat-icon>refresh</mat-icon>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        @if (loading()) {
+          <div class="empty-state">
+            <p>Loading your leave requests…</p>
+          </div>
+        } @else if (requests().length === 0) {
+          <div class="empty-state">
+            <mat-icon>inbox</mat-icon>
+            <p>No leave requests found.</p>
+            <p class="text-xs text-slate-400 mt-1">Create your first request using the "New Request" tab.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="requests-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Dates</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (req of requests(); track req.id) {
+                  <tr>
+                    <td style="font-weight: 600;">
+                      {{ formatType(req.leaveTypeCode) }}
+                    </td>
+                    <td>
+                      {{ formatDisplayDate(req.startDate) }} → {{ formatDisplayDate(req.endDate) }}
+                      @if (req.halfDayStart || req.halfDayEnd) {
+                        <span class="text-xs text-slate-400 block">
+                          ({{ req.halfDayStart ? '½ start' : '' }}{{ req.halfDayStart && req.halfDayEnd ? ', ' : '' }}{{ req.halfDayEnd ? '½ end' : '' }})
+                        </span>
+                      }
+                    </td>
+                    <td style="font-weight: 500;">
+                      {{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}
+                    </td>
+                    <td>
+                      <span
+                        class="status-badge"
+                        [ngClass]="{
+                          'status-draft': req.status === 'DRAFT',
+                          'status-pending': req.status === 'PENDING',
+                          'status-approved': req.status === 'APPROVED',
+                          'status-rejected': req.status === 'REJECTED',
+                          'status-cancelled': req.status === 'CANCELLED'
+                        }"
+                      >
+                        {{ req.status }}
+                      </span>
+                    </td>
+                    <td style="max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                      {{ req.reason || '—' }}
+                    </td>
+                    <td style="text-align: right;">
+                      @if (req.status === 'DRAFT') {
+                        <button
+                          mat-flat-button
+                          class="primary-btn"
+                          style="min-width: 80px; height: 32px; font-size: 0.75rem;"
+                          [disabled]="submittingId() === req.id"
+                          (click)="submitExistingDraft(req.id)"
+                        >
+                          {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
+                        </button>
+                      } @else {
+                        <span style="color: #94a3b8; font-size: 0.8rem;">—</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    }
+  </main>
+</div>

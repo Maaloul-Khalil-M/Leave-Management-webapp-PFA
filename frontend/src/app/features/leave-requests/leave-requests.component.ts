@@ -1,7 +1,25 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  inject,
+  signal,
+  computed,
+  viewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
+import { MatDividerModule } from '@angular/material/divider';
+
 import {
   LeaveRequestService,
   CreateLeaveRequest,
@@ -9,254 +27,108 @@ import {
   LeaveTypeCode,
 } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
+import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
+import { calculateWorkingDays, formatDisplayDate } from './leave-calculator';
+
+interface LeaveTypeItem {
+  code: LeaveTypeCode;
+  title: string;
+  icon: string;
+  description: string;
+  policyHint: string;
+}
+
+const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
+  {
+    code: 'PAID_ANNUAL',
+    title: 'Paid Annual',
+    icon: 'beach_access',
+    description: 'Standard paid vacation and accrued personal time off',
+    policyHint:
+      'Paid annual leave accrues monthly and deducts directly from your approved leave balance.',
+  },
+  {
+    code: 'SICK',
+    title: 'Sick Leave',
+    icon: 'medical_services',
+    description: 'Absence due to illness, medical visits, or recovery',
+    policyHint:
+      'Sick leave covers periods of medical incapacity. Standard medical certification may be requested.',
+  },
+  {
+    code: 'UNPAID',
+    title: 'Unpaid Leave',
+    icon: 'event_busy',
+    description: 'Approved time off without salary compensation',
+    policyHint:
+      'Unpaid leave is subject to manager review and requires a reason to be specified.',
+  },
+  {
+    code: 'MATERNITY',
+    title: 'Maternity Leave',
+    icon: 'family_restroom',
+    description: 'Statutory maternity or parental leave',
+    policyHint:
+      'Statutory leave for maternity. Does not deduct from your annual vacation balance.',
+  },
+];
 
 @Component({
   selector: 'app-leave-requests',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  template: `
-    <div class="min-h-screen bg-slate-50">
-      <!-- Header -->
-      <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div class="flex items-center gap-3">
-            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-900 text-sm font-bold text-white">
-              LR
-            </div>
-            <div>
-              <h1 class="text-sm font-semibold text-slate-900">Leave Requests</h1>
-              <p class="text-xs text-slate-500">Employee Self-Service</p>
-            </div>
-          </div>
-          <nav class="flex items-center gap-2">
-            <a
-              routerLink="/"
-              class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-            >
-              Dashboard
-            </a>
-            @if (auth.isLoggedIn()) {
-              <button
-                type="button"
-                (click)="auth.logout()"
-                class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
-              >
-                Sign out
-              </button>
-            }
-          </nav>
-        </div>
-      </header>
-
-      <main class="mx-auto max-w-6xl px-6 py-8">
-        <div class="grid gap-8 lg:grid-cols-3">
-          <!-- Draft Form -->
-          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1">
-            <h2 class="text-base font-semibold text-slate-900">Create Draft Request</h2>
-            <p class="mt-1 text-xs text-slate-500">
-              Drafts are not submitted for approval and do not deduct your leave balance.
-            </p>
-
-            @if (errorMessage()) {
-              <div class="mt-4 rounded-lg bg-rose-50 p-3 text-xs text-rose-700">
-                {{ errorMessage() }}
-              </div>
-            }
-
-            @if (successMessage()) {
-              <div class="mt-4 rounded-lg bg-emerald-50 p-3 text-xs text-emerald-700">
-                {{ successMessage() }}
-              </div>
-            }
-
-            <form (ngSubmit)="submitDraft()" class="mt-4 space-y-4">
-              <div>
-                <label class="block text-xs font-medium text-slate-700">Leave Type</label>
-                <select
-                  [(ngModel)]="form.leaveTypeCode"
-                  name="leaveTypeCode"
-                  class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none"
-                  required
-                >
-                  <option value="PAID_ANNUAL">Paid Annual</option>
-                  <option value="SICK">Sick Leave</option>
-                  <option value="UNPAID">Unpaid Leave</option>
-                  <option value="MATERNITY">Maternity</option>
-                </select>
-              </div>
-
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-medium text-slate-700">Start Date</label>
-                  <input
-                    type="date"
-                    [(ngModel)]="form.startDate"
-                    name="startDate"
-                    class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-slate-900 focus:outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-700">End Date</label>
-                  <input
-                    type="date"
-                    [(ngModel)]="form.endDate"
-                    name="endDate"
-                    class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm shadow-sm focus:border-slate-900 focus:outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div class="space-y-2 pt-1">
-                <label class="flex items-center gap-2 text-xs text-slate-700">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="form.halfDayStart"
-                    name="halfDayStart"
-                    class="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                  />
-                  Half day on start date
-                </label>
-                <label class="flex items-center gap-2 text-xs text-slate-700">
-                  <input
-                    type="checkbox"
-                    [(ngModel)]="form.halfDayEnd"
-                    name="halfDayEnd"
-                    class="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
-                  />
-                  Half day on end date
-                </label>
-              </div>
-
-              <div>
-                <label class="block text-xs font-medium text-slate-700">Reason (Optional)</label>
-                <textarea
-                  [(ngModel)]="form.reason"
-                  name="reason"
-                  rows="3"
-                  class="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-slate-900 focus:outline-none"
-                  placeholder="e.g. Personal travel, family event"
-                ></textarea>
-              </div>
-
-              <button
-                type="submit"
-                [disabled]="submitting()"
-                class="w-full rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
-              >
-                {{ submitting() ? 'Saving Draft…' : 'Save as Draft' }}
-              </button>
-            </form>
-          </section>
-
-          <!-- Requests List -->
-          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-            <div class="flex items-center justify-between pb-4">
-              <div>
-                <h2 class="text-base font-semibold text-slate-900">My Requests</h2>
-                <p class="text-xs text-slate-500">History of drafts and submitted leaves</p>
-              </div>
-              <button
-                type="button"
-                (click)="loadRequests()"
-                class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-              >
-                Refresh
-              </button>
-            </div>
-
-            @if (loading()) {
-              <div class="py-12 text-center text-sm text-slate-400">Loading requests…</div>
-            } @else if (requests().length === 0) {
-              <div class="rounded-xl border border-dashed border-slate-200 py-12 text-center">
-                <p class="text-sm font-medium text-slate-600">No leave requests found</p>
-                <p class="mt-1 text-xs text-slate-400">Create your first draft using the form on the left.</p>
-              </div>
-            } @else {
-              <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                  <thead class="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    <tr>
-                      <th class="pb-3">Type</th>
-                      <th class="pb-3">Period</th>
-                      <th class="pb-3">Duration</th>
-                      <th class="pb-3">Status</th>
-                      <th class="pb-3">Reason</th>
-                      <th class="pb-3 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-100">
-                    @for (req of requests(); track req.id) {
-                      <tr>
-                        <td class="py-3 font-medium text-slate-900">
-                          {{ formatType(req.leaveTypeCode) }}
-                        </td>
-                        <td class="py-3 text-xs text-slate-600">
-                          {{ req.startDate }} → {{ req.endDate }}
-                          @if (req.halfDayStart || req.halfDayEnd) {
-                            <span class="text-slate-400">
-                              ({{ req.halfDayStart ? '½ start' : '' }}{{ req.halfDayStart && req.halfDayEnd ? ', ' : '' }}{{ req.halfDayEnd ? '½ end' : '' }})
-                            </span>
-                          }
-                        </td>
-                        <td class="py-3 text-xs font-medium text-slate-700">
-                          {{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}
-                        </td>
-                        <td class="py-3">
-                          <span
-                            class="inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                            [ngClass]="{
-                              'bg-amber-50 text-amber-700 ring-1 ring-amber-200': req.status === 'DRAFT',
-                              'bg-blue-50 text-blue-700 ring-1 ring-blue-200': req.status === 'PENDING',
-                              'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200': req.status === 'APPROVED',
-                              'bg-rose-50 text-rose-700 ring-1 ring-rose-200': req.status === 'REJECTED',
-                              'bg-slate-100 text-slate-600': req.status === 'CANCELLED'
-                            }"
-                          >
-                            {{ req.status }}
-                          </span>
-                        </td>
-                        <td class="max-w-xs truncate py-3 text-xs text-slate-500">
-                          {{ req.reason || '—' }}
-                        </td>
-                        <td class="py-3 text-right">
-                          @if (req.status === 'DRAFT') {
-                            <button
-                              type="button"
-                              (click)="submitRequest(req.id)"
-                              [disabled]="submittingId() === req.id"
-                              class="rounded bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
-                            >
-                              {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
-                            </button>
-                          } @else {
-                            <span class="text-xs text-slate-400">—</span>
-                          }
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-          </section>
-        </div>
-      </main>
-    </div>
-  `,
+  providers: [provideNativeDateAdapter()],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    MatButtonModule,
+    MatCardModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatNativeDateModule,
+    MatStepperModule,
+    MatDividerModule,
+  ],
+  templateUrl: './leave-requests.component.html',
+  styleUrl: './leave-requests.component.scss',
 })
 export class LeaveRequestsComponent implements OnInit {
   private readonly leaveRequestService = inject(LeaveRequestService);
+  private readonly dashboardState = inject(DashboardStateService);
   readonly auth = inject(AuthService);
 
+  readonly stepper = viewChild(MatStepper);
+
+  // Stepper Definition
+  readonly steps = [
+    { index: 0, label: 'Leave Type', icon: 'category' },
+    { index: 1, label: 'Leave Details', icon: 'event' },
+    { index: 2, label: 'Review', icon: 'rate_review' },
+  ];
+
+  readonly leaveTypesList = LEAVE_TYPES_METADATA;
+
+  // View state
+  readonly activeTab = signal<'new' | 'history'>('new');
+  readonly activeStep = signal(0);
+  readonly submitted = signal(false);
+  readonly submitting = signal(false);
+  readonly submitMode = signal<'draft' | 'submit' | null>(null);
+  readonly submittingId = signal<string | null>(null);
+  readonly lastCreatedRequest = signal<LeaveRequestResponse | null>(null);
+
+  // Data & Message state
   readonly requests = signal<LeaveRequestResponse[]>([]);
   readonly loading = signal(false);
-  readonly submitting = signal(false);
-  readonly submittingId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
+  logoError = false;
+
+  // Form model strictly conforming to CreateLeaveRequest
   form: CreateLeaveRequest = {
     leaveTypeCode: 'PAID_ANNUAL',
     startDate: '',
@@ -266,10 +138,66 @@ export class LeaveRequestsComponent implements OnInit {
     reason: '',
   };
 
+  // Profile and balance info from DashboardState
+  readonly employeeName = computed(() => {
+    const prof = this.dashboardState.profile();
+    return prof?.name || 'Employee';
+  });
+
+  readonly employeePosition = computed(() => {
+    const prof = this.dashboardState.profile();
+    return prof?.position || 'Team Member';
+  });
+
+  readonly employeeDepartment = computed(() => {
+    const prof = this.dashboardState.profile();
+    return prof?.department || 'General';
+  });
+
+  readonly availableAnnualBalance = computed(() => {
+    const balances = this.dashboardState.leaveBalances();
+    const annual = balances.find((b) => b.code === 'PAID_ANNUAL');
+    return annual ? annual.remaining : 25;
+  });
+
+  readonly currentTypeMeta = computed<LeaveTypeItem>(() => {
+    return (
+      LEAVE_TYPES_METADATA.find((m) => m.code === this.form.leaveTypeCode) ||
+      LEAVE_TYPES_METADATA[0]
+    );
+  });
+
+  readonly calculatedDuration = computed(() => {
+    return calculateWorkingDays(
+      this.form.startDate,
+      this.form.endDate,
+      this.form.halfDayStart,
+      this.form.halfDayEnd
+    );
+  });
+
+  readonly step1Valid = computed(() => !!this.form.leaveTypeCode);
+
+  readonly step2Valid = computed(() => {
+    if (!this.form.startDate || !this.form.endDate) return false;
+    if (this.form.endDate < this.form.startDate) return false;
+    if (this.calculatedDuration() <= 0) return false;
+    if (this.form.leaveTypeCode === 'UNPAID' && !this.form.reason?.trim()) {
+      return false;
+    }
+    return true;
+  });
+
+  readonly isReadyToSubmit = computed(() => this.step1Valid() && this.step2Valid());
+
   ngOnInit(): void {
     this.loadRequests();
+    if (!this.dashboardState.profile()) {
+      this.dashboardState.loadDashboard();
+    }
   }
 
+  // ─── Data Loading ─────────────────────────────────────────
   loadRequests(): void {
     this.loading.set(true);
     this.leaveRequestService.listMine().subscribe({
@@ -284,39 +212,117 @@ export class LeaveRequestsComponent implements OnInit {
     });
   }
 
-  submitDraft(): void {
+  // ─── Tab Switching ────────────────────────────────────────
+  setActiveTab(tab: 'new' | 'history'): void {
+    this.activeTab.set(tab);
+    this.errorMessage.set(null);
+  }
+
+  // ─── Stepper Navigation ───────────────────────────────────
+  selectLeaveType(code: LeaveTypeCode): void {
+    this.form.leaveTypeCode = code;
+  }
+
+  goNext(): void {
+    const current = this.activeStep();
+    if (current === 0 && !this.step1Valid()) return;
+    if (current === 1 && !this.step2Valid()) return;
+
+    const nextIndex = Math.min(current + 1, 2);
+    this.activeStep.set(nextIndex);
+    const stepperInstance = this.stepper();
+    if (stepperInstance) {
+      stepperInstance.selectedIndex = nextIndex;
+    }
+  }
+
+  goBack(): void {
+    const prevIndex = Math.max(this.activeStep() - 1, 0);
+    this.activeStep.set(prevIndex);
+    const stepperInstance = this.stepper();
+    if (stepperInstance) {
+      stepperInstance.selectedIndex = prevIndex;
+    }
+  }
+
+  isStepClickable(index: number): boolean {
+    if (this.submitted()) return false;
+    if (index === 0) return true;
+    if (index === 1) return this.step1Valid();
+    if (index === 2) return this.step1Valid() && this.step2Valid();
+    return false;
+  }
+
+  onStepClick(index: number): void {
+    if (this.isStepClickable(index)) {
+      this.activeStep.set(index);
+      const stepperInstance = this.stepper();
+      if (stepperInstance) {
+        stepperInstance.selectedIndex = index;
+      }
+    }
+  }
+
+  onStepperSelectionChange(index: number): void {
+    this.activeStep.set(index);
+  }
+
+  onFormValuesChanged(): void {
+    // triggers reactivity
+  }
+
+  // ─── Date Picker Helpers ──────────────────────────────────
+  startDateAsDate(): Date | null {
+    if (!this.form.startDate) return null;
+    const [y, m, d] = this.form.startDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  endDateAsDate(): Date | null {
+    if (!this.form.endDate) return null;
+    const [y, m, d] = this.form.endDate.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  onStartDateChange(d: Date | null): void {
+    this.form.startDate = this.toIsoDate(d);
+  }
+
+  onEndDateChange(d: Date | null): void {
+    this.form.endDate = this.toIsoDate(d);
+  }
+
+  private toIsoDate(d: Date | null): string {
+    if (!d || isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // ─── Submissions ──────────────────────────────────────────
+  saveDraft(): void {
+    if (!this.isReadyToSubmit()) return;
+
     this.errorMessage.set(null);
     this.successMessage.set(null);
-
-    if (!this.form.startDate || !this.form.endDate) {
-      this.errorMessage.set('Please select both a start date and an end date.');
-      return;
-    }
-
-    if (this.form.endDate < this.form.startDate) {
-      this.errorMessage.set('End date cannot be before start date.');
-      return;
-    }
-
     this.submitting.set(true);
+    this.submitMode.set('draft');
+
     this.leaveRequestService.createDraft(this.form).subscribe({
       next: (created) => {
         this.submitting.set(false);
+        this.submitMode.set(null);
+        this.lastCreatedRequest.set(created);
+        this.submitted.set(true);
         this.successMessage.set(
-          `Draft leave request created successfully (${created.durationDays} days).`
+          `Draft created successfully with ID ${created.id} (${created.durationDays} days).`
         );
-        this.form = {
-          leaveTypeCode: 'PAID_ANNUAL',
-          startDate: '',
-          endDate: '',
-          halfDayStart: false,
-          halfDayEnd: false,
-          reason: '',
-        };
         this.loadRequests();
       },
       error: (err) => {
         this.submitting.set(false);
+        this.submitMode.set(null);
         this.errorMessage.set(
           err?.error?.message || err?.error?.error?.message || 'Failed to create draft request.'
         );
@@ -324,7 +330,53 @@ export class LeaveRequestsComponent implements OnInit {
     });
   }
 
-  submitRequest(id: string): void {
+  submitForApproval(): void {
+    if (!this.isReadyToSubmit()) return;
+
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+    this.submitting.set(true);
+    this.submitMode.set('submit');
+
+    // First create the draft, then immediately submit it
+    this.leaveRequestService.createDraft(this.form).subscribe({
+      next: (created) => {
+        this.leaveRequestService.submit(created.id).subscribe({
+          next: (submitted) => {
+            this.submitting.set(false);
+            this.submitMode.set(null);
+            this.lastCreatedRequest.set(submitted);
+            this.submitted.set(true);
+            this.successMessage.set(
+              `Leave request submitted for approval (${submitted.durationDays} days).`
+            );
+            this.loadRequests();
+          },
+          error: (submitErr) => {
+            this.submitting.set(false);
+            this.submitMode.set(null);
+            // Even if submit step fails, draft was created
+            this.lastCreatedRequest.set(created);
+            this.errorMessage.set(
+              `Draft was created, but submission for approval failed: ${
+                submitErr?.error?.message || 'Unknown error'
+              }`
+            );
+            this.loadRequests();
+          },
+        });
+      },
+      error: (err) => {
+        this.submitting.set(false);
+        this.submitMode.set(null);
+        this.errorMessage.set(
+          err?.error?.message || err?.error?.error?.message || 'Failed to create leave request.'
+        );
+      },
+    });
+  }
+
+  submitExistingDraft(id: string): void {
     this.errorMessage.set(null);
     this.successMessage.set(null);
     this.submittingId.set(id);
@@ -344,18 +396,29 @@ export class LeaveRequestsComponent implements OnInit {
     });
   }
 
-  formatType(code: LeaveTypeCode): string {
-    switch (code) {
-      case 'PAID_ANNUAL':
-        return 'Paid Annual';
-      case 'SICK':
-        return 'Sick Leave';
-      case 'UNPAID':
-        return 'Unpaid Leave';
-      case 'MATERNITY':
-        return 'Maternity';
-      default:
-        return code;
+  resetAndCreateAnother(): void {
+    this.form = {
+      leaveTypeCode: 'PAID_ANNUAL',
+      startDate: '',
+      endDate: '',
+      halfDayStart: false,
+      halfDayEnd: false,
+      reason: '',
+    };
+    this.submitted.set(false);
+    this.lastCreatedRequest.set(null);
+    this.activeStep.set(0);
+    const stepperInstance = this.stepper();
+    if (stepperInstance) {
+      stepperInstance.reset();
     }
   }
+
+  // ─── Formatters ───────────────────────────────────────────
+  formatType(code: LeaveTypeCode): string {
+    const found = LEAVE_TYPES_METADATA.find((m) => m.code === code);
+    return found ? found.title : code;
+  }
+
+  formatDisplayDate = formatDisplayDate;
 }
