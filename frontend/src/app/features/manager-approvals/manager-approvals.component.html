@@ -1,164 +1,428 @@
 <app-header />
 
-<div class="min-h-screen bg-slate-50">
-  <main class="mx-auto max-w-6xl px-6 py-8">
+<div class="manager-hub-page">
+  <main class="dashboard-container">
     <!-- Notification Banners -->
     @if (errorMessage()) {
-      <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span>{{ errorMessage() }}</span>
-          <button type="button" (click)="errorMessage.set(null)" class="text-rose-500 hover:text-rose-700">&times;</button>
-        </div>
+      <div class="error-banner flex items-center justify-between">
+        <span>{{ errorMessage() }}</span>
+        <button type="button" (click)="errorMessage.set(null)" class="close-btn">&times;</button>
       </div>
     }
 
     @if (successMessage()) {
-      <div class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 shadow-sm">
-        <div class="flex items-center justify-between">
-          <span>{{ successMessage() }}</span>
-          <button type="button" (click)="successMessage.set(null)" class="text-emerald-500 hover:text-emerald-700">&times;</button>
-        </div>
+      <div class="success-banner flex items-center justify-between">
+        <span>{{ successMessage() }}</span>
+        <button type="button" (click)="successMessage.set(null)" class="close-btn">&times;</button>
       </div>
     }
 
-    <section class="app-card p-6">
-      <div class="flex items-center justify-between pb-4">
-        <div>
-          <h2 class="text-base font-semibold text-slate-900">Pending Requests Queue</h2>
-          <p class="text-xs text-slate-500">
-            Leave requests submitted by your direct reports requiring approval or rejection
-          </p>
+    <!-- Integrated Material Tabs Navigation Card -->
+    <mat-card class="section-card header-tab-card">
+      <div class="hub-header-bar">
+        <div class="hub-title-wrap">
+          <mat-icon class="hub-header-icon">admin_panel_settings</mat-icon>
+          <div>
+            <h2 class="hub-title">Manager Workplace Hub</h2>
+            <p class="hub-subtitle">
+              Team leave approvals, workforce availability & data-driven capacity planning
+            </p>
+          </div>
         </div>
-        <button
-          type="button"
-          (click)="loadPending()"
-          class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+
+        <mat-tab-group
+          animationDuration="150ms"
+          class="compact-tab-group"
+          [selectedIndex]="selectedTabIndex()"
+          (selectedIndexChange)="onTabChange($event)"
         >
-          Refresh
-        </button>
-      </div>
-
-      @if (loading()) {
-        <div class="py-12 text-center text-sm text-slate-400">Loading pending requests…</div>
-      } @else if (pendingRequests().length === 0) {
-        <div class="rounded-xl border border-dashed border-slate-200 py-12 text-center">
-          <p class="text-sm font-medium text-slate-600">No pending leave requests</p>
-          <p class="mt-1 text-xs text-slate-400">All caught up! There are no requests awaiting your approval.</p>
-        </div>
-      } @else {
-        <div class="space-y-4">
-          @for (req of pendingRequests(); track req.id) {
-            <div class="request-card p-4">
-              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <!-- Employee & Leave Details -->
-                <div class="space-y-1">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-semibold text-slate-900">
-                      {{ getEmployeeName(req) }}
-                    </span>
-                    @if (req.employeeSnapshot?.departmentLabel) {
-                      <span class="rounded bg-slate-200/70 px-2 py-0.5 text-xs font-medium text-slate-700">
-                        {{ req.employeeSnapshot?.departmentLabel }}
-                      </span>
-                    }
-                  </div>
-
-                  <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600">
-                    <span class="font-medium text-slate-800">{{ formatType(req.leaveTypeCode) }}</span>
-                    <span>•</span>
-                    <span>{{ req.startDate }} → {{ req.endDate }}</span>
-                    @if (req.halfDayStart || req.halfDayEnd) {
-                      <span class="text-slate-400">
-                        ({{ req.halfDayStart ? '½ start' : '' }}{{ req.halfDayStart && req.halfDayEnd ? ', ' : '' }}{{ req.halfDayEnd ? '½ end' : '' }})
-                      </span>
-                    }
-                    <span>•</span>
-                    <span class="font-semibold text-slate-900">{{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}</span>
-                  </div>
-
-                  @if (req.reason) {
-                    <p class="text-xs text-slate-500 italic">"{{ req.reason }}"</p>
-                  }
-                </div>
-
-                <!-- Action Controls -->
-                <div class="flex items-center gap-2">
-                  @if (activeActionId() !== req.id) {
-                    <button
-                      type="button"
-                      (click)="openApprove(req.id)"
-                      [disabled]="processingId() === req.id"
-                      class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      type="button"
-                      (click)="openReject(req.id)"
-                      [disabled]="processingId() === req.id"
-                      class="rounded-lg border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 shadow-sm hover:bg-rose-50 disabled:opacity-50"
-                    >
-                      Reject
-                    </button>
-                  }
-                </div>
+          <!-- Tab 1: Pending Approvals Queue -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <div class="tab-label">
+                <mat-icon class="tab-icon">task_alt</mat-icon>
+                <span>Pending Approvals</span>
+                <span class="badge-count" [class.empty]="pendingRequests().length === 0">
+                  {{ pendingRequests().length }}
+                </span>
               </div>
+            </ng-template>
+          </mat-tab>
 
-              <!-- Inline Decision Form -->
-              @if (activeActionId() === req.id) {
-                <div class="mt-4 decision-form">
-                  <div class="mb-2 flex items-center justify-between">
-                    <span class="text-xs font-semibold" [ngClass]="currentAction() === 'approve' ? 'text-emerald-700' : 'text-rose-700'">
-                      {{ currentAction() === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request' }}
-                    </span>
-                    <button type="button" (click)="cancelAction()" class="text-xs text-slate-400 hover:text-slate-600">
-                      Cancel
-                    </button>
-                  </div>
+          <!-- Tab 2: Team & Department Analytics -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <div class="tab-label">
+                <mat-icon class="tab-icon">insights</mat-icon>
+                <span>Team & Department Analytics</span>
+                @if ((analyticsData()?.approvalKpi?.stalePendingCount ?? 0) > 0) {
+                  <span class="badge-count stale">
+                    {{ analyticsData()?.approvalKpi?.stalePendingCount }} Stale
+                  </span>
+                }
+              </div>
+            </ng-template>
+          </mat-tab>
+        </mat-tab-group>
+      </div>
+    </mat-card>
 
-                  <div class="space-y-3">
-                    <input
-                      type="text"
-                      [(ngModel)]="decisionComment"
-                      [placeholder]="currentAction() === 'approve' ? 'Optional approval comment' : 'Reason for rejection (required)'"
-                      class="w-full rounded-lg border border-slate-300 px-3 py-1.5 text-xs shadow-sm focus:border-slate-900 focus:outline-none"
-                    />
+    <!-- ================================================================= -->
+    <!-- TAB 0: PENDING APPROVALS QUEUE                                    -->
+    <!-- ================================================================= -->
+    @if (selectedTabIndex() === 0) {
+      <mat-card class="section-card queue-card">
+        <div class="card-header">
+          <div class="title-wrap">
+            <mat-icon class="header-icon">checklist</mat-icon>
+            <h3>Pending Requests Awaiting Decision</h3>
+          </div>
+          <button mat-button class="refresh-btn" (click)="loadPending()">
+            <mat-icon>refresh</mat-icon>
+            Refresh
+          </button>
+        </div>
 
-                    <div class="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        (click)="cancelAction()"
-                        class="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                      >
-                        Cancel
-                      </button>
-                      @if (currentAction() === 'approve') {
-                        <button
-                          type="button"
-                          (click)="confirmApprove(req.id)"
-                          [disabled]="processingId() === req.id"
-                          class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-500 disabled:opacity-50"
-                        >
-                          {{ processingId() === req.id ? 'Approving…' : 'Confirm Approval' }}
-                        </button>
-                      } @else {
-                        <button
-                          type="button"
-                          (click)="confirmReject(req.id)"
-                          [disabled]="processingId() === req.id || !decisionComment.trim()"
-                          class="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-rose-500 disabled:opacity-50"
-                        >
-                          {{ processingId() === req.id ? 'Rejecting…' : 'Confirm Rejection' }}
-                        </button>
+        @if (loading()) {
+          <div class="empty-state">
+            <p>Loading pending requests…</p>
+          </div>
+        } @else if (pendingRequests().length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon">task_alt</mat-icon>
+            <p class="font-medium text-slate-700">All caught up!</p>
+            <span class="text-xs text-slate-400">There are no leave requests currently awaiting your decision.</span>
+          </div>
+        } @else {
+          <div class="request-list">
+            @for (req of pendingRequests(); track req.id) {
+              <div class="request-item">
+                <div class="item-main">
+                  <div class="emp-info">
+                    <div class="avatar-circle">
+                      {{ req.employeeSnapshot?.firstName?.charAt(0) || 'E' }}{{ req.employeeSnapshot?.lastName?.charAt(0) || '' }}
+                    </div>
+                    <div>
+                      <div class="emp-name-row">
+                        <span class="emp-name">{{ getEmployeeName(req) }}</span>
+                        @if (req.employeeSnapshot?.departmentLabel) {
+                          <span class="dept-tag">{{ req.employeeSnapshot?.departmentLabel }}</span>
+                        }
+                        <app-status-badge status="PENDING" variant="pill" size="sm" />
+                      </div>
+                      <div class="leave-meta-row">
+                        <span class="leave-type-chip">{{ formatType(req.leaveTypeCode) }}</span>
+                        <span class="dot-sep">•</span>
+                        <span class="date-range">{{ req.startDate }} → {{ req.endDate }}</span>
+                        <span class="dot-sep">•</span>
+                        <span class="duration font-semibold">{{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}</span>
+                        @if (req.submittedAt) {
+                          <span class="submitted-tag">({{ req.submittedAt | date:'MMM d' }})</span>
+                        }
+                      </div>
+                      @if (req.reason) {
+                        <p class="request-reason">"{{ req.reason }}"</p>
                       }
                     </div>
                   </div>
+
+                  <!-- Decision Buttons -->
+                  @if (activeActionId() !== req.id) {
+                    <div class="action-buttons">
+                      <button
+                        mat-flat-button
+                        color="primary"
+                        class="approve-btn"
+                        (click)="openApprove(req.id)"
+                        [disabled]="processingId() === req.id"
+                      >
+                        <mat-icon>check</mat-icon>
+                        Approve
+                      </button>
+                      <button
+                        mat-stroked-button
+                        class="reject-btn"
+                        (click)="openReject(req.id)"
+                        [disabled]="processingId() === req.id"
+                      >
+                        <mat-icon>close</mat-icon>
+                        Reject
+                      </button>
+                    </div>
+                  }
                 </div>
-              }
-            </div>
-          }
+
+                <!-- Inline Decision Form -->
+                @if (activeActionId() === req.id) {
+                  <div class="inline-decision-box" [class.approve-mode]="currentAction() === 'approve'" [class.reject-mode]="currentAction() === 'reject'">
+                    <div class="decision-box-header">
+                      <span class="decision-title">
+                        {{ currentAction() === 'approve' ? 'Confirm Approval' : 'Reject Leave Request' }}
+                      </span>
+                      <button mat-icon-button (click)="cancelAction()" class="cancel-icon-btn">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+
+                    <div class="decision-inputs">
+                      <input
+                        type="text"
+                        [(ngModel)]="decisionComment"
+                        [placeholder]="currentAction() === 'approve' ? 'Optional approval comment' : 'Reason for rejection (required)'"
+                        class="decision-input"
+                      />
+                      <div class="decision-actions">
+                        <button mat-button (click)="cancelAction()" class="btn-cancel">Cancel</button>
+                        @if (currentAction() === 'approve') {
+                          <button
+                            mat-flat-button
+                            color="primary"
+                            (click)="confirmApprove(req.id)"
+                            [disabled]="processingId() === req.id"
+                            class="btn-confirm-approve"
+                          >
+                            {{ processingId() === req.id ? 'Approving…' : 'Approve' }}
+                          </button>
+                        } @else {
+                          <button
+                            mat-flat-button
+                            color="warn"
+                            (click)="confirmReject(req.id)"
+                            [disabled]="processingId() === req.id || !decisionComment.trim()"
+                            class="btn-confirm-reject"
+                          >
+                            {{ processingId() === req.id ? 'Rejecting…' : 'Confirm Reject' }}
+                          </button>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </mat-card>
+    }
+
+    <!-- ================================================================= -->
+    <!-- TAB 1: TEAM & DEPARTMENT ANALYTICS (MINIMAL SCROLL DUAL PANE)     -->
+    <!-- ================================================================= -->
+    @if (selectedTabIndex() === 1) {
+      @if (loadingAnalytics()) {
+        <div class="loading-overlay">
+          <p>Loading workplace analytics…</p>
         </div>
+      } @else if (analyticsData(); as data) {
+        <!-- Top Consolidated Strip: Department + Scope Toggle + 4 KPI Metric Chips -->
+        <section class="top-row">
+          <mat-card class="section-card consolidated-kpi-card">
+            <div class="kpi-strip-layout">
+              <!-- Left: Department Badge & Scope -->
+              <div class="dept-scope-block">
+                <div class="dept-avatar">
+                  {{ data.teamSummary.departmentLabel?.substring(0, 2)?.toUpperCase() || 'EN' }}
+                </div>
+                <div class="dept-meta">
+                  <span class="dept-name">{{ data.teamSummary.departmentLabel || 'Department' }}</span>
+                  <span class="manager-name">Lead: {{ data.teamSummary.managerName }}</span>
+                </div>
+
+                <div class="scope-toggle-pills">
+                  <button
+                    type="button"
+                    class="scope-pill"
+                    [class.active]="selectedScope() === 'team'"
+                    (click)="setScope('team')"
+                  >
+                    Direct Reports ({{ data.teamSummary.totalMembers }})
+                  </button>
+                  <button
+                    type="button"
+                    class="scope-pill"
+                    [class.active]="selectedScope() === 'department'"
+                    (click)="setScope('department')"
+                  >
+                    Department
+                  </button>
+                </div>
+              </div>
+
+              <!-- Right: 4 Compact KPI Metric Blocks -->
+              <div class="metrics-grid">
+                <!-- KPI 1: Present Today -->
+                <div class="metric-block">
+                  <div class="metric-head">
+                    <span class="metric-label">Present Today</span>
+                    <app-status-badge
+                      [status]="getLeaveRateBadge(data.presenceKpi.leaveRateStatus).category"
+                      [label]="getLeaveRateBadge(data.presenceKpi.leaveRateStatus).label"
+                      variant="pill"
+                      size="sm"
+                    />
+                  </div>
+                  <div class="metric-val-row">
+                    <span class="metric-number">{{ data.presenceKpi.presentTodayCount }}/{{ data.presenceKpi.totalMembers }}</span>
+                    <span class="metric-sub">{{ data.presenceKpi.onLeaveTodayCount }} on leave</span>
+                  </div>
+                </div>
+
+                <!-- KPI 2: Team Leave Rate -->
+                <div class="metric-block">
+                  <div class="metric-head">
+                    <span class="metric-label">Daily Leave Rate</span>
+                    <span class="metric-sub-tag">Today</span>
+                  </div>
+                  <div class="metric-val-row">
+                    <span class="metric-number rate">{{ data.presenceKpi.leaveRatePercentage }}%</span>
+                    <div class="mini-progress-track">
+                      <div
+                        class="mini-progress-fill"
+                        [style.width.%]="data.presenceKpi.leaveRatePercentage"
+                        [class.high-rate]="data.presenceKpi.leaveRatePercentage > 30"
+                        [class.med-rate]="data.presenceKpi.leaveRatePercentage > 15 && data.presenceKpi.leaveRatePercentage <= 30"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KPI 3: Approval Rate -->
+                <div class="metric-block">
+                  <div class="metric-head">
+                    <span class="metric-label">Decision Approval Rate</span>
+                    <span class="metric-sub-tag">Decided</span>
+                  </div>
+                  <div class="metric-val-row">
+                    <span class="metric-number success">{{ data.approvalKpi.approvalRatePercentage }}%</span>
+                    <span class="metric-sub">{{ data.approvalKpi.approvedCount }} app • {{ data.approvalKpi.rejectedCount }} rej</span>
+                  </div>
+                </div>
+
+                <!-- KPI 4: Pending Queue & Stale -->
+                <div class="metric-block" [class.has-stale]="data.approvalKpi.stalePendingCount > 0">
+                  <div class="metric-head">
+                    <span class="metric-label">Pending Queue</span>
+                    @if (data.approvalKpi.stalePendingCount > 0) {
+                      <span class="stale-alert-tag">{{ data.approvalKpi.stalePendingCount }} Stale (>3d)</span>
+                    }
+                  </div>
+                  <div class="metric-val-row">
+                    <span class="metric-number">{{ data.approvalKpi.pendingCount }}</span>
+                    <span class="metric-sub">{{ data.approvalKpi.totalRequests }} total requests</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-card>
+        </section>
+
+        <!-- Operational Dual-Pane Workspace Grid (Minimal Scroll) -->
+        <section class="workspace-grid">
+          <!-- Left / Primary Workspace (58%): Staffing Risk Calendar + Team Availability Roster -->
+          <div class="col-primary">
+            <!-- Calendar Heatmap Card -->
+            <mat-card class="section-card compact-widget-card">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <mat-icon class="header-icon calendar-icon">calendar_month</mat-icon>
+                  <h3>Staffing & Absence Risk Calendar</h3>
+                </div>
+                <span class="header-hint">Proactively assess understaffed dates</span>
+              </div>
+              <div echarts [options]="heatmapOptions()" class="calendar-echart"></div>
+            </mat-card>
+
+            <!-- Team Availability Roster Card -->
+            <mat-card class="section-card compact-widget-card roster-card">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <mat-icon class="header-icon roster-icon">people</mat-icon>
+                  <h3>Team Availability Roster</h3>
+                </div>
+                <span class="count-tag">{{ data.teamRoster.length }} members</span>
+              </div>
+
+              <div class="roster-table-wrap">
+                <table class="roster-table">
+                  <thead>
+                    <tr>
+                      <th>Team Member</th>
+                      <th>Role</th>
+                      <th>Status Today</th>
+                      <th>Active Leave</th>
+                      <th>Contact</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (member of data.teamRoster; track member.employeeId) {
+                      <tr class="roster-row">
+                        <td class="name-cell">
+                          <div class="member-name-wrap">
+                            <span class="member-avatar">
+                              {{ member.firstName?.charAt(0) || '' }}{{ member.lastName?.charAt(0) || '' }}
+                            </span>
+                            <div>
+                              <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
+                              <span class="member-code">{{ member.employeeNumber }}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="role-cell">{{ member.positionLabel || 'Employee' }}</td>
+                        <td class="status-cell">
+                          <app-status-badge
+                            [status]="member.presenceStatus === 'PRESENT' ? 'ACTIVE' : 'SUSPENDED'"
+                            [label]="member.presenceStatus === 'PRESENT' ? 'Present' : 'On Leave'"
+                            variant="pill"
+                            size="sm"
+                          />
+                        </td>
+                        <td class="leave-cell">
+                          @if (member.presenceStatus === 'ON_LEAVE' && member.activeLeaveStartDate) {
+                            <span class="leave-detail">
+                              <strong>{{ formatType(member.activeLeaveTypeCode!) }}</strong>
+                              ({{ member.activeLeaveStartDate | date:'MMM d' }} – {{ member.activeLeaveEndDate | date:'MMM d' }}, {{ member.activeLeaveDurationDays }}d)
+                            </span>
+                          } @else {
+                            <span class="text-slate-300">—</span>
+                          }
+                        </td>
+                        <td class="email-cell">{{ member.email || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </mat-card>
+          </div>
+
+          <!-- Right / Secondary Workspace (42%): Donut Chart + Grouped Bar Chart -->
+          <div class="col-secondary">
+            <!-- Donut Chart: Leave by Type -->
+            <mat-card class="section-card compact-widget-card">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <mat-icon class="header-icon donut-icon">donut_large</mat-icon>
+                  <h3>Leave by Type Distribution</h3>
+                </div>
+                <span class="header-hint">Days taken</span>
+              </div>
+              <div echarts [options]="donutOptions()" class="donut-echart"></div>
+            </mat-card>
+
+            <!-- Grouped Bar Chart: Approvals & Pipeline -->
+            <mat-card class="section-card compact-widget-card">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <mat-icon class="header-icon bar-icon">bar_chart</mat-icon>
+                  <h3>Approvals & Pipeline by Type</h3>
+                </div>
+                <span class="header-hint">Decisions & backlog</span>
+              </div>
+              <div echarts [options]="barOptions()" class="bar-echart"></div>
+            </mat-card>
+          </div>
+        </section>
       }
-    </section>
+    }
   </main>
 </div>

@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.stagepfa.demo.domain.dtos.response.ManagerAnalyticsResponse;
+import com.stagepfa.demo.services.ManagerAnalyticsService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 import java.util.List;
 
 @RestController
@@ -23,6 +27,14 @@ public class ManagerController {
 
     private final CurrentUserService currentUserService;
     private final EmployeeService employeeService;
+    private final ManagerAnalyticsService managerAnalyticsService;
+
+    @GetMapping("/analytics")
+    @Operation(operationId = "getManagerAnalytics", summary = "Get team and department analytics for manager")
+    public ResponseEntity<ManagerAnalyticsResponse> analytics(
+            @RequestParam(defaultValue = "team") String scope) {
+        return ResponseEntity.ok(managerAnalyticsService.getAnalytics(scope));
+    }
 
     @GetMapping("/team")
     @Operation(operationId = "listManagerTeam", summary = "List manager team members")

@@ -18,6 +18,8 @@ public interface LeaveRequestRepository extends MongoRepository<LeaveRequest, St
     List<LeaveRequest> findByEmployeeIdInAndStatus(Collection<String> employeeIds,
                                                    LeaveRequestStatus status);
 
+    List<LeaveRequest> findByEmployeeIdIn(Collection<String> employeeIds);
+
     /*
     WHERE employee_id = :employeeId
       AND status = :status
