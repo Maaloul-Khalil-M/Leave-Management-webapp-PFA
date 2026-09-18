@@ -83,6 +83,38 @@ export class OrganizationManagementComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
 
+  readonly departmentSearch = signal('');
+  readonly positionSearch = signal('');
+  readonly positionDeptFilter = signal('ALL');
+
+  readonly totalActiveEmployees = computed(() => {
+    return this.allEmployees().filter((e) => e.employmentStatus === 'ACTIVE').length;
+  });
+
+  readonly filteredDepartments = computed(() => {
+    const query = this.departmentSearch().toLowerCase().trim();
+    const list = this.departments();
+    if (!query) return list;
+    return list.filter((d) => d.label.toLowerCase().includes(query));
+  });
+
+  readonly filteredPositions = computed(() => {
+    const query = this.positionSearch().toLowerCase().trim();
+    const deptFilter = this.positionDeptFilter();
+    let list = this.positions();
+    if (deptFilter !== 'ALL') {
+      list = list.filter((p) => p.departmentId === deptFilter);
+    }
+    if (query) {
+      list = list.filter(
+        (p) =>
+          p.title.toLowerCase().includes(query) ||
+          this.getDepartmentLabel(p.departmentId).toLowerCase().includes(query)
+      );
+    }
+    return list;
+  });
+
   // Department Modal
   readonly showAddDeptModal = signal(false);
   newDeptLabel = '';
@@ -260,6 +292,63 @@ export class OrganizationManagementComponent implements OnInit {
 
   getPositionsForDepartment(deptId: string): PositionResponse[] {
     return this.positions().filter((p) => p.departmentId === deptId);
+  }
+
+  getEmployeesInDepartment(deptId: string): EmployeeResponse[] {
+    const dept = this.departments().find((d) => d.id === deptId);
+    const label = dept?.label;
+    return this.allEmployees().filter(
+      (e) =>
+        e.currentAssignment?.departmentId === deptId ||
+        (label && e.currentAssignment?.departmentLabel === label)
+    );
+  }
+
+  getActiveCountForDepartment(deptId: string): number {
+    return this.getEmployeesInDepartment(deptId).filter(
+      (e) => e.employmentStatus === 'ACTIVE'
+    ).length;
+  }
+
+  getDepartmentWorkforceShare(deptId: string): number {
+    const total = this.totalActiveEmployees();
+    if (total === 0) return 0;
+    const count = this.getActiveCountForDepartment(deptId);
+    return Math.round((count / total) * 100);
+  }
+
+  getDepartmentManagers(deptId: string): string[] {
+    const employees = this.getEmployeesInDepartment(deptId);
+    const mgrNames = new Set<string>();
+
+    for (const emp of employees) {
+      if (emp.currentManager?.name) {
+        mgrNames.add(emp.currentManager.name);
+      }
+    }
+
+    for (const emp of employees) {
+      const posTitle = emp.currentAssignment?.positionLabel?.toLowerCase() || '';
+      if (posTitle.includes('manager') || posTitle.includes('lead') || posTitle.includes('director') || posTitle.includes('head')) {
+        mgrNames.add(`${emp.profile.firstName} ${emp.profile.lastName}`);
+      }
+    }
+
+    return Array.from(mgrNames);
+  }
+
+  getEmployeesInPosition(posId: string, posTitle?: string): EmployeeResponse[] {
+    return this.allEmployees().filter(
+      (e) =>
+        e.currentAssignment?.positionId === posId ||
+        (posTitle && e.currentAssignment?.positionLabel === posTitle)
+    );
+  }
+
+  getActiveCountForPosition(posId: string, posTitle?: string): number {
+    return this.getEmployeesInPosition(posId, posTitle).filter(
+      (e) => e.employmentStatus === 'ACTIVE'
+    ).length;
   }
 
   openAddDepartment(): void {
