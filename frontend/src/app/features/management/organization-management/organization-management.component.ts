@@ -17,8 +17,17 @@ import {
   DayType,
 } from '../../../core/services/calendar-admin.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import {
+  UserAdminService,
+  UserResponse,
+  AccountStatus,
+} from '../../../core/services/user-admin.service';
+import {
+  EmployeeAdminService,
+  EmployeeResponse,
+} from '../../../core/services/employee-admin.service';
 
-type ManagementTab = 'departments' | 'positions' | 'calendars' | 'settings';
+type ManagementTab = 'departments' | 'positions' | 'calendars' | 'settings' | 'users';
 
 interface DayOfWeekOption {
   value: number;
@@ -45,7 +54,11 @@ const DAYS_OF_WEEK: DayOfWeekOption[] = [
 export class OrganizationManagementComponent implements OnInit {
   private readonly orgService = inject(OrganizationService);
   private readonly calendarService = inject(CalendarAdminService);
+  private readonly userAdminService = inject(UserAdminService);
+  private readonly employeeAdminService = inject(EmployeeAdminService);
   readonly auth = inject(AuthService);
+
+  readonly isAdmin = computed(() => this.auth.hasRole('ADMIN'));
 
   readonly daysOfWeek = DAYS_OF_WEEK;
 
@@ -113,10 +126,35 @@ export class OrganizationManagementComponent implements OnInit {
   editCountry: CountryCode = 'TN';
   editWeekendDays: number[] = [6, 7];
 
+  // System Users State
+  readonly users = signal<UserResponse[]>([]);
+  readonly loadingUsers = signal(false);
+  readonly userStatusFilter = signal<string>('ALL');
+  readonly allEmployees = signal<EmployeeResponse[]>([]);
+
+  readonly filteredUsers = computed(() => {
+    const list = this.users();
+    const filter = this.userStatusFilter();
+    if (filter === 'ALL') return list;
+    return list.filter((u) => u.accountStatus === filter);
+  });
+
+  // System User Modals
+  readonly showAddUserModal = signal(false);
+  userEmail = '';
+  userEmployeeId = '';
+
+  readonly showEditUserModal = signal(false);
+  readonly editingUser = signal<UserResponse | null>(null);
+  editAccountStatus: AccountStatus = 'ACTIVE';
+  editUserEmployeeId = '';
+
   ngOnInit(): void {
     this.loadData();
     this.loadCalendars();
     this.loadSettings();
+    this.loadUsers();
+    this.loadEmployees();
   }
 
   setTab(tab: ManagementTab): void {
@@ -127,6 +165,8 @@ export class OrganizationManagementComponent implements OnInit {
       this.loadCalendars();
     } else if (tab === 'settings' && !this.settings()) {
       this.loadSettings();
+    } else if (tab === 'users' && this.users().length === 0) {
+      this.loadUsers();
     }
   }
 
@@ -571,5 +611,137 @@ export class OrganizationManagementComponent implements OnInit {
           this.errorMessage.set(err?.error?.message || 'Failed to update organization settings.');
         },
       });
+  }
+
+  // =========================================================
+  // SYSTEM USERS
+  // =========================================================
+
+  loadUsers(): void {
+    this.loadingUsers.set(true);
+    this.userAdminService.listUsers().subscribe({
+      next: (res) => {
+        this.users.set(res.data || []);
+        this.loadingUsers.set(false);
+      },
+      error: (err) => {
+        this.loadingUsers.set(false);
+        this.errorMessage.set(err?.error?.message || 'Failed to load system users.');
+      },
+    });
+  }
+
+  loadEmployees(): void {
+    this.employeeAdminService.listEmployees().subscribe({
+      next: (res) => {
+        this.allEmployees.set(res.data || []);
+      },
+      error: () => {
+        // non-blocking lookup helper
+      },
+    });
+  }
+
+  getLinkedEmployeeName(empId?: string): string {
+    if (!empId) return 'Standalone / Unlinked';
+    const emp = this.allEmployees().find((e) => e.id === empId);
+    if (!emp) return empId;
+    return `${emp.profile.firstName} ${emp.profile.lastName} (${emp.employeeNumber})`;
+  }
+
+  openAddUser(): void {
+    this.userEmail = '';
+    this.userEmployeeId = '';
+    this.showAddUserModal.set(true);
+  }
+
+  saveNewUser(): void {
+    if (!this.userEmail.trim()) return;
+
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.userAdminService
+      .createUser({
+        email: this.userEmail.trim(),
+        employeeId: this.userEmployeeId.trim() ? this.userEmployeeId.trim() : undefined,
+      })
+      .subscribe({
+        next: (created) => {
+          this.saving.set(false);
+          this.showAddUserModal.set(false);
+          this.successMessage.set(`System user "${created.email}" created with status PENDING_ACTIVATION.`);
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.errorMessage.set(err?.error?.message || 'Failed to create user.');
+        },
+      });
+  }
+
+  openEditUser(user: UserResponse): void {
+    this.editingUser.set(user);
+    this.editAccountStatus = user.accountStatus;
+    this.editUserEmployeeId = user.employeeId || '';
+    this.showEditUserModal.set(true);
+  }
+
+  saveEditUser(): void {
+    const user = this.editingUser();
+    if (!user) return;
+
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    this.userAdminService
+      .updateUser(user.id, {
+        accountStatus: this.editAccountStatus,
+        employeeId: this.editUserEmployeeId, // Send '' to unlink or empId to link
+      })
+      .subscribe({
+        next: (updated) => {
+          this.saving.set(false);
+          this.showEditUserModal.set(false);
+          this.successMessage.set(`User "${updated.email}" updated successfully.`);
+          this.loadUsers();
+        },
+        error: (err) => {
+          this.saving.set(false);
+          this.errorMessage.set(err?.error?.message || 'Failed to update user.');
+        },
+      });
+  }
+
+  getUserStatusClass(status: AccountStatus): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'PENDING_ACTIVATION':
+        return 'bg-amber-100 text-amber-800';
+      case 'SUSPENDED':
+        return 'bg-rose-100 text-rose-800';
+      case 'ARCHIVED':
+        return 'bg-slate-100 text-slate-700';
+      default:
+        return 'bg-slate-100 text-slate-700';
+    }
+  }
+
+  getUserStatusLabel(status: AccountStatus): string {
+    switch (status) {
+      case 'ACTIVE':
+        return 'Active';
+      case 'PENDING_ACTIVATION':
+        return 'Pending Activation';
+      case 'SUSPENDED':
+        return 'Suspended';
+      case 'ARCHIVED':
+        return 'Archived';
+      default:
+        return status;
+    }
   }
 }

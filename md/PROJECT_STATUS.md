@@ -44,7 +44,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | Employee leave request UI | Working | Draft creation, listing, submit action on DRAFT, cancel action on DRAFT/PENDING/APPROVED (both on /dashboard and /leave-requests), and clear status badges |
 | Manager approval UI | Working | Team pending leave requests queue at /manager/approvals with Approve (optional comment) and Reject (required comment) |
 | In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
-| HR & Admin screens (employees, departments, positions, calendars, settings) | Working | Complete workforce directory, CSV import/export, master data, calendar & special days CRUD, and company settings at /management/** |
+| HR & Admin screens (employees, departments, positions, calendars, settings, users) | Working | Complete workforce directory, CSV import/export, master data, calendar & special days CRUD, company settings, and system users CRUD at /management/** |
 | HR screens (policies, adjustments) | Missing | Leave policies and balance adjustments UI |
 | Pending / ACTIVE gating | Working | Non-ACTIVE or missing employee profiles redirected cleanly to `/no-profile` holding screen with logout action |
 | Two colour systems (lifecycle vs availability) | Missing | |
