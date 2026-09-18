@@ -26,8 +26,17 @@ import {
   EmployeeAdminService,
   EmployeeResponse,
 } from '../../../core/services/employee-admin.service';
+import {
+  LeavePolicyAdminService,
+  LeavePolicyResponse,
+  CreateLeavePolicyRequest,
+  LeaveBonus,
+  AccrualUnit,
+  BonusApplication,
+} from '../../../core/services/leave-policy-admin.service';
+import { LeaveTypeCode } from '../../../core/services/leave-request.service';
 
-type ManagementTab = 'departments' | 'positions' | 'calendars' | 'settings' | 'users';
+type ManagementTab = 'departments' | 'positions' | 'calendars' | 'settings' | 'users' | 'policies';
 
 interface DayOfWeekOption {
   value: number;
@@ -56,9 +65,11 @@ export class OrganizationManagementComponent implements OnInit {
   private readonly calendarService = inject(CalendarAdminService);
   private readonly userAdminService = inject(UserAdminService);
   private readonly employeeAdminService = inject(EmployeeAdminService);
+  private readonly policyService = inject(LeavePolicyAdminService);
   readonly auth = inject(AuthService);
 
   readonly isAdmin = computed(() => this.auth.hasRole('ADMIN'));
+  readonly canManagePolicies = computed(() => this.auth.hasAnyRole('HR', 'ADMIN'));
 
   readonly daysOfWeek = DAYS_OF_WEEK;
 
@@ -149,12 +160,52 @@ export class OrganizationManagementComponent implements OnInit {
   editAccountStatus: AccountStatus = 'ACTIVE';
   editUserEmployeeId = '';
 
+  // Leave Policies State
+  readonly policies = signal<LeavePolicyResponse[]>([]);
+  readonly loadingPolicies = signal(false);
+  readonly policyCountryFilter = signal<string>('ALL');
+  readonly policyTypeFilter = signal<string>('ALL');
+
+  readonly filteredPolicies = computed(() => {
+    let list = this.policies();
+    const cFilter = this.policyCountryFilter();
+    if (cFilter !== 'ALL') {
+      list = list.filter((p) => p.country === cFilter);
+    }
+    const tFilter = this.policyTypeFilter();
+    if (tFilter !== 'ALL') {
+      list = list.filter((p) => p.leaveTypeCode === tFilter);
+    }
+    return list;
+  });
+
+  // Leave Policy Modal State
+  readonly showPolicyModal = signal(false);
+  policyCountry: CountryCode = 'TN';
+  policyLeaveTypeCode: LeaveTypeCode = 'PAID_ANNUAL';
+  policyAccrualUnit: AccrualUnit = 'WORKING_DAY';
+  policyAccrualRate: number = 1.83;
+  policyMaxBalance: number | null = 30;
+  policyMinBlockDays: number | null = null;
+  policyNoticeDays: number | null = 3;
+  policyBonuses: LeaveBonus[] = [];
+
+  // Bonus sub-form state
+  showAddBonusForm = false;
+  newBonusLabel = '';
+  newBonusAppliesTo: BonusApplication = 'RATE';
+  newBonusAmount = 1;
+  newBonusMinYears: number | null = 5;
+  newBonusEveryNYears: number | null = 5;
+  newBonusMaxAge: number | null = null;
+
   ngOnInit(): void {
     this.loadData();
     this.loadCalendars();
     this.loadSettings();
     this.loadUsers();
     this.loadEmployees();
+    this.loadPolicies();
   }
 
   setTab(tab: ManagementTab): void {
@@ -167,6 +218,8 @@ export class OrganizationManagementComponent implements OnInit {
       this.loadSettings();
     } else if (tab === 'users' && this.users().length === 0) {
       this.loadUsers();
+    } else if (tab === 'policies' && this.policies().length === 0) {
+      this.loadPolicies();
     }
   }
 
@@ -742,6 +795,149 @@ export class OrganizationManagementComponent implements OnInit {
         return 'Archived';
       default:
         return status;
+    }
+  }
+
+  // =========================================================
+  // LEAVE POLICIES
+  // =========================================================
+
+  loadPolicies(): void {
+    this.loadingPolicies.set(true);
+    this.policyService.listLeavePolicies().subscribe({
+      next: (res) => {
+        this.policies.set(res.data || []);
+        this.loadingPolicies.set(false);
+      },
+      error: (err) => {
+        this.loadingPolicies.set(false);
+        this.errorMessage.set(err?.error?.message || 'Failed to load leave policies.');
+      },
+    });
+  }
+
+  openCreatePolicy(): void {
+    this.policyCountry = 'TN';
+    this.policyLeaveTypeCode = 'PAID_ANNUAL';
+    this.policyAccrualUnit = 'WORKING_DAY';
+    this.policyAccrualRate = 1.83;
+    this.policyMaxBalance = 30;
+    this.policyMinBlockDays = null;
+    this.policyNoticeDays = 3;
+    this.policyBonuses = [];
+    this.showAddBonusForm = false;
+    this.showPolicyModal.set(true);
+  }
+
+  openClonePolicy(p: LeavePolicyResponse): void {
+    this.policyCountry = p.country;
+    this.policyLeaveTypeCode = p.leaveTypeCode;
+    this.policyAccrualUnit = p.accrualUnit;
+    this.policyAccrualRate = p.accrualRate;
+    this.policyMaxBalance = p.maxBalance ?? null;
+    this.policyMinBlockDays = p.minBlockDays ?? null;
+    this.policyNoticeDays = p.noticeDays ?? null;
+    this.policyBonuses = (p.bonuses || []).map((b) => ({ ...b }));
+    this.showAddBonusForm = false;
+    this.showPolicyModal.set(true);
+  }
+
+  addBonusRule(): void {
+    if (!this.newBonusLabel.trim() || this.newBonusAmount <= 0) return;
+    this.policyBonuses.push({
+      label: this.newBonusLabel.trim(),
+      appliesTo: this.newBonusAppliesTo,
+      isOverride: false,
+      amount: this.newBonusAmount,
+      minYearsOfService: this.newBonusMinYears ? Number(this.newBonusMinYears) : null,
+      everyNYears: this.newBonusEveryNYears ? Number(this.newBonusEveryNYears) : null,
+      maxAge: this.newBonusMaxAge ? Number(this.newBonusMaxAge) : null,
+    });
+    this.newBonusLabel = '';
+    this.newBonusAmount = 1;
+    this.showAddBonusForm = false;
+  }
+
+  removeBonusRule(index: number): void {
+    this.policyBonuses.splice(index, 1);
+  }
+
+  savePolicy(): void {
+    if (!this.policyCountry || !this.policyLeaveTypeCode || !this.policyAccrualUnit) return;
+
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    const req: CreateLeavePolicyRequest = {
+      country: this.policyCountry,
+      leaveTypeCode: this.policyLeaveTypeCode,
+      accrualUnit: this.policyAccrualUnit,
+      accrualRate: Number(this.policyAccrualRate) || 0,
+      maxBalance:
+        this.policyMaxBalance !== null &&
+        this.policyMaxBalance !== undefined &&
+        this.policyMaxBalance !== ('' as any)
+          ? Number(this.policyMaxBalance)
+          : null,
+      minBlockDays:
+        this.policyMinBlockDays !== null &&
+        this.policyMinBlockDays !== undefined &&
+        this.policyMinBlockDays !== ('' as any)
+          ? Number(this.policyMinBlockDays)
+          : null,
+      noticeDays:
+        this.policyNoticeDays !== null &&
+        this.policyNoticeDays !== undefined &&
+        this.policyNoticeDays !== ('' as any)
+          ? Number(this.policyNoticeDays)
+          : null,
+      bonuses: this.policyBonuses,
+    };
+
+    this.policyService.createLeavePolicy(req).subscribe({
+      next: (created) => {
+        this.saving.set(false);
+        this.showPolicyModal.set(false);
+        this.successMessage.set(
+          `New policy version created for ${created.country} - ${created.leaveTypeCode} successfully.`
+        );
+        this.loadPolicies();
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.errorMessage.set(err?.error?.message || 'Failed to create leave policy version.');
+      },
+    });
+  }
+
+  getLeaveTypeBadgeClass(code: string): string {
+    switch (code) {
+      case 'PAID_ANNUAL':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'SICK':
+        return 'bg-rose-100 text-rose-800 border-rose-200';
+      case 'UNPAID':
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+      case 'MATERNITY':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
+    }
+  }
+
+  getLeaveTypeLabel(code: string): string {
+    switch (code) {
+      case 'PAID_ANNUAL':
+        return 'Paid Annual';
+      case 'SICK':
+        return 'Sick Leave';
+      case 'UNPAID':
+        return 'Unpaid Leave';
+      case 'MATERNITY':
+        return 'Maternity Leave';
+      default:
+        return code;
     }
   }
 }
