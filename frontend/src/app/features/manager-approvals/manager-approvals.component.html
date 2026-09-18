@@ -68,152 +68,338 @@
     </mat-card>
 
     <!-- ================================================================= -->
-    <!-- TAB 0: PENDING APPROVALS QUEUE                                    -->
+    <!-- TAB 0: PENDING APPROVALS HIGH-DENSITY MATERIAL TABLE              -->
     <!-- ================================================================= -->
     @if (selectedTabIndex() === 0) {
       <mat-card class="section-card queue-card">
-        <div class="card-header">
-          <div class="title-wrap">
-            <mat-icon class="header-icon">checklist</mat-icon>
-            <h3>Pending Requests Awaiting Decision</h3>
+        <!-- Card Toolbar: Title, Search, Chip Filters & Refresh -->
+        <div class="queue-toolbar">
+          <div class="toolbar-primary-row">
+            <div class="title-wrap">
+              <mat-icon class="header-icon">checklist</mat-icon>
+              <div>
+                <h3 class="queue-title">Pending Leave Requests</h3>
+                <span class="queue-subtitle">
+                  High-density decision queue for employee leave applications
+                </span>
+              </div>
+            </div>
+
+            <!-- Search Field & Refresh Button -->
+            <div class="toolbar-actions">
+              <div class="search-input-box">
+                <mat-icon class="search-icon">search</mat-icon>
+                <input
+                  type="text"
+                  [ngModel]="searchQuery()"
+                  (ngModelChange)="onSearchChange($event)"
+                  placeholder="Filter employee, dept, reason…"
+                  class="search-input"
+                />
+                @if (searchQuery()) {
+                  <button
+                    type="button"
+                    (click)="onSearchChange('')"
+                    class="clear-search-btn"
+                    title="Clear search"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+                }
+              </div>
+
+              <button
+                mat-button
+                class="refresh-btn"
+                (click)="loadPending()"
+                [disabled]="loading() || batchProcessing()"
+              >
+                <mat-icon [class.spin]="loading()">refresh</mat-icon>
+                Refresh
+              </button>
+            </div>
           </div>
-          <button mat-button class="refresh-btn" (click)="loadPending()">
-            <mat-icon>refresh</mat-icon>
-            Refresh
-          </button>
+
+          <!-- Quick Filters: MatChipListbox -->
+          <div class="filter-chips-row">
+            <mat-chip-listbox
+              [value]="selectedTypeFilter()"
+              (change)="setTypeFilter($event.value)"
+              aria-label="Filter by leave type"
+            >
+              <mat-chip-option value="ALL">All Types</mat-chip-option>
+              <mat-chip-option value="PAID_ANNUAL">Paid Annual</mat-chip-option>
+              <mat-chip-option value="SICK">Sick Leave</mat-chip-option>
+              <mat-chip-option value="UNPAID">Unpaid Leave</mat-chip-option>
+              <mat-chip-option value="MATERNITY">Maternity</mat-chip-option>
+            </mat-chip-listbox>
+          </div>
         </div>
 
+        <!-- Processing Progress Bar -->
+        @if (batchProcessing()) {
+          <mat-progress-bar mode="indeterminate" class="processing-progress"></mat-progress-bar>
+        }
+
+        <!-- Batch Action Bar (Revealed when rows are selected) -->
+        @if (selection.hasValue()) {
+          <div class="batch-action-bar">
+            <div class="batch-info">
+              <mat-icon class="batch-icon">playlist_add_check</mat-icon>
+              <span class="batch-text">
+                <strong>{{ selection.selected.length }}</strong>
+                {{ selection.selected.length === 1 ? 'request selected' : 'requests selected' }}
+              </span>
+              <button mat-button class="clear-selection-btn" (click)="clearSelection()">
+                Clear Selection
+              </button>
+            </div>
+
+            <div class="batch-buttons">
+              <button
+                mat-flat-button
+                class="batch-approve-btn"
+                (click)="openBatchApproveDialog()"
+                [disabled]="batchProcessing()"
+              >
+                <mat-icon>check</mat-icon>
+                Approve Selected ({{ selection.selected.length }})
+              </button>
+
+              <button
+                mat-stroked-button
+                class="batch-reject-btn"
+                (click)="openBatchRejectDialog()"
+                [disabled]="batchProcessing()"
+              >
+                <mat-icon>close</mat-icon>
+                Reject Selected ({{ selection.selected.length }})
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- Data Grid Table -->
         @if (loading()) {
           <div class="empty-state">
-            <p>Loading pending requests…</p>
+            <mat-icon class="loading-spin-icon">hourglass_empty</mat-icon>
+            <p class="font-medium text-slate-700">Loading pending requests…</p>
+            <span class="text-xs text-slate-400">Fetching latest submissions from direct reports.</span>
           </div>
         } @else if (pendingRequests().length === 0) {
           <div class="empty-state">
             <mat-icon class="empty-icon">task_alt</mat-icon>
             <p class="font-medium text-slate-700">All caught up!</p>
-            <span class="text-xs text-slate-400">There are no leave requests currently awaiting your decision.</span>
+            <span class="text-xs text-slate-400">
+              There are no leave requests currently awaiting your decision.
+            </span>
+          </div>
+        } @else if (dataSource.filteredData.length === 0) {
+          <div class="empty-state">
+            <mat-icon class="empty-icon text-slate-400">filter_alt_off</mat-icon>
+            <p class="font-medium text-slate-700">No matching requests found</p>
+            <span class="text-xs text-slate-400">
+              Try modifying your search or leave type filter.
+            </span>
+            <button
+              mat-button
+              class="reset-filters-btn"
+              (click)="onSearchChange(''); setTypeFilter('ALL')"
+            >
+              Reset Filters
+            </button>
           </div>
         } @else {
-          <div class="request-list">
-            @for (req of pendingRequests(); track req.id) {
-              <div class="request-item">
-                <div class="item-main">
-                  <div class="emp-info">
+          <div class="table-container">
+            <table
+              mat-table
+              [dataSource]="dataSource"
+              matSort
+              class="dense-approvals-table"
+            >
+              <!-- Checkbox Column -->
+              <ng-container matColumnDef="select">
+                <th mat-header-cell *matHeaderCellDef class="checkbox-col">
+                  <mat-checkbox
+                    (change)="$event ? toggleAllRows() : null"
+                    [checked]="isAllSelected()"
+                    [indeterminate]="isIndeterminate()"
+                    aria-label="Select all requests"
+                    color="primary"
+                  ></mat-checkbox>
+                </th>
+                <td mat-cell *matCellDef="let row" class="checkbox-col">
+                  <mat-checkbox
+                    (click)="$event.stopPropagation()"
+                    (change)="$event ? selection.toggle(row) : null"
+                    [checked]="selection.isSelected(row)"
+                    [aria-label]="'Select leave request from ' + getEmployeeName(row)"
+                    color="primary"
+                  ></mat-checkbox>
+                </td>
+              </ng-container>
+
+              <!-- Employee Column (Avatar, Name, Department, Urgency) -->
+              <ng-container matColumnDef="employee">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="employee-col">
+                  Employee
+                </th>
+                <td mat-cell *matCellDef="let row" class="employee-col">
+                  <div class="employee-cell-wrap">
                     <div class="avatar-circle">
-                      {{ req.employeeSnapshot?.firstName?.charAt(0) || 'E' }}{{ req.employeeSnapshot?.lastName?.charAt(0) || '' }}
+                      {{ getEmployeeInitials(row) }}
                     </div>
-                    <div>
-                      <div class="emp-name-row">
-                        <span class="emp-name">{{ getEmployeeName(req) }}</span>
-                        @if (req.employeeSnapshot?.departmentLabel) {
-                          <span class="dept-tag">{{ req.employeeSnapshot?.departmentLabel }}</span>
-                        }
-                        <app-status-badge status="PENDING" variant="pill" size="sm" />
-                      </div>
-                      <div class="leave-meta-row">
-                        <span class="leave-type-chip">{{ formatType(req.leaveTypeCode) }}</span>
-                        <span class="dot-sep">•</span>
-                        <span class="date-range">{{ req.startDate }} → {{ req.endDate }}</span>
-                        <span class="dot-sep">•</span>
-                        <span class="duration font-semibold">{{ req.durationDays }} {{ req.durationDays === 1 ? 'day' : 'days' }}</span>
-                        @if (req.submittedAt) {
-                          <span class="submitted-tag">({{ req.submittedAt | date:'MMM d' }})</span>
+                    <div class="employee-meta">
+                      <div class="employee-name-line">
+                        <span class="employee-name">{{ getEmployeeName(row) }}</span>
+                        @if (isStale(row)) {
+                          <span class="stale-pill" matTooltip="Awaiting decision for over 3 days">
+                            Stale
+                          </span>
                         }
                       </div>
-                      @if (req.reason) {
-                        <p class="request-reason">"{{ req.reason }}"</p>
-                      }
-                      @if (req.supportingDocuments && req.supportingDocuments.length > 0) {
-                        <div class="supporting-doc-banner" style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px;">
-                          <mat-icon style="color: #0284c7; font-size: 18px; width: 18px; height: 18px;">attach_file</mat-icon>
-                          <span style="font-size: 0.8rem; font-weight: 600; color: #0369a1;">Supporting Document Attached</span>
-                          <button
-                            mat-button
-                            type="button"
-                            style="color: #0284c7; font-size: 0.75rem; height: 26px; line-height: 26px; padding: 0 8px; font-weight: 700; text-decoration: underline;"
-                            (click)="viewDocument(req.supportingDocuments[0])"
-                          >
-                            View Document
-                          </button>
-                        </div>
-                      }
-                    </div>
-                  </div>
-
-                  <!-- Decision Buttons -->
-                  @if (activeActionId() !== req.id) {
-                    <div class="action-buttons">
-                      <button
-                        mat-flat-button
-                        color="primary"
-                        class="approve-btn"
-                        (click)="openApprove(req.id)"
-                        [disabled]="processingId() === req.id"
-                      >
-                        <mat-icon>check</mat-icon>
-                        Approve
-                      </button>
-                      <button
-                        mat-stroked-button
-                        class="reject-btn"
-                        (click)="openReject(req.id)"
-                        [disabled]="processingId() === req.id"
-                      >
-                        <mat-icon>close</mat-icon>
-                        Reject
-                      </button>
-                    </div>
-                  }
-                </div>
-
-                <!-- Inline Decision Form -->
-                @if (activeActionId() === req.id) {
-                  <div class="inline-decision-box" [class.approve-mode]="currentAction() === 'approve'" [class.reject-mode]="currentAction() === 'reject'">
-                    <div class="decision-box-header">
-                      <span class="decision-title">
-                        {{ currentAction() === 'approve' ? 'Confirm Approval' : 'Reject Leave Request' }}
+                      <span class="employee-dept">
+                        {{ row.employeeSnapshot?.departmentLabel || 'Direct Report' }}
                       </span>
-                      <button mat-icon-button (click)="cancelAction()" class="cancel-icon-btn">
-                        <mat-icon>close</mat-icon>
-                      </button>
-                    </div>
-
-                    <div class="decision-inputs">
-                      <input
-                        type="text"
-                        [(ngModel)]="decisionComment"
-                        [placeholder]="currentAction() === 'approve' ? 'Optional approval comment' : 'Reason for rejection (required)'"
-                        class="decision-input"
-                      />
-                      <div class="decision-actions">
-                        <button mat-button (click)="cancelAction()" class="btn-cancel">Cancel</button>
-                        @if (currentAction() === 'approve') {
-                          <button
-                            mat-flat-button
-                            color="primary"
-                            (click)="confirmApprove(req.id)"
-                            [disabled]="processingId() === req.id"
-                            class="btn-confirm-approve"
-                          >
-                            {{ processingId() === req.id ? 'Approving…' : 'Approve' }}
-                          </button>
-                        } @else {
-                          <button
-                            mat-flat-button
-                            color="warn"
-                            (click)="confirmReject(req.id)"
-                            [disabled]="processingId() === req.id || !decisionComment.trim()"
-                            class="btn-confirm-reject"
-                          >
-                            {{ processingId() === req.id ? 'Rejecting…' : 'Confirm Reject' }}
-                          </button>
-                        }
-                      </div>
                     </div>
                   </div>
-                }
-              </div>
-            }
+                </td>
+              </ng-container>
+
+              <!-- Leave Type Column -->
+              <ng-container matColumnDef="leaveType">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="type-col">
+                  Leave Type
+                </th>
+                <td mat-cell *matCellDef="let row" class="type-col">
+                  <mat-chip
+                    class="type-chip"
+                    [class.type-annual]="row.leaveTypeCode === 'PAID_ANNUAL'"
+                    [class.type-sick]="row.leaveTypeCode === 'SICK'"
+                    [class.type-unpaid]="row.leaveTypeCode === 'UNPAID'"
+                    [class.type-maternity]="row.leaveTypeCode === 'MATERNITY'"
+                  >
+                    {{ formatType(row.leaveTypeCode) }}
+                  </mat-chip>
+                </td>
+              </ng-container>
+
+              <!-- Dates Column -->
+              <ng-container matColumnDef="dates">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="dates-col">
+                  Requested Dates
+                </th>
+                <td mat-cell *matCellDef="let row" class="dates-col">
+                  <div class="dates-cell-wrap">
+                    <span class="date-range">{{ row.startDate }} → {{ row.endDate }}</span>
+                    @if (row.submittedAt) {
+                      <span class="submitted-hint">
+                        Submitted {{ row.submittedAt | date:'MMM d' }}
+                      </span>
+                    }
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Duration Column -->
+              <ng-container matColumnDef="duration">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="duration-col">
+                  Duration
+                </th>
+                <td mat-cell *matCellDef="let row" class="duration-col">
+                  <span class="duration-pill">
+                    {{ row.durationDays }} {{ row.durationDays === 1 ? 'day' : 'days' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Reason Column -->
+              <ng-container matColumnDef="reason">
+                <th mat-header-cell *matHeaderCellDef class="reason-col">
+                  Reason / Notes
+                </th>
+                <td
+                  mat-cell
+                  *matCellDef="let row"
+                  class="reason-col"
+                  [matTooltip]="row.reason || 'No specific reason provided.'"
+                >
+                  <span class="reason-text">
+                    {{ row.reason ? ('"' + row.reason + '"') : '—' }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Attachments Column -->
+              <ng-container matColumnDef="attachments">
+                <th mat-header-cell *matHeaderCellDef class="attachments-col">
+                  Proof
+                </th>
+                <td mat-cell *matCellDef="let row" class="attachments-col">
+                  @if (row.supportingDocuments && row.supportingDocuments.length > 0) {
+                    <button
+                      mat-icon-button
+                      class="attachment-btn active"
+                      matTooltip="Preview supporting certificate"
+                      (click)="openDocumentDialog(row.supportingDocuments[0], row); $event.stopPropagation()"
+                    >
+                      <mat-icon>attach_file</mat-icon>
+                    </button>
+                  } @else {
+                    <span class="no-attachment">—</span>
+                  }
+                </td>
+              </ng-container>
+
+              <!-- Actions Column -->
+              <ng-container matColumnDef="actions">
+                <th mat-header-cell *matHeaderCellDef class="actions-col">
+                  Decision
+                </th>
+                <td mat-cell *matCellDef="let row" class="actions-col">
+                  <div class="row-actions">
+                    <button
+                      mat-button
+                      class="row-approve-btn"
+                      matTooltip="Approve leave request"
+                      (click)="openApproveDialog(row); $event.stopPropagation()"
+                      [disabled]="batchProcessing()"
+                    >
+                      <mat-icon>check</mat-icon>
+                      Approve
+                    </button>
+                    <button
+                      mat-button
+                      class="row-reject-btn"
+                      matTooltip="Reject leave request"
+                      (click)="openRejectDialog(row); $event.stopPropagation()"
+                      [disabled]="batchProcessing()"
+                    >
+                      <mat-icon>close</mat-icon>
+                      Reject
+                    </button>
+                  </div>
+                </td>
+              </ng-container>
+
+              <!-- Table Rows -->
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr
+                mat-row
+                *matRowDef="let row; columns: displayedColumns"
+                class="request-table-row"
+                [class.selected-row]="selection.isSelected(row)"
+              ></tr>
+            </table>
+
+            <!-- Table Paginator -->
+            <mat-paginator
+              [pageSizeOptions]="[5, 10, 25, 50]"
+              [pageSize]="10"
+              showFirstLastButtons
+              aria-label="Select page of pending leave requests"
+              class="approvals-paginator"
+            ></mat-paginator>
           </div>
         }
       </mat-card>
