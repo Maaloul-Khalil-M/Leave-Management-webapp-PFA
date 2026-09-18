@@ -7,6 +7,7 @@ import {
   EligibilityResponse,
   Explanation,
   LeaveTypeCode,
+  SupportingDocumentResponse,
 } from '../../../core/services/leave-request.service';
 import { formatDisplayDate } from '../leave-calculator';
 
@@ -32,6 +33,7 @@ export class LeaveReviewPanelComponent {
   @Input() halfDayEnd = false;
   @Input({ required: true }) durationDays = 0;
   @Input() reason = '';
+  @Input() uploadedDocuments: SupportingDocumentResponse[] = [];
 
   @Input() employeeName = '';
   @Input() employeePosition = '';

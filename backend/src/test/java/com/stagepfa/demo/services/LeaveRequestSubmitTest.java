@@ -60,18 +60,33 @@ class LeaveRequestSubmitTest {
     private DurationCalculator durationCalculator;
 
     @Mock
+    private com.stagepfa.demo.repositories.LeaveTypeRepository leaveTypeRepository;
+
+    @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private LeaveRequestServiceImpl leaveRequestService;
 
     private User user;
+    private com.stagepfa.demo.domain.entities.LeaveType paidAnnualType;
+    private com.stagepfa.demo.domain.entities.LeaveType sickType;
 
     @BeforeEach
     void setUp() {
         user = User.builder()
                 .id("u123")
                 .employeeId("emp123")
+                .build();
+
+        paidAnnualType = com.stagepfa.demo.domain.entities.LeaveType.builder()
+                .code(L_CODE.PAID_ANNUAL)
+                .requiresProof(false)
+                .build();
+
+        sickType = com.stagepfa.demo.domain.entities.LeaveType.builder()
+                .code(L_CODE.SICK)
+                .requiresProof(true)
                 .build();
     }
 
@@ -92,6 +107,7 @@ class LeaveRequestSubmitTest {
         Employee employee = Employee.builder().id("emp123").build();
 
         when(leaveRequestRepository.findById("req1")).thenReturn(Optional.of(existing));
+        when(leaveTypeRepository.findByCode("PAID_ANNUAL")).thenReturn(Optional.of(paidAnnualType));
         when(employeeRepository.findById("emp123")).thenReturn(Optional.of(employee));
         when(eligibilityService.check(any(), any())).thenReturn(
                 EligibilityResponse.builder().eligible(true).build()
@@ -131,6 +147,7 @@ class LeaveRequestSubmitTest {
         Employee employee = Employee.builder().id("emp123").build();
 
         when(leaveRequestRepository.findById("req1")).thenReturn(Optional.of(existing));
+        when(leaveTypeRepository.findByCode("PAID_ANNUAL")).thenReturn(Optional.of(paidAnnualType));
         when(employeeRepository.findById("emp123")).thenReturn(Optional.of(employee));
 
         Explanation exp = Explanation.builder()
@@ -174,6 +191,7 @@ class LeaveRequestSubmitTest {
         Employee employee = Employee.builder().id("emp123").build();
 
         when(leaveRequestRepository.findById("req1")).thenReturn(Optional.of(existing));
+        when(leaveTypeRepository.findByCode("PAID_ANNUAL")).thenReturn(Optional.of(paidAnnualType));
         when(employeeRepository.findById("emp123")).thenReturn(Optional.of(employee));
 
         Explanation exp = Explanation.builder()
@@ -265,5 +283,65 @@ class LeaveRequestSubmitTest {
                 () -> leaveRequestService.submit("req4")
         );
         assertEquals(ErrorCode.FORBIDDEN, ex.getErrorCode());
+    }
+
+    @Test
+    void testSubmitSickWithoutDocumentFails() {
+        when(currentUserService.requireLinkedUser()).thenReturn(user);
+
+        LeaveRequest existing = LeaveRequest.builder()
+                .id("req-sick-1")
+                .employeeId("emp123")
+                .leaveTypeCode(L_CODE.SICK)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .endDate(LocalDate.of(2026, 10, 3))
+                .status(LeaveRequestStatus.DRAFT)
+                .supportingDocuments(new ArrayList<>())
+                .build();
+
+        when(leaveRequestRepository.findById("req-sick-1")).thenReturn(Optional.of(existing));
+        when(leaveTypeRepository.findByCode("SICK")).thenReturn(Optional.of(sickType));
+
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> leaveRequestService.submit("req-sick-1")
+        );
+        assertEquals(ErrorCode.VALIDATION_ERROR, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("Supporting document is required"));
+        verify(leaveRequestRepository, never()).save(any());
+    }
+
+    @Test
+    void testSubmitSickWithDocumentSucceeds() {
+        when(currentUserService.requireLinkedUser()).thenReturn(user);
+
+        LeaveRequest existing = LeaveRequest.builder()
+                .id("req-sick-2")
+                .employeeId("emp123")
+                .leaveTypeCode(L_CODE.SICK)
+                .startDate(LocalDate.of(2026, 10, 1))
+                .endDate(LocalDate.of(2026, 10, 3))
+                .status(LeaveRequestStatus.DRAFT)
+                .supportingDocuments(List.of("doc-id-123"))
+                .statusHistory(new ArrayList<>())
+                .build();
+
+        Employee employee = Employee.builder().id("emp123").build();
+
+        when(leaveRequestRepository.findById("req-sick-2")).thenReturn(Optional.of(existing));
+        when(leaveTypeRepository.findByCode("SICK")).thenReturn(Optional.of(sickType));
+        when(employeeRepository.findById("emp123")).thenReturn(Optional.of(employee));
+        when(eligibilityService.check(any(), any())).thenReturn(
+                EligibilityResponse.builder().eligible(true).build()
+        );
+        when(leaveRequestRepository.save(any(LeaveRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        LeaveRequest submitted = leaveRequestService.submit("req-sick-2");
+
+        assertNotNull(submitted);
+        assertEquals(LeaveRequestStatus.PENDING, submitted.getStatus());
+        assertEquals(1, submitted.getSupportingDocuments().size());
+        assertEquals("doc-id-123", submitted.getSupportingDocuments().get(0));
+        verify(leaveRequestRepository, times(1)).save(existing);
     }
 }

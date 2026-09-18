@@ -132,7 +132,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .status(LeaveRequestStatus.DRAFT)
                 .statusHistory(new ArrayList<>(List.of(initialHistory)))
                 .reason(request.getReason())
-                .supportingDocuments(new ArrayList<>())
+                .supportingDocuments(request.getSupportingDocuments() != null ? new ArrayList<>(request.getSupportingDocuments()) : new ArrayList<>())
                 .build();
 
         return leaveRequestRepository.save(leaveRequest);
@@ -156,6 +156,13 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
         if (leaveRequest.getStatus() != LeaveRequestStatus.DRAFT) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Only draft leave requests can be submitted");
+        }
+
+        LeaveType leaveType = leaveTypeRepository.findByCode(leaveRequest.getLeaveTypeCode().name())
+                .orElseThrow(() -> new ResourceNotFoundException("LeaveType", leaveRequest.getLeaveTypeCode().name()));
+
+        if (leaveType.isRequiresProof() && (leaveRequest.getSupportingDocuments() == null || leaveRequest.getSupportingDocuments().isEmpty())) {
+            throw new BusinessException(ErrorCode.VALIDATION_ERROR, "Supporting document is required for " + leaveRequest.getLeaveTypeCode());
         }
 
         Employee employee = employeeRepository.findById(employeeId)

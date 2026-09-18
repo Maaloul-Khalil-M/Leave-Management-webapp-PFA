@@ -32,6 +32,14 @@ export interface EligibilityResponse {
   explanations: Explanation[];
 }
 
+export interface SupportingDocumentResponse {
+  id: string;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  uploadedAt: string;
+}
+
 export interface CreateLeaveRequest {
   leaveTypeCode: LeaveTypeCode;
   startDate: string;
@@ -39,6 +47,7 @@ export interface CreateLeaveRequest {
   halfDayStart: boolean;
   halfDayEnd: boolean;
   reason?: string;
+  supportingDocuments?: string[];
 }
 
 export interface EmployeeSnapshot {
@@ -63,6 +72,7 @@ export interface LeaveRequestResponse {
   durationDays: number;
   status: string;
   reason?: string;
+  supportingDocuments?: string[];
   submittedAt?: string;
   validatedAt?: string;
   validatedBy?: string;
@@ -134,6 +144,27 @@ export class LeaveRequestService {
     return this.http.post<LeaveRequestResponse>(
       `${this.apiUrl}/api/manager/leave-requests/${id}/reject`,
       { comment }
+    );
+  }
+
+  uploadDocument(file: File): Observable<SupportingDocumentResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<SupportingDocumentResponse>(
+      `${this.apiUrl}/api/employee/leave-requests/documents`,
+      formData
+    );
+  }
+
+  downloadDocument(id: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/api/documents/${id}`, {
+      responseType: 'blob',
+    });
+  }
+
+  getDocumentMetadata(id: string): Observable<SupportingDocumentResponse> {
+    return this.http.get<SupportingDocumentResponse>(
+      `${this.apiUrl}/api/documents/${id}/metadata`
     );
   }
 }

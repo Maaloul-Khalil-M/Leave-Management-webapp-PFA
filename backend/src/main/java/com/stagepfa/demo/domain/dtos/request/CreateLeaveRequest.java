@@ -28,4 +28,7 @@ public class CreateLeaveRequest {
     private boolean halfDayEnd;
 
     private String reason;
+
+    @Builder.Default
+    private java.util.List<String> supportingDocuments = new java.util.ArrayList<>();
 }

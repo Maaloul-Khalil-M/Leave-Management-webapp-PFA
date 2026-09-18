@@ -26,6 +26,7 @@ import {
   LeaveTypeCode,
   EligibilityResponse,
   Explanation,
+  SupportingDocumentResponse,
 } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
@@ -145,6 +146,16 @@ export class LeaveRequestsComponent implements OnInit {
   readonly eligibility = signal<EligibilityResponse | null>(null);
   readonly checkingEligibility = signal<boolean>(false);
 
+  // Document upload state
+  readonly uploadedDocuments = signal<SupportingDocumentResponse[]>([]);
+  readonly uploadingDocument = signal<boolean>(false);
+  readonly uploadError = signal<string | null>(null);
+
+  readonly requiresProof = computed(() => {
+    const code = this.leaveTypeCode();
+    return code === 'SICK' || code === 'MATERNITY';
+  });
+
   // Profile and balance info from DashboardState
   readonly employeeName = computed(() => {
     const prof = this.dashboardState.profile();
@@ -193,6 +204,9 @@ export class LeaveRequestsComponent implements OnInit {
     if (end < start) return false;
     if (this.calculatedDuration() <= 0) return false;
     if (this.leaveTypeCode() === 'UNPAID' && !this.reason().trim()) {
+      return false;
+    }
+    if (this.requiresProof() && this.uploadedDocuments().length === 0) {
       return false;
     }
     return true;
@@ -348,7 +362,53 @@ export class LeaveRequestsComponent implements OnInit {
       halfDayStart: this.halfDayStart(),
       halfDayEnd: this.halfDayEnd(),
       reason: this.reason().trim() || undefined,
+      supportingDocuments: this.uploadedDocuments().map((d) => d.id),
     };
+  }
+
+  // ─── File Upload Helpers ─────────────────────────────────
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      this.uploadError.set('File exceeds the 10MB size limit.');
+      input.value = '';
+      return;
+    }
+
+    this.uploadingDocument.set(true);
+    this.uploadError.set(null);
+
+    this.leaveRequestService.uploadDocument(file).subscribe({
+      next: (doc) => {
+        this.uploadedDocuments.update((prev) => [...prev, doc]);
+        this.uploadingDocument.set(false);
+        input.value = '';
+      },
+      error: (err) => {
+        this.uploadingDocument.set(false);
+        this.uploadError.set(err?.error?.message || 'Failed to upload document.');
+        input.value = '';
+      },
+    });
+  }
+
+  removeDocument(id: string): void {
+    this.uploadedDocuments.update((prev) => prev.filter((d) => d.id !== id));
+  }
+
+  viewDocument(id: string): void {
+    this.leaveRequestService.downloadDocument(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      },
+      error: () => {
+        this.errorMessage.set('Failed to open document preview.');
+      },
+    });
   }
 
   // ─── Submissions ──────────────────────────────────────────
@@ -478,6 +538,8 @@ export class LeaveRequestsComponent implements OnInit {
     this.halfDayStart.set(false);
     this.halfDayEnd.set(false);
     this.reason.set('');
+    this.uploadedDocuments.set([]);
+    this.uploadError.set(null);
     this.submitted.set(false);
     this.lastCreatedRequest.set(null);
     this.activeStep.set(0);

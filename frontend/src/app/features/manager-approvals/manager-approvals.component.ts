@@ -437,4 +437,16 @@ export class ManagerApprovalsComponent implements OnInit {
         return code;
     }
   }
+
+  viewDocument(id: string): void {
+    this.leaveRequestService.downloadDocument(id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      },
+      error: () => {
+        this.errorMessage.set('Failed to open supporting document preview.');
+      },
+    });
+  }
 }

@@ -242,6 +242,91 @@
                 }
               </mat-form-field>
 
+              <!-- Supporting Document Upload (Mandatory for SICK and MATERNITY) -->
+              @if (requiresProof()) {
+                <div class="document-upload-card" style="margin: 1rem 0; padding: 1rem; border: 1px dashed #94a3b8; border-radius: 8px; background: #f8fafc;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <mat-icon style="color: #0284c7;">attach_file</mat-icon>
+                      <span style="font-weight: 600; font-size: 0.9rem; color: #1e293b;">
+                        Supporting Document / Medical Proof
+                        <span style="color: #ef4444;">*</span>
+                      </span>
+                    </div>
+                    <span style="font-size: 0.75rem; color: #64748b;">PDF, PNG, JPG (Max 10MB)</span>
+                  </div>
+
+                  <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 0.75rem;">
+                    A medical certificate or official documentation is required for {{ formatType(leaveTypeCode()) }}.
+                  </p>
+
+                  @if (uploadedDocuments().length === 0) {
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                      <input
+                        type="file"
+                        #fileInput
+                        style="display: none;"
+                        accept=".pdf,.png,.jpg,.jpeg,.webp"
+                        (change)="onFileSelected($event)"
+                      />
+                      <button
+                        mat-stroked-button
+                        type="button"
+                        style="color: #0284c7; border-color: #0284c7;"
+                        [disabled]="uploadingDocument()"
+                        (click)="fileInput.click()"
+                      >
+                        <mat-icon>upload_file</mat-icon>
+                        {{ uploadingDocument() ? 'Uploading document…' : 'Choose & Upload Document' }}
+                      </button>
+
+                      <span style="font-size: 0.8rem; color: #b91c1c; font-weight: 500;">
+                        * Required to continue
+                      </span>
+                    </div>
+                  } @else {
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                      @for (doc of uploadedDocuments(); track doc.id) {
+                        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0.5rem 0.75rem;">
+                          <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <mat-icon style="color: #16a34a; font-size: 20px; width: 20px; height: 20px;">task</mat-icon>
+                            <span style="font-size: 0.85rem; font-weight: 600; color: #1e293b;">{{ doc.fileName }}</span>
+                            <span style="font-size: 0.75rem; color: #64748b;">({{ (doc.fileSize / 1024).toFixed(1) }} KB)</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 0.25rem;">
+                            <button
+                              mat-icon-button
+                              type="button"
+                              style="color: #0284c7;"
+                              title="Preview document"
+                              (click)="viewDocument(doc.id)"
+                            >
+                              <mat-icon>visibility</mat-icon>
+                            </button>
+                            <button
+                              mat-icon-button
+                              type="button"
+                              style="color: #ef4444;"
+                              title="Remove document"
+                              (click)="removeDocument(doc.id)"
+                            >
+                              <mat-icon>delete_outline</mat-icon>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  @if (uploadError()) {
+                    <div style="margin-top: 0.5rem; color: #b91c1c; font-size: 0.8rem; display: flex; align-items: center; gap: 0.25rem;">
+                      <mat-icon style="font-size: 16px; width: 16px; height: 16px;">error</mat-icon>
+                      <span>{{ uploadError() }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
               <!-- Validation Hints -->
               @if (startDate() && endDate() && endDate() < startDate()) {
                 <div class="notice notice-error">
@@ -292,6 +377,7 @@
                   [halfDayEnd]="halfDayEnd()"
                   [durationDays]="calculatedDuration()"
                   [reason]="reason()"
+                  [uploadedDocuments]="uploadedDocuments()"
                   [employeeName]="employeeName()"
                   [employeePosition]="employeePosition()"
                   [employeeDepartment]="employeeDepartment()"
@@ -386,6 +472,7 @@
                   <th>Duration</th>
                   <th>Status</th>
                   <th>Reason</th>
+                  <th>Proof</th>
                   <th style="text-align: right;">Action</th>
                 </tr>
               </thead>
@@ -411,6 +498,21 @@
                     </td>
                     <td style="max-width: 220px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                       {{ req.reason || '—' }}
+                    </td>
+                    <td>
+                      @if (req.supportingDocuments && req.supportingDocuments.length > 0) {
+                        <button
+                          mat-button
+                          type="button"
+                          style="font-size: 0.75rem; height: 28px; line-height: 28px; padding: 0 8px; color: #0284c7;"
+                          (click)="viewDocument(req.supportingDocuments[0])"
+                        >
+                          <mat-icon style="font-size: 16px; width: 16px; height: 16px; margin-right: 4px;">attachment</mat-icon>
+                          View
+                        </button>
+                      } @else {
+                        <span style="color: #94a3b8; font-size: 0.8rem;">—</span>
+                      }
                     </td>
                     <td style="text-align: right; white-space: nowrap;">
                       <div style="display: inline-flex; align-items: center; gap: 0.5rem; justify-content: flex-end;">

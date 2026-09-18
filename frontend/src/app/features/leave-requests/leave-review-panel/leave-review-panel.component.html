@@ -105,6 +105,16 @@
           <span class="quote-text">{{ reason }}</span>
         </div>
       }
+
+      @if (uploadedDocuments.length > 0) {
+        <div class="documents-preview" style="margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
+          <mat-icon style="color: #0284c7; font-size: 20px; width: 20px; height: 20px;">attach_file</mat-icon>
+          <span style="font-size: 0.825rem; color: #334155; font-weight: 500;">Attached Document:</span>
+          @for (doc of uploadedDocuments; track doc.id) {
+            <span style="font-size: 0.825rem; color: #0284c7; font-weight: 600;">{{ doc.fileName }}</span>
+          }
+        </div>
+      }
     </div>
 
     <!-- Right Card: Balance Impact Meter -->

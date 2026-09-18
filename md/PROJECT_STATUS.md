@@ -203,9 +203,35 @@ Update this file when something moves from Incomplete → Working, or when a new
   - Supports clean fallbacks: if an employee or manager lacks an email address or unassigned manager, email delivery is cleanly skipped and logged.
 - **Verification**:
   - Added unit test suite `NotificationServiceTest` covering submit, approve, reject, unassigned manager, mark-as-read, and security ownership checks (7/7 tests passing).
-  - All 27 backend tests across the application passing (`BUILD SUCCESS`).
+### Leave Request Supporting Documents (MongoDB Upload & Manager Review) — 2026-09-18
+- **Backend Architecture & Storage**:
+  - Implemented `SupportingDocument` MongoDB entity (`employeeId`, `fileName`, `contentType`, `fileSize`, `byte[] data`, `uploadedAt`) in `supporting_documents` collection.
+  - Implemented `SupportingDocumentRepository` for document persistence.
+  - Implemented `SupportingDocumentService` and `SupportingDocumentServiceImpl`:
+    - Handles uploads with 10MB size restriction and MIME type validation (PDF, JPEG, PNG, WebP).
+    - Enforces document security and ownership access: accessible by the owner employee, their manager, or HR/ADMIN roles.
+  - Implemented `DocumentController`:
+    - `POST /api/employee/leave-requests/documents`: multipart/form-data upload returning `SupportingDocumentResponse`.
+    - `GET /api/documents/{id}`: inline file streaming with appropriate `Content-Type` and `Content-Disposition`.
+    - `GET /api/documents/{id}/metadata`: lightweight metadata retrieval.
+- **Mandatory Proof Enforcement**:
+  - Extended `CreateLeaveRequest` DTO and `LeaveRequest` entity to link uploaded document IDs.
+  - Updated `LeaveRequestServiceImpl.submit()` to enforce mandatory proof: if `leaveType.isRequiresProof()` is true (e.g. `SICK`, `MATERNITY`), submission is blocked with `ErrorCode.VALIDATION_ERROR` when `supportingDocuments` is empty.
+- **Frontend Employee Experience**:
+  - Enhanced `LeaveRequestsComponent` (`/leave-requests`):
+    - Added conditional upload card in Step 2 for leave types requiring proof (`SICK`, `MATERNITY`).
+    - Enforced mandatory upload in `step2Valid`: user cannot progress past Step 2 or submit without attaching a valid document.
+    - Added document preview card in Step 3 review panel.
+    - Added "Proof" column in "My Requests" history table with inline "View" button opening the document in a new tab.
+- **Frontend Manager Experience**:
+  - Enhanced `ManagerApprovalsComponent` (`/manager/approvals`):
+    - When pending requests have supporting documents attached, rendered a dedicated "Supporting Document Attached — View Document" action.
+    - Securely downloads document blob via `HttpClient` (carrying Keycloak Bearer token) and opens in a new browser tab.
+- **Verification**:
+  - Backend test suite: 77/77 tests passed (`BUILD SUCCESS`), including 7 unit tests in `SupportingDocumentServiceTest` and 2 new proof enforcement tests in `LeaveRequestSubmitTest`.
+  - Frontend production build: `npm run build` compiled with 0 errors.
 
-### Leave Request Workflow — Slice C (Employee + Manager UI) — 2026-09-16
+### Leave Request Notifications & Alerts — Slice D (Decoupled Async Events & MailHog) — 2026-09-17
 - **Backend API**:
   - Implemented `LeaveRequestService.listPendingTeamRequests()` and exposed `GET /api/manager/leave-requests/pending` on `ManagerLeaveRequestController` returning direct reports' pending requests.
   - Added unit test in `LeaveRequestDecisionTest` verifying direct report resolution and pending status filtering.

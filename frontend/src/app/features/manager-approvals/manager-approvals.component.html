@@ -123,6 +123,20 @@
                       @if (req.reason) {
                         <p class="request-reason">"{{ req.reason }}"</p>
                       }
+                      @if (req.supportingDocuments && req.supportingDocuments.length > 0) {
+                        <div class="supporting-doc-banner" style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.5rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px; padding: 4px 10px;">
+                          <mat-icon style="color: #0284c7; font-size: 18px; width: 18px; height: 18px;">attach_file</mat-icon>
+                          <span style="font-size: 0.8rem; font-weight: 600; color: #0369a1;">Supporting Document Attached</span>
+                          <button
+                            mat-button
+                            type="button"
+                            style="color: #0284c7; font-size: 0.75rem; height: 26px; line-height: 26px; padding: 0 8px; font-weight: 700; text-decoration: underline;"
+                            (click)="viewDocument(req.supportingDocuments[0])"
+                          >
+                            View Document
+                          </button>
+                        </div>
+                      }
                     </div>
                   </div>
 
