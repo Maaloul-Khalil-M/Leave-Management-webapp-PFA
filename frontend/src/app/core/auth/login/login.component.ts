@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../auth.service';
-import { HeaderComponent } from '../../layout/header/header.component';
 
 @Component({
   selector: 'app-login',
@@ -15,11 +14,9 @@ import { HeaderComponent } from '../../layout/header/header.component';
     MatButtonModule,
     MatCardModule,
     MatIconModule,
-    HeaderComponent,
   ],
   template: `
     <div class="login-page">
-      <app-header />
 
       <main class="login-container">
         <div class="login-card">
@@ -27,7 +24,7 @@ import { HeaderComponent } from '../../layout/header/header.component';
             <div class="brand-mark">
               <img src="/LOGO.png" alt="Platana" class="brand-logo" />
             </div>
-            <h1 class="login-title">Sign in to Platana</h1>
+            <h1 class="login-title">Leave management platform</h1>
             <p class="login-subtitle">
               Manage your leave requests, view company calendar, and access workforce resources.
             </p>
@@ -39,7 +36,7 @@ import { HeaderComponent } from '../../layout/header/header.component';
               class="google-btn"
               (click)="signInWithGoogle()"
             >
-              <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20">
+              <svg class="google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -63,7 +60,7 @@ import { HeaderComponent } from '../../layout/header/header.component';
 
           <div class="login-footer">
             <span class="security-note">
-              Protected by Keycloak Single Sign-On & OAuth 2.0
+              Protected by Keycloak OAuth 2.0
             </span>
           </div>
         </div>
@@ -71,141 +68,144 @@ import { HeaderComponent } from '../../layout/header/header.component';
     </div>
   `,
   styles: [`
-    .login-page {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: #f8fafc;
-    }
+             :host {
+               display: block;
+               --login-bg: #f8fafc;
+               --card-bg: #ffffff;
+               --card-border: #e2e8f0;
+               --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+               --title-color: #0f172a;
+               --subtitle-color: #64748b;
+               --btn-bg: #ffffff;
+               --btn-border: #cbd5e1;
+               --btn-color: #1e293b;
+               --btn-hover-bg: #f8fafc;
+               --btn-hover-border: #94a3b8;
+               --footer-border: #f1f5f9;
+               --note-color: #94a3b8;
+               --focus-ring: #2563eb;
+             }
 
-    :host-context(html.dark) .login-page {
-      background: #0f172a;
-    }
+             :host-context(html.dark) {
+               --login-bg: #0f172a;
+               --card-bg: #1e293b;
+               --card-border: #334155;
+               --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+               --title-color: #f8fafc;
+               --subtitle-color: #94a3b8;
+               --btn-bg: #334155;
+               --btn-border: #475569;
+               --btn-color: #f8fafc;
+               --btn-hover-bg: #3e4f66;
+               --btn-hover-border: #64748b;
+               --footer-border: #334155;
+               --note-color: #64748b;
+               --focus-ring: #60a5fa;
+             }
 
-    .login-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1rem;
-    }
+             .login-page {
+               min-height: 100vh;
+               display: flex;
+               flex-direction: column;
+               background: var(--login-bg);
+             }
 
-    .login-card {
-      width: 100%;
-      max-width: 420px;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.08);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
+             .login-container {
+               flex: 1;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               padding: 2rem 1rem;
+             }
 
-    :host-context(html.dark) .login-card {
-      background: #1e293b;
-      border-color: #334155;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    }
+             .login-card {
+               width: 100%;
+               max-width: 420px;
+               background: var(--card-bg);
+               border: 1px solid var(--card-border);
+               border-radius: 16px;
+               padding: 2.5rem 2rem;
+               box-shadow: var(--card-shadow);
+               display: flex;
+               flex-direction: column;
+               align-items: center;
+               text-align: center;
+             }
 
-    .brand-mark {
-      margin-bottom: 1.25rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
+             .brand-mark {
+               margin-bottom: 1.25rem;
+               display: inline-flex;
+               align-items: center;
+               justify-content: center;
+             }
 
-    .brand-logo {
-      height: 48px;
-      width: auto;
-      object-fit: contain;
-    }
+             .brand-logo {
+               height: 48px;
+               width: auto;
+               object-fit: contain;
+             }
 
-    .login-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0 0 0.5rem 0;
-      letter-spacing: -0.02em;
-    }
+             .login-title {
+               font-size: 1.5rem;
+               font-weight: 700;
+               color: var(--title-color);
+               margin: 0 0 0.5rem 0;
+               letter-spacing: -0.02em;
+             }
 
-    :host-context(html.dark) .login-title {
-      color: #f8fafc;
-    }
+             .login-subtitle {
+               font-size: 0.875rem;
+               color: var(--subtitle-color);
+               margin: 0 0 2rem 0;
+               line-height: 1.5;
+             }
 
-    .login-subtitle {
-      font-size: 0.875rem;
-      color: #64748b;
-      margin: 0 0 2rem 0;
-      line-height: 1.5;
-    }
+             .login-actions {
+               width: 100%;
+             }
 
-    :host-context(html.dark) .login-subtitle {
-      color: #94a3b8;
-    }
+             .google-btn {
+               width: 100%;
+               display: flex;
+               align-items: center;
+               justify-content: center;
+               gap: 0.75rem;
+               padding: 0.75rem 1.25rem;
+               font-size: 0.9375rem;
+               font-weight: 600;
+               color: var(--btn-color);
+               background-color: var(--btn-bg);
+               border: 1px solid var(--btn-border);
+               border-radius: 10px;
+               cursor: pointer;
+               transition: all 0.15s ease-in-out;
+               box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+             }
 
-    .login-actions {
-      width: 100%;
-    }
+             .google-btn:hover {
+               background-color: var(--btn-hover-bg);
+               border-color: var(--btn-hover-border);
+               box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
+               transform: translateY(-1px);
+             }
 
-    .google-btn {
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.75rem;
-      padding: 0.75rem 1.25rem;
-      font-size: 0.9375rem;
-      font-weight: 600;
-      color: #1e293b;
-      background-color: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.15s ease-in-out;
-      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    }
+             .google-btn:focus-visible {
+               outline: 2px solid var(--focus-ring);
+               outline-offset: 2px;
+             }
 
-    .google-btn:hover {
-      background-color: #f8fafc;
-      border-color: #94a3b8;
-      box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.08);
-      transform: translateY(-1px);
-    }
+             .login-footer {
+               margin-top: 2rem;
+               padding-top: 1.25rem;
+               border-top: 1px solid var(--footer-border);
+               width: 100%;
+             }
 
-    :host-context(html.dark) .google-btn {
-      background-color: #334155;
-      color: #f8fafc;
-      border-color: #475569;
-    }
-
-    :host-context(html.dark) .google-btn:hover {
-      background-color: #3e4f66;
-      border-color: #64748b;
-    }
-
-    .login-footer {
-      margin-top: 2rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid #f1f5f9;
-      width: 100%;
-    }
-
-    :host-context(html.dark) .login-footer {
-      border-top-color: #334155;
-    }
-
-    .security-note {
-      font-size: 0.75rem;
-      color: #94a3b8;
-    }
-
-    :host-context(html.dark) .security-note {
-      color: #64748b;
-    }
-  `],
+             .security-note {
+               font-size: 0.75rem;
+               color: var(--note-color);
+             }
+           `],
 })
 export class LoginComponent implements OnInit {
   private readonly auth = inject(AuthService);

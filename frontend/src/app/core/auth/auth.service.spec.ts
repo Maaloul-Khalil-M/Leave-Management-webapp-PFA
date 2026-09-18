@@ -1,5 +1,6 @@
+import '@angular/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestBed } from '@angular/core/testing';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { Subject } from 'rxjs';
 import { OAuthService, OAuthEvent } from 'angular-oauth2-oidc';
 import { AuthService } from './auth.service';
@@ -29,14 +30,13 @@ describe('AuthService', () => {
       clientId: 'angular-app',
     };
 
-    TestBed.configureTestingModule({
+    const injector = Injector.create({
       providers: [
-        AuthService,
         { provide: OAuthService, useValue: oauthServiceMock },
       ],
     });
 
-    service = TestBed.inject(AuthService);
+    service = runInInjectionContext(injector, () => new AuthService());
   });
 
   describe('Sign-out flow', () => {
@@ -78,20 +78,21 @@ describe('AuthService', () => {
 
     it('extracts realm and client roles from access token JWT', () => {
       const payload = {
-        realm_access: { roles: ['EMPLOYEE', 'USER'] },
+        realm_access: { roles: ['EMPLOYEE'] },
         resource_access: { 'angular-app': { roles: ['HR'] } },
       };
       const token = `header.${btoa(JSON.stringify(payload))}.sig`;
       oauthServiceMock.getAccessToken.mockReturnValue(token);
 
-      expect(service.roles()).toEqual(['EMPLOYEE', 'HR', 'USER']);
+      expect(service.roles()).toEqual(['EMPLOYEE', 'HR']);
       expect(service.hasRole('HR')).toBe(true);
       expect(service.hasRole('ADMIN')).toBe(false);
-      expect(service.hasAnyRole('ADMIN', 'HR')).toBe(true);
+      expect(service.hasAnyRole('MANAGER', 'HR')).toBe(true);
     });
 
     it('initiates Google login code flow with kc_idp_hint', () => {
       service.loginWithGoogle();
+
       expect(oauthServiceMock.initCodeFlow).toHaveBeenCalledWith(undefined, {
         kc_idp_hint: 'google',
       });

@@ -11,6 +11,13 @@ export const routes: Routes = [
       import('./core/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'no-profile',
+    loadComponent: () =>
+      import('./core/auth/no-profile/no-profile.component').then(
+        (m) => m.NoProfileComponent
+      ),
+  },
+  {
     path: 'dashboard',
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then(

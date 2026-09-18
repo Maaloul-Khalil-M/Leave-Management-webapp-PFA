@@ -46,7 +46,7 @@ Update this file when something moves from Incomplete → Working, or when a new
 | In-app Notifications UI | Working | Notification bell with unread badge counter in header, dropdown list with status styling and relative timestamps, click-to-mark-read via real API |
 | HR & Admin screens (employees, departments, positions, calendars, settings) | Working | Complete workforce directory, CSV import/export, master data, calendar & special days CRUD, and company settings at /management/** |
 | HR screens (policies, adjustments) | Missing | Leave policies and balance adjustments UI |
-| Pending / ACTIVE gating | Missing | |
+| Pending / ACTIVE gating | Working | Non-ACTIVE or missing employee profiles redirected cleanly to `/no-profile` holding screen with logout action |
 | Two colour systems (lifecycle vs availability) | Missing | |
 
 ---

@@ -20,11 +20,13 @@ export const employeeGuard: CanActivateFn = () => {
         return true;
       }
 
-      alert(`Your account is ${me.accountStatus}.`);
+      router.navigate(['/no-profile'], {
+        queryParams: { reason: me.accountStatus?.toLowerCase() },
+      });
       return false;
     }),
     catchError(() => {
-      alert('Unable to load your user account.');
+      router.navigate(['/no-profile']);
       return of(false);
     })
   );
