@@ -1,4 +1,4 @@
-﻿import { Component, OnInit, inject, input, output, computed } from '@angular/core';
+import { Component, OnInit, inject, input, output, computed } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,6 +10,7 @@ import { NotificationBellComponent } from '../notification-bell/notification-bel
 import { NotificationItem } from '../notification-bell/notification.model';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../auth/auth.service';
+import { UserProfileService, EmployeeProfileData } from '../../services/user-profile.service';
 
 export interface UserHeaderProfile {
   name?: string;
@@ -39,6 +40,7 @@ export class HeaderComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   readonly auth = inject(AuthService);
+  readonly userProfileService = inject(UserProfileService);
 
   readonly profile = input<UserHeaderProfile | null>(null);
 
@@ -47,9 +49,15 @@ export class HeaderComponent implements OnInit {
 
   notifications: NotificationItem[] = [];
 
+  readonly employeeDetails = computed<EmployeeProfileData | null>(() => {
+    return this.userProfileService.profile();
+  });
+
   readonly displayName = computed(() => {
     const prof = this.profile();
     if (prof?.name) return prof.name;
+    const globalProf = this.userProfileService.profile();
+    if (globalProf?.name) return globalProf.name;
     const user = this.auth.username();
     if (user) return user;
     const email = this.auth.email();
@@ -60,6 +68,8 @@ export class HeaderComponent implements OnInit {
   readonly displayTitle = computed(() => {
     const prof = this.profile();
     if (prof?.position) return prof.position;
+    const globalProf = this.userProfileService.profile();
+    if (globalProf?.position) return globalProf.position;
     if (this.auth.hasRole('ADMIN')) return 'System Administrator';
     if (this.auth.hasRole('HR')) return 'HR Administrator';
     if (this.auth.hasRole('MANAGER')) return 'Department Manager';
@@ -74,6 +84,11 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     if (this.auth.isLoggedIn()) {
       this.loadNotifications();
+      if (!this.userProfileService.profile()) {
+        this.userProfileService.loadProfile().subscribe({
+          error: () => {},
+        });
+      }
     }
   }
 
@@ -106,6 +121,7 @@ export class HeaderComponent implements OnInit {
 
   onSignOut(): void {
     this.signOut.emit();
+    this.userProfileService.clear();
     this.auth.logout();
   }
 }

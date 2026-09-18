@@ -13,6 +13,7 @@ import {
   CalendarData,
   CalendarEvent
 } from '../models';
+import { UserProfileService } from '../../../core/services/user-profile.service';
 
 interface EmployeeProfileResponse {
   id: string;
@@ -86,6 +87,7 @@ interface PageResponse<T> {
 export class DashboardStateService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:8080';
+  private readonly userProfileService = inject(UserProfileService);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -171,6 +173,20 @@ export class DashboardStateService {
             accrualRate: '2.08 days/mo',
             fiscalPeriod: `Jan ${currentYear} – Dec ${currentYear}`,
             email: p?.email || ''
+          });
+
+          this.userProfileService.setProfile({
+            id: profileData.id,
+            employeeNumber: profileData.employeeNumber,
+            employmentStatus: profileData.employmentStatus,
+            name: fullName,
+            firstName: p?.firstName,
+            lastName: p?.lastName,
+            email: p?.email || '',
+            phone: p?.phone,
+            position: profileData.currentAssignment?.positionLabel || 'Software Engineer',
+            department: profileData.currentAssignment?.departmentLabel || '',
+            manager: mgr
           });
         }
 

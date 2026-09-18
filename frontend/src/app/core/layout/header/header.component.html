@@ -77,38 +77,85 @@
       </div>
 
       <!-- User Profile Dropdown Menu -->
-      <mat-menu #userMenu="matMenu" xPosition="before">
-        <button mat-menu-item routerLink="/leave-requests">
-          <mat-icon>event_note</mat-icon>
-          <span>My Requests</span>
-        </button>
-        <button mat-menu-item routerLink="/manager/approvals">
-          <mat-icon>rule</mat-icon>
-          <span>Team Approvals</span>
-        </button>
-        @if (auth.hasAnyRole('HR', 'ADMIN')) {
-          <button mat-menu-item routerLink="/management/employees">
-            <mat-icon>badge</mat-icon>
-            <span>Employees Directory</span>
-          </button>
-          <button mat-menu-item routerLink="/management/organization">
-            <mat-icon>domain</mat-icon>
-            <span>Organization Master Data</span>
-          </button>
-          <button mat-menu-item routerLink="/management/analytics">
-            <mat-icon>analytics</mat-icon>
-            <span>Workforce Analytics</span>
-          </button>
-        }
-        <button mat-menu-item routerLink="/dev/auth-test">
-          <mat-icon>security</mat-icon>
-          <span>Auth Diagnostics</span>
-        </button>
-        <mat-divider></mat-divider>
-        <button mat-menu-item (click)="onSignOut()">
-          <mat-icon>logout</mat-icon>
-          <span>Sign out</span>
-        </button>
+      <mat-menu #userMenu="matMenu" xPosition="before" class="user-profile-menu-panel">
+        <div class="user-profile-card" (click)="$event.stopPropagation()">
+          <!-- Profile Card Header -->
+          <div class="profile-card-header">
+            <div class="avatar-lg">{{ avatarLetter() }}</div>
+            <div class="profile-card-identity">
+              <span class="profile-card-name">{{ displayName() }}</span>
+              <span class="profile-card-title">{{ displayTitle() }}</span>
+              @if (employeeDetails()?.employeeNumber) {
+                <span class="profile-card-badge">ID: {{ employeeDetails()?.employeeNumber }}</span>
+              }
+            </div>
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <!-- Brief Info Details -->
+          <div class="profile-card-details">
+            @if (employeeDetails()?.email || auth.email()) {
+              <div class="detail-row">
+                <mat-icon class="detail-icon">mail_outline</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Email</span>
+                  <span class="detail-value" [title]="employeeDetails()?.email || auth.email()">
+                    {{ employeeDetails()?.email || auth.email() }}
+                  </span>
+                </div>
+              </div>
+            }
+
+            @if (employeeDetails()?.department) {
+              <div class="detail-row">
+                <mat-icon class="detail-icon">domain</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Department</span>
+                  <span class="detail-value">{{ employeeDetails()?.department }}</span>
+                </div>
+              </div>
+            }
+
+            @if (employeeDetails()?.manager) {
+              <div class="detail-row">
+                <mat-icon class="detail-icon">supervisor_account</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Manager</span>
+                  <span class="detail-value">{{ employeeDetails()?.manager }}</span>
+                </div>
+              </div>
+            }
+
+            @if (employeeDetails()?.employmentStatus) {
+              <div class="detail-row">
+                <mat-icon class="detail-icon">verified_user</mat-icon>
+                <div class="detail-content">
+                  <span class="detail-label">Status</span>
+                  <span class="detail-status status-{{ employeeDetails()?.employmentStatus?.toLowerCase() }}">
+                    {{ employeeDetails()?.employmentStatus }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+
+          <mat-divider></mat-divider>
+
+          <!-- Profile Actions -->
+          <div class="profile-card-actions">
+            @if (auth.hasAnyRole('HR', 'ADMIN')) {
+              <button mat-menu-item routerLink="/dev/auth-test" class="menu-action-item">
+                <mat-icon>security</mat-icon>
+                <span>Auth Diagnostics</span>
+              </button>
+            }
+            <button mat-menu-item (click)="onSignOut()" class="menu-action-item signout-btn">
+              <mat-icon>logout</mat-icon>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
       </mat-menu>
     }
   </div>

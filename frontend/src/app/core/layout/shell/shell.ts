@@ -1,5 +1,5 @@
 import {Component} from '@angular/core';
-import {Header} from '../header/header';
+import {HeaderComponent} from '../header/header.component';
 import {Main} from '../main/main';
 
 //import {Footer} from '../footer/footer';
@@ -7,7 +7,7 @@ import {Main} from '../main/main';
 @Component({
   selector: 'app-shell',
   imports: [
-    Header,
+    HeaderComponent,
     Main,
   ],
   template: `
