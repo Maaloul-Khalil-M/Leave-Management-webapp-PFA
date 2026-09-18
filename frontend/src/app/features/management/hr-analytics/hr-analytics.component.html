@@ -1,0 +1,344 @@
+<app-header />
+
+<div class="manager-hub-page">
+  <main class="dashboard-container">
+    <!-- Notification Banners -->
+    @if (errorMessage()) {
+      <div class="error-banner flex items-center justify-between">
+        <span>{{ errorMessage() }}</span>
+        <button type="button" (click)="errorMessage.set(null)" class="close-btn">&times;</button>
+      </div>
+    }
+
+    <!-- Top Integrated Department Selector Tabs Card -->
+    <mat-card class="section-card header-tab-card">
+      <div class="hub-header-bar">
+        <div class="hub-title-wrap">
+          <mat-icon class="hub-header-icon">analytics</mat-icon>
+          <div>
+            <h2 class="hub-title">Workforce Intelligence & Analytics</h2>
+            <p class="hub-subtitle">
+              Organization-wide & department capacity, absence risk, and decision velocity
+            </p>
+          </div>
+        </div>
+
+        <mat-tab-group
+          animationDuration="150ms"
+          class="compact-tab-group"
+          [selectedIndex]="selectedTabIndex()"
+          (selectedIndexChange)="onDepartmentTabChange($event)"
+        >
+          <!-- Tab 0: All Departments (Company-wide) -->
+          <mat-tab>
+            <ng-template mat-tab-label>
+              <div class="tab-label">
+                <mat-icon class="tab-icon">corporate_fare</mat-icon>
+                <span>All Departments</span>
+                <span class="badge-count">
+                  {{ analyticsData()?.organizationSummary?.totalWorkforce || 0 }}
+                </span>
+              </div>
+            </ng-template>
+          </mat-tab>
+
+          <!-- Dynamic Tabs for Each Department -->
+          @for (dept of analyticsData()?.availableDepartments || []; track dept.departmentId) {
+            <mat-tab>
+              <ng-template mat-tab-label>
+                <div class="tab-label">
+                  <mat-icon class="tab-icon dept-tab-icon">business</mat-icon>
+                  <span>{{ dept.departmentLabel }}</span>
+                </div>
+              </ng-template>
+            </mat-tab>
+          }
+        </mat-tab-group>
+      </div>
+    </mat-card>
+
+    @if (loading()) {
+      <div class="loading-overlay">
+        <p>Loading workforce intelligence…</p>
+      </div>
+    } @else if (analyticsData(); as data) {
+      <!-- Top Consolidated KPI Strip -->
+      <section class="top-row">
+        <mat-card class="section-card consolidated-kpi-card">
+          <div class="kpi-strip-layout">
+            <!-- Left: Scope Label & Refresh -->
+            <div class="dept-scope-block">
+              <div class="dept-avatar">
+                {{ selectedDepartmentId() === 'ALL' ? 'ALL' : (data.organizationSummary.departmentLabel?.substring(0, 2)?.toUpperCase() || 'DP') }}
+              </div>
+              <div class="dept-meta">
+                <span class="dept-name">{{ data.organizationSummary.departmentLabel }}</span>
+                <span class="manager-name">
+                  {{ selectedDepartmentId() === 'ALL' ? (data.organizationSummary.totalDepartments + ' departments tracked') : 'Department Scope' }}
+                </span>
+              </div>
+
+              <button mat-button class="refresh-btn" (click)="loadData()">
+                <mat-icon>refresh</mat-icon>
+                Refresh
+              </button>
+            </div>
+
+            <!-- Right: 4 Compact KPI Metric Blocks -->
+            <div class="metrics-grid">
+              <!-- KPI 1: Workforce Presence Today -->
+              <div class="metric-block">
+                <div class="metric-head">
+                  <span class="metric-label">Workforce Present</span>
+                  <app-status-badge
+                    [status]="getLeaveRateBadge(data.presenceKpi.leaveRateStatus).category"
+                    [label]="getLeaveRateBadge(data.presenceKpi.leaveRateStatus).label"
+                    variant="pill"
+                    size="sm"
+                  />
+                </div>
+                <div class="metric-val-row">
+                  <span class="metric-number">{{ data.presenceKpi.presentTodayCount }}/{{ data.presenceKpi.totalMembers }}</span>
+                  <span class="metric-sub">{{ data.presenceKpi.onLeaveTodayCount }} on leave today</span>
+                </div>
+              </div>
+
+              <!-- KPI 2: Daily Leave Rate -->
+              <div class="metric-block">
+                <div class="metric-head">
+                  <span class="metric-label">Daily Leave Rate</span>
+                  <span class="metric-sub-tag">Today</span>
+                </div>
+                <div class="metric-val-row">
+                  <span class="metric-number rate">{{ data.presenceKpi.leaveRatePercentage }}%</span>
+                  <div class="mini-progress-track">
+                    <div
+                      class="mini-progress-fill"
+                      [style.width.%]="data.presenceKpi.leaveRatePercentage"
+                      [class.high-rate]="data.presenceKpi.leaveRatePercentage > 30"
+                      [class.med-rate]="data.presenceKpi.leaveRatePercentage > 15 && data.presenceKpi.leaveRatePercentage <= 30"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- KPI 3: Approval Rate -->
+              <div class="metric-block">
+                <div class="metric-head">
+                  <span class="metric-label">Decision Approval Rate</span>
+                  <span class="metric-sub-tag">Decided</span>
+                </div>
+                <div class="metric-val-row">
+                  <span class="metric-number success">{{ data.approvalKpi.approvalRatePercentage }}%</span>
+                  <span class="metric-sub">{{ data.approvalKpi.approvedCount }} app • {{ data.approvalKpi.rejectedCount }} rej</span>
+                </div>
+              </div>
+
+              <!-- KPI 4: Pending Backlog & Stale Alerts -->
+              <div class="metric-block" [class.has-stale]="data.approvalKpi.stalePendingCount > 0">
+                <div class="metric-head">
+                  <span class="metric-label">Pending Backlog</span>
+                  @if (data.approvalKpi.stalePendingCount > 0) {
+                    <span class="stale-alert-tag">{{ data.approvalKpi.stalePendingCount }} Stale (>3d)</span>
+                  }
+                </div>
+                <div class="metric-val-row">
+                  <span class="metric-number">{{ data.approvalKpi.pendingCount }}</span>
+                  <span class="metric-sub">{{ data.approvalKpi.totalRequests }} total in scope</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-card>
+      </section>
+
+      <!-- Operational Dual-Pane Minimal-Scroll Workspace -->
+      <section class="workspace-grid">
+        <!-- Left / Primary Workspace (58%): Calendar Heatmap + Department Comparison + Roster -->
+        <div class="col-primary">
+          <!-- Calendar Heatmap Card -->
+          <mat-card class="section-card compact-widget-card">
+            <div class="card-header">
+              <div class="title-wrap">
+                <mat-icon class="header-icon calendar-icon">calendar_month</mat-icon>
+                <h3>Staffing & Absence Risk Calendar</h3>
+              </div>
+              <span class="header-hint">Proactively assess understaffed dates</span>
+            </div>
+            <div echarts [options]="heatmapOptions()" class="calendar-echart"></div>
+          </mat-card>
+
+          <!-- Department Comparison Grid (Company-Wide View Only) -->
+          @if (selectedDepartmentId() === 'ALL' && data.departmentStats.length > 0) {
+            <mat-card class="section-card compact-widget-card">
+              <div class="card-header">
+                <div class="title-wrap">
+                  <mat-icon class="header-icon dept-icon">domain</mat-icon>
+                  <h3>Cross-Department Breakdown & Capacity Comparison</h3>
+                </div>
+                <span class="header-hint">Click row to filter department</span>
+              </div>
+
+              <div class="roster-table-wrap">
+                <table class="roster-table">
+                  <thead>
+                    <tr>
+                      <th>Department</th>
+                      <th>Headcount</th>
+                      <th>Present Today</th>
+                      <th>Leave Rate</th>
+                      <th>Pending Backlog</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (dept of data.departmentStats; track dept.departmentId) {
+                      <tr class="roster-row clickable" (click)="selectDepartmentFromTable(dept.departmentId)">
+                        <td class="name-cell font-semibold text-slate-900">
+                          {{ dept.departmentLabel }}
+                        </td>
+                        <td class="role-cell">{{ dept.headcount }} staff</td>
+                        <td class="status-cell">
+                          <span class="font-medium text-slate-800">{{ dept.presentCount }}</span>
+                          <span class="text-slate-400 text-[10px]"> ({{ dept.onLeaveCount }} away)</span>
+                        </td>
+                        <td class="leave-cell">
+                          <span
+                            class="font-semibold"
+                            [ngClass]="dept.leaveRatePercentage > 30 ? 'text-rose-600' : dept.leaveRatePercentage > 15 ? 'text-amber-600' : 'text-emerald-600'"
+                          >
+                            {{ dept.leaveRatePercentage }}%
+                          </span>
+                        </td>
+                        <td class="role-cell">
+                          <span class="font-medium text-slate-800">{{ dept.pendingCount }}</span>
+                          @if (dept.stalePendingCount > 0) {
+                            <span class="stale-mini-tag">{{ dept.stalePendingCount }} stale</span>
+                          }
+                        </td>
+                        <td class="action-cell">
+                          <button mat-button class="view-dept-btn" (click)="$event.stopPropagation(); selectDepartmentFromTable(dept.departmentId)">
+                            Filter
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </mat-card>
+          }
+
+          <!-- Workforce Availability Roster Card -->
+          <mat-card class="section-card compact-widget-card roster-card">
+            <div class="card-header">
+              <div class="title-wrap">
+                <mat-icon class="header-icon roster-icon">people</mat-icon>
+                <h3>Workforce Availability Roster</h3>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  [ngModel]="rosterSearchQuery()"
+                  (ngModelChange)="rosterSearchQuery.set($event)"
+                  placeholder="Filter by name, department, or #…"
+                  class="search-mini-input"
+                />
+                <span class="count-tag">{{ filteredRoster().length }} members</span>
+              </div>
+            </div>
+
+            <div class="roster-table-wrap">
+              <table class="roster-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Department</th>
+                    <th>Role</th>
+                    <th>Status Today</th>
+                    <th>Active Leave</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (member of filteredRoster(); track member.employeeId) {
+                    <tr class="roster-row">
+                      <td class="name-cell">
+                        <div class="member-name-wrap">
+                          <span class="member-avatar">
+                            {{ member.firstName?.charAt(0) || '' }}{{ member.lastName?.charAt(0) || '' }}
+                          </span>
+                          <div>
+                            <span class="member-name">{{ member.firstName }} {{ member.lastName }}</span>
+                            <span class="member-code">{{ member.employeeNumber }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="dept-cell font-medium text-slate-700">
+                        {{ member.departmentLabel || '—' }}
+                      </td>
+                      <td class="role-cell">{{ member.positionLabel || 'Employee' }}</td>
+                      <td class="status-cell">
+                        <app-status-badge
+                          [status]="member.presenceStatus === 'PRESENT' ? 'ACTIVE' : 'SUSPENDED'"
+                          [label]="member.presenceStatus === 'PRESENT' ? 'Present' : 'On Leave'"
+                          variant="pill"
+                          size="sm"
+                        />
+                      </td>
+                      <td class="leave-cell">
+                        @if (member.presenceStatus === 'ON_LEAVE' && member.activeLeaveStartDate) {
+                          <span class="leave-detail">
+                            <strong>{{ formatType(member.activeLeaveTypeCode!) }}</strong>
+                            ({{ member.activeLeaveStartDate | date:'MMM d' }} – {{ member.activeLeaveEndDate | date:'MMM d' }}, {{ member.activeLeaveDurationDays }}d)
+                          </span>
+                        } @else {
+                          <span class="text-slate-300">—</span>
+                        }
+                      </td>
+                      <td class="email-cell">{{ member.email || '—' }}</td>
+                    </tr>
+                  }
+                  @if (filteredRoster().length === 0) {
+                    <tr>
+                      <td colspan="6" class="text-center py-4 text-slate-400">
+                        No employees found matching filter criteria
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </mat-card>
+        </div>
+
+        <!-- Right / Secondary Workspace (42%): Donut Chart + Grouped Bar Chart -->
+        <div class="col-secondary">
+          <!-- Donut Chart: Leave by Type -->
+          <mat-card class="section-card compact-widget-card">
+            <div class="card-header">
+              <div class="title-wrap">
+                <mat-icon class="header-icon donut-icon">donut_large</mat-icon>
+                <h3>Leave by Type Distribution</h3>
+              </div>
+              <span class="header-hint">Days taken in scope</span>
+            </div>
+            <div echarts [options]="donutOptions()" class="donut-echart"></div>
+          </mat-card>
+
+          <!-- Grouped Bar Chart: Approvals & Pipeline -->
+          <mat-card class="section-card compact-widget-card">
+            <div class="card-header">
+              <div class="title-wrap">
+                <mat-icon class="header-icon bar-icon">bar_chart</mat-icon>
+                <h3>Approvals & Pipeline Decisions</h3>
+              </div>
+              <span class="header-hint">Status breakdown</span>
+            </div>
+            <div echarts [options]="barOptions()" class="bar-echart"></div>
+          </mat-card>
+        </div>
+      </section>
+    }
+  </main>
+</div>

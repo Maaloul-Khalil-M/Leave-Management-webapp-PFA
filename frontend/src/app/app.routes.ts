@@ -58,6 +58,14 @@ export const routes: Routes = [
     canActivate: [hrGuard],
   },
   {
+    path: 'management/analytics',
+    loadComponent: () =>
+      import(
+        './features/management/hr-analytics/hr-analytics.component'
+      ).then((m) => m.HrAnalyticsComponent),
+    canActivate: [hrGuard],
+  },
+  {
     path: 'dev/auth-test',
     component: HomeComponent,
   },

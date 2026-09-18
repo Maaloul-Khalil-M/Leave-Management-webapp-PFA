@@ -38,6 +38,9 @@
         <a class="nav-link" routerLink="/management/organization" routerLinkActive="active">
           Organization
         </a>
+        <a class="nav-link" routerLink="/management/analytics" routerLinkActive="active">
+          Analytics
+        </a>
       }
     </nav>
   }
@@ -92,6 +95,10 @@
             <mat-icon>domain</mat-icon>
             <span>Organization Master Data</span>
           </button>
+          <button mat-menu-item routerLink="/management/analytics">
+            <mat-icon>analytics</mat-icon>
+            <span>Workforce Analytics</span>
+          </button>
         }
         <button mat-menu-item routerLink="/dev/auth-test">
           <mat-icon>security</mat-icon>
@@ -129,6 +136,10 @@
     <button mat-menu-item routerLink="/management/organization">
       <mat-icon>domain</mat-icon>
       <span>Organization Master Data</span>
+    </button>
+    <button mat-menu-item routerLink="/management/analytics">
+      <mat-icon>analytics</mat-icon>
+      <span>Workforce Analytics</span>
     </button>
   }
   <button mat-menu-item routerLink="/dev/auth-test">
