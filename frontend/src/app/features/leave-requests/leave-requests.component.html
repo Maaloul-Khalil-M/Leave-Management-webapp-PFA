@@ -284,92 +284,26 @@
                 <h2 class="section-title">Review Request</h2>
                 <p class="section-subtitle">Please verify your leave details before saving or submitting</p>
 
-                <div class="review-cards-container">
-                  <!-- Employee Card -->
-                  <div class="review-card">
-                    <h4>Employee Information</h4>
-                    <p class="review-name">{{ employeeName() }}</p>
-                    <p class="review-meta">{{ employeePosition() }} · {{ employeeDepartment() }}</p>
-                  </div>
-
-                  <!-- Leave Details Card -->
-                  <div class="review-card">
-                    <h4>Leave Request Summary</h4>
-                    <p class="review-name">{{ currentTypeMeta().title }}</p>
-                    <div class="date-range">
-                      <span>{{ formatDisplayDate(startDate()) }}</span>
-                      <mat-icon>arrow_forward</mat-icon>
-                      <span>{{ formatDisplayDate(endDate()) }}</span>
-                    </div>
-
-                    @if (halfDayStart() || halfDayEnd()) {
-                      <p class="review-meta">
-                        {{ halfDayStart() ? '½ Day on start date' : '' }}
-                        {{ halfDayStart() && halfDayEnd() ? ' · ' : '' }}
-                        {{ halfDayEnd() ? '½ Day on end date' : '' }}
-                      </p>
-                    }
-
-                    <span class="days-badge">
-                      {{ calculatedDuration() }} working day{{ calculatedDuration() === 1 ? '' : 's' }}
-                    </span>
-
-                    @if (reason()) {
-                      <p class="review-reason">"{{ reason() }}"</p>
-                    }
-                  </div>
-                </div>
-
-                <!-- Validation Status Banner -->
-                <div
-                  class="validation-banner"
-                  [class.success]="isReadyToSubmit()"
-                  [class.error]="!isReadyToSubmit()"
-                >
-                  <mat-icon>{{ isReadyToSubmit() ? 'check_circle' : 'error' }}</mat-icon>
-                  <div>
-                    <strong>{{ isReadyToSubmit() ? 'Request is ready' : 'Incomplete request' }}</strong>
-                    <p>
-                      {{
-                        isReadyToSubmit()
-                          ? 'You can save this request as a draft or submit it directly for manager approval.'
-                          : 'Please check your dates or required fields before proceeding.'
-                      }}
-                    </p>
-                  </div>
-                </div>
-
-                <!-- Step 3 Actions: Dual Submission -->
-                <div class="step-actions">
-                  <button mat-stroked-button class="action-btn" type="button" (click)="goBack()">
-                    <mat-icon>arrow_back</mat-icon>
-                    Back
-                  </button>
-
-                  <div class="right-buttons">
-                    <button
-                      mat-stroked-button
-                      class="action-btn"
-                      type="button"
-                      [disabled]="submitting() || !isReadyToSubmit()"
-                      (click)="saveDraft()"
-                    >
-                      <mat-icon>save</mat-icon>
-                      {{ submitting() && submitMode() === 'draft' ? 'Saving…' : 'Save as Draft' }}
-                    </button>
-
-                    <button
-                      mat-flat-button
-                      class="action-btn primary-btn"
-                      type="button"
-                      [disabled]="submitting() || !isReadyToSubmit()"
-                      (click)="submitForApproval()"
-                    >
-                      <mat-icon>send</mat-icon>
-                      {{ submitting() && submitMode() === 'submit' ? 'Submitting…' : 'Submit for Approval' }}
-                    </button>
-                  </div>
-                </div>
+                <app-leave-review-panel
+                  [leaveTypeMeta]="currentTypeMeta()"
+                  [startDate]="startDate()"
+                  [endDate]="endDate()"
+                  [halfDayStart]="halfDayStart()"
+                  [halfDayEnd]="halfDayEnd()"
+                  [durationDays]="calculatedDuration()"
+                  [reason]="reason()"
+                  [employeeName]="employeeName()"
+                  [employeePosition]="employeePosition()"
+                  [employeeDepartment]="employeeDepartment()"
+                  [availableBalance]="availableAnnualBalance()"
+                  [eligibility]="eligibility()"
+                  [checkingEligibility]="checkingEligibility()"
+                  [submitting]="submitting()"
+                  [submitMode]="submitMode()"
+                  (goBack)="goBack()"
+                  (saveDraft)="saveDraft()"
+                  (submitForApproval)="submitForApproval()"
+                ></app-leave-review-panel>
               } @else {
                 <!-- ─── SUCCESS SCREEN ───────────────────────────── -->
                 <div class="success-screen">

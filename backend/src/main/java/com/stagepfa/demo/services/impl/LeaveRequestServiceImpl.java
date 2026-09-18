@@ -13,6 +13,9 @@ import com.stagepfa.demo.domain.enums.AccrualUnit;
 import com.stagepfa.demo.domain.enums.CountryCode;
 import com.stagepfa.demo.domain.enums.LedgerMovementType;
 import com.stagepfa.demo.domain.enums.LeaveRequestStatus;
+import com.stagepfa.demo.domain.dtos.request.EligibilityCheckRequest;
+import com.stagepfa.demo.domain.dtos.response.EligibilityResponse;
+import com.stagepfa.demo.domain.enums.ExplanationSeverity;
 import com.stagepfa.demo.domain.events.LeaveRequestEvent;
 import com.stagepfa.demo.exception.BusinessException;
 import com.stagepfa.demo.exception.ErrorCode;
@@ -21,6 +24,8 @@ import com.stagepfa.demo.repositories.EmployeeRepository;
 import com.stagepfa.demo.repositories.LeaveRequestRepository;
 import com.stagepfa.demo.repositories.LeaveTypeRepository;
 import com.stagepfa.demo.services.CurrentUserService;
+import com.stagepfa.demo.services.DurationCalculator;
+import com.stagepfa.demo.services.EligibilityService;
 import com.stagepfa.demo.services.LeaveLedgerService;
 import com.stagepfa.demo.services.LeavePolicyService;
 import com.stagepfa.demo.services.LeaveRequestService;
@@ -49,6 +54,8 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final LeaveLedgerService leaveLedgerService;
     private final LeaveTypeRepository leaveTypeRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EligibilityService eligibilityService;
+    private final DurationCalculator durationCalculator;
 
     @Override
     @Transactional
@@ -149,6 +156,36 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
         if (leaveRequest.getStatus() != LeaveRequestStatus.DRAFT) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Only draft leave requests can be submitted");
+        }
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee", employeeId));
+
+        EligibilityCheckRequest checkReq = EligibilityCheckRequest.builder()
+                .leaveTypeCode(leaveRequest.getLeaveTypeCode())
+                .startDate(leaveRequest.getStartDate())
+                .endDate(leaveRequest.getEndDate())
+                .halfDayStart(leaveRequest.isHalfDayStart())
+                .halfDayEnd(leaveRequest.isHalfDayEnd())
+                .excludeRequestId(leaveRequest.getId())
+                .build();
+
+        EligibilityResponse eligibility = eligibilityService.check(employee, checkReq);
+        if (!eligibility.isEligible()) {
+            List<com.stagepfa.demo.domain.dtos.common.ErrorDetail> details = eligibility.getExplanations().stream()
+                    .filter(e -> e.getSeverity() == ExplanationSeverity.BLOCKING)
+                    .map(e -> com.stagepfa.demo.domain.dtos.common.ErrorDetail.builder()
+                            .field(e.getCode())
+                            .code(e.getCode())
+                            .message(e.getBody())
+                            .build())
+                    .toList();
+
+            throw new BusinessException(
+                    mapEligibilityError(eligibility),
+                    "Not eligible to submit: " + String.join("; ", eligibility.getReasons()),
+                    details
+            );
         }
 
         Instant now = Instant.now();
@@ -408,20 +445,25 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         }
     }
 
-    private double calculateDuration(LocalDate start, LocalDate end, boolean halfDayStart, boolean halfDayEnd, AccrualUnit accrualUnit) {
-        if (accrualUnit == AccrualUnit.CALENDAR_DAY) {
-            long totalDays = ChronoUnit.DAYS.between(start, end) + 1;
-            double days = (double) totalDays;
-            if (halfDayStart) {
-                days -= 0.5;
-            }
-            if (halfDayEnd) {
-                days -= 0.5;
-            }
-            return Math.max(0.0, days);
+    private ErrorCode mapEligibilityError(EligibilityResponse e) {
+        if (e.getBlockingCode() != null) {
+            return switch (e.getBlockingCode()) {
+                case "INSUFFICIENT_BALANCE" -> ErrorCode.INSUFFICIENT_BALANCE;
+                case "OVERLAP_DETECTED" -> ErrorCode.OVERLAP_DETECTED;
+                default -> ErrorCode.VALIDATION_ERROR;
+            };
         }
+        String joined = String.join(" ", e.getReasons()).toLowerCase();
+        if (joined.contains("insufficient balance")) {
+            return ErrorCode.INSUFFICIENT_BALANCE;
+        }
+        if (joined.contains("overlap")) {
+            return ErrorCode.OVERLAP_DETECTED;
+        }
+        return ErrorCode.VALIDATION_ERROR;
+    }
 
-        // WORKING_DAY
+    private double calculateDuration(LocalDate start, LocalDate end, boolean halfDayStart, boolean halfDayEnd, AccrualUnit accrualUnit) {
         List<Integer> weekendDays = List.of(6, 7);
         try {
             var settings = organizationSettingsService.get();
@@ -431,26 +473,6 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         } catch (Exception ignored) {
             // fallback to Saturday (6) and Sunday (7)
         }
-
-        double workingDays = 0.0;
-        LocalDate current = start;
-        while (!current.isAfter(end)) {
-            int dayOfWeek = current.getDayOfWeek().getValue();
-            if (!weekendDays.contains(dayOfWeek)) {
-                workingDays += 1.0;
-            }
-            current = current.plusDays(1);
-        }
-
-        if (workingDays > 0) {
-            if (halfDayStart && !weekendDays.contains(start.getDayOfWeek().getValue())) {
-                workingDays -= 0.5;
-            }
-            if (halfDayEnd && !weekendDays.contains(end.getDayOfWeek().getValue())) {
-                workingDays -= 0.5;
-            }
-        }
-
-        return Math.max(0.0, workingDays);
+        return durationCalculator.calculate(start, end, halfDayStart, halfDayEnd, accrualUnit, weekendDays);
     }
 }

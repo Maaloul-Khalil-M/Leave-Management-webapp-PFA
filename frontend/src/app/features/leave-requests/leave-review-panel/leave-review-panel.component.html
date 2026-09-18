@@ -1,0 +1,291 @@
+<div class="review-panel-root">
+  <!-- ── 1. Unified Status Banner ── -->
+  @if (checkingEligibility) {
+    <div class="status-banner status-banner--checking">
+      <div class="banner-spinner"></div>
+      <div class="banner-content">
+        <h4 class="banner-title">Verifying Eligibility</h4>
+        <p class="banner-desc">Checking your request against company leave policies and live balances…</p>
+      </div>
+    </div>
+  } @else if (eligibility && !eligibility.eligible) {
+    <div class="status-banner status-banner--blocked">
+      <div class="banner-icon-badge">
+        <mat-icon>gpp_bad</mat-icon>
+      </div>
+      <div class="banner-content">
+        <div class="title-row">
+          <h4 class="banner-title">Action Required Before Submission</h4>
+          <span class="issue-pill">
+            {{ blockingExplanations.length }} issue{{ blockingExplanations.length > 1 ? 's' : '' }} preventing submit
+          </span>
+        </div>
+        <p class="banner-desc">
+          This request cannot be submitted yet due to policy or balance constraints. Review the items below, adjust your dates, or save it as a draft for now.
+        </p>
+      </div>
+    </div>
+  } @else if (eligibility && eligibility.eligible && warningExplanations.length > 0) {
+    <div class="status-banner status-banner--warning">
+      <div class="banner-icon-badge">
+        <mat-icon>warning_amber</mat-icon>
+      </div>
+      <div class="banner-content">
+        <div class="title-row">
+          <h4 class="banner-title">Ready for Review (With Policy Advisories)</h4>
+          <span class="advisory-pill">
+            {{ warningExplanations.length }} advisory{{ warningExplanations.length > 1 ? 'ies' : '' }}
+          </span>
+        </div>
+        <p class="banner-desc">
+          You have sufficient balance. Please note the policy advisories below before submitting to your manager.
+        </p>
+      </div>
+    </div>
+  } @else {
+    <div class="status-banner status-banner--ready">
+      <div class="banner-icon-badge">
+        <mat-icon>verified</mat-icon>
+      </div>
+      <div class="banner-content">
+        <h4 class="banner-title">All Eligibility Checks Passed</h4>
+        <p class="banner-desc">
+          Dates and balances are verified. You can submit directly for manager approval or save as draft.
+        </p>
+      </div>
+    </div>
+  }
+
+  <!-- ── 2. Two-Column Information & Balance Grid ── -->
+  <div class="review-grid">
+    <!-- Left Card: Request Summary -->
+    <div class="panel-card request-card">
+      <div class="card-header">
+        <div class="header-left">
+          <span class="type-icon-wrapper">
+            <mat-icon>{{ leaveTypeMeta.icon }}</mat-icon>
+          </span>
+          <div>
+            <h3 class="card-title">{{ leaveTypeMeta.title }}</h3>
+            <span class="employee-sub">
+              {{ employeeName }} · {{ employeePosition }}
+            </span>
+          </div>
+        </div>
+        <span class="days-badge">
+          {{ durationDays }} working day{{ durationDays === 1 ? '' : 's' }}
+        </span>
+      </div>
+
+      <div class="card-divider"></div>
+
+      <div class="date-timeline">
+        <div class="timeline-point">
+          <span class="point-label">Start Date</span>
+          <span class="point-date">{{ formatDisplayDate(startDate) }}</span>
+          @if (halfDayStart) {
+            <span class="half-day-tag">½ Day</span>
+          }
+        </div>
+        <div class="timeline-arrow">
+          <mat-icon>trending_flat</mat-icon>
+        </div>
+        <div class="timeline-point">
+          <span class="point-label">End Date</span>
+          <span class="point-date">{{ formatDisplayDate(endDate) }}</span>
+          @if (halfDayEnd) {
+            <span class="half-day-tag">½ Day</span>
+          }
+        </div>
+      </div>
+
+      @if (reason) {
+        <div class="reason-quote">
+          <mat-icon class="quote-icon">format_quote</mat-icon>
+          <span class="quote-text">{{ reason }}</span>
+        </div>
+      }
+    </div>
+
+    <!-- Right Card: Balance Impact Meter -->
+    <div class="panel-card balance-card">
+      <div class="card-header">
+        <div class="header-left">
+          <span class="type-icon-wrapper balance-icon">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </span>
+          <div>
+            <h3 class="card-title">Balance Impact</h3>
+            <span class="employee-sub">
+              {{ isPaidAnnual ? 'Annual Paid Leave Allowance' : 'Non-deductible category' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-divider"></div>
+
+      @if (isPaidAnnual) {
+        <!-- 3-Way Stat Comparison -->
+        <div class="balance-stats">
+          <div class="stat-cell">
+            <span class="stat-label">Available</span>
+            <span class="stat-val">{{ currentAvailable }}</span>
+            <span class="stat-unit">days</span>
+          </div>
+
+          <div class="stat-operator">−</div>
+
+          <div class="stat-cell">
+            <span class="stat-label">Requested</span>
+            <span class="stat-val stat-requested">{{ durationDays }}</span>
+            <span class="stat-unit">days</span>
+          </div>
+
+          <div class="stat-operator">=</div>
+
+          <div class="stat-cell" [class.stat-cell--deficit]="hasDeficit" [class.stat-cell--surplus]="!hasDeficit">
+            <span class="stat-label">{{ hasDeficit ? 'Shortfall' : 'Remaining' }}</span>
+            <span class="stat-val">{{ hasDeficit ? '-' + deficitAmount : remainingAfter }}</span>
+            <span class="stat-unit">days</span>
+          </div>
+        </div>
+
+        <!-- Visual Balance Bar -->
+        <div class="balance-bar-container">
+          <div class="bar-track">
+            @if (!hasDeficit) {
+              <div
+                class="bar-fill bar-fill--used"
+                [style.width.%]="(durationDays / (currentAvailable || 1)) * 100"
+              ></div>
+            } @else {
+              <div class="bar-fill bar-fill--over" style="width: 100%;"></div>
+            }
+          </div>
+          <div class="bar-legend">
+            @if (hasDeficit) {
+              <span class="legend-text legend-danger">
+                <mat-icon>error_outline</mat-icon>
+                Exceeds your available balance by {{ deficitAmount }} day{{ deficitAmount === 1 ? '' : 's' }}
+              </span>
+            } @else {
+              <span class="legend-text legend-ok">
+                <mat-icon>check_circle_outline</mat-icon>
+                {{ remainingAfter }} day{{ remainingAfter === 1 ? '' : 's' }} remaining after approval
+              </span>
+            }
+          </div>
+        </div>
+      } @else {
+        <!-- Non-deductible notice -->
+        <div class="non-deductible-box">
+          <mat-icon>event_available</mat-icon>
+          <div>
+            <strong>Independent of Vacation Balance</strong>
+            <p>This leave type does not deduct from your accrued annual vacation balance.</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ── 3. Policy & Compliance Section ── -->
+  @if (blockingExplanations.length > 0 || warningExplanations.length > 0) {
+    <div class="compliance-section">
+      <!-- Blocking Issues -->
+      @if (blockingExplanations.length > 0) {
+        <div class="issue-group issue-group--blocking">
+          <div class="group-header">
+            <mat-icon>cancel</mat-icon>
+            <span>Action Required Before You Can Submit</span>
+          </div>
+          <div class="issue-list">
+            @for (item of blockingExplanations; track item.code) {
+              <div class="issue-item">
+                <div class="issue-item-icon">
+                  <mat-icon>report_problem</mat-icon>
+                </div>
+                <div class="issue-item-body">
+                  <span class="issue-title">{{ item.title }}</span>
+                  <p class="issue-description">{{ item.body }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Soft Warnings / Advisories -->
+      @if (warningExplanations.length > 0) {
+        <div class="issue-group issue-group--warning">
+          <div class="group-header">
+            <mat-icon>info</mat-icon>
+            <span>Policy Advisories (Subject to Manager Discretion)</span>
+          </div>
+          <div class="issue-list">
+            @for (item of warningExplanations; track item.code) {
+              <div class="issue-item">
+                <div class="issue-item-icon">
+                  <mat-icon>notification_important</mat-icon>
+                </div>
+                <div class="issue-item-body">
+                  <span class="issue-title">{{ item.title }}</span>
+                  <p class="issue-description">{{ item.body }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── 4. Action Buttons ── -->
+  <div class="panel-actions">
+    <button
+      mat-stroked-button
+      type="button"
+      class="nav-btn"
+      (click)="goBack.emit()"
+      [disabled]="submitting"
+    >
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </button>
+
+    <div class="right-actions">
+      <!-- Save as Draft (Always allowed) -->
+      <button
+        mat-stroked-button
+        type="button"
+        class="draft-btn"
+        (click)="saveDraft.emit()"
+        [disabled]="submitting"
+      >
+        <mat-icon>bookmark_border</mat-icon>
+        {{ submitting && submitMode === 'draft' ? 'Saving Draft…' : 'Save as Draft' }}
+      </button>
+
+      <!-- Submit for Approval (Guarded) -->
+      <div
+        class="submit-wrapper"
+        [matTooltip]="!canSubmit && !submitting ? 'Resolve blocking issues above before submitting' : ''"
+      >
+        <button
+          mat-flat-button
+          type="button"
+          class="submit-btn"
+          [disabled]="!canSubmit"
+          (click)="submitForApproval.emit()"
+        >
+          <mat-icon>send</mat-icon>
+          <span>{{ submitting && submitMode === 'submit' ? 'Submitting…' : 'Submit for Approval' }}</span>
+          @if (!canSubmit && blockingExplanations.length > 0) {
+            <span class="blocked-badge">{{ blockingExplanations.length }}</span>
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

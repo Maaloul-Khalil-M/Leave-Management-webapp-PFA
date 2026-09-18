@@ -4,6 +4,34 @@ import { Observable } from 'rxjs';
 
 export type LeaveTypeCode = 'PAID_ANNUAL' | 'SICK' | 'UNPAID' | 'MATERNITY';
 
+export type ExplanationSeverity = 'INFO' | 'WARNING' | 'BLOCKING';
+
+export interface Explanation {
+  code: string;
+  severity: ExplanationSeverity;
+  title: string;
+  body: string;
+  params?: Record<string, any>;
+}
+
+export interface EligibilityCheckRequest {
+  leaveTypeCode: LeaveTypeCode;
+  startDate: string;
+  endDate: string;
+  halfDayStart?: boolean;
+  halfDayEnd?: boolean;
+  excludeRequestId?: string;
+}
+
+export interface EligibilityResponse {
+  eligible: boolean;
+  durationDays: number;
+  availableBalance: number | null;
+  blockingCode: string | null;
+  reasons: string[];
+  explanations: Explanation[];
+}
+
 export interface CreateLeaveRequest {
   leaveTypeCode: LeaveTypeCode;
   startDate: string;
@@ -54,6 +82,13 @@ export interface PageResponse<T> {
 export class LeaveRequestService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = 'http://localhost:8080';
+
+  checkEligibility(dto: EligibilityCheckRequest): Observable<EligibilityResponse> {
+    return this.http.post<EligibilityResponse>(
+      `${this.apiUrl}/api/employee/leave-requests/eligibility`,
+      dto
+    );
+  }
 
   createDraft(dto: CreateLeaveRequest): Observable<LeaveRequestResponse> {
     return this.http.post<LeaveRequestResponse>(

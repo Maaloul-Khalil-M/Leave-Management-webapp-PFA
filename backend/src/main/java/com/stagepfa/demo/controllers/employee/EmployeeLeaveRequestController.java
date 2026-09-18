@@ -7,6 +7,9 @@ import com.stagepfa.demo.domain.dtos.response.LeaveRequestResponse;
 import com.stagepfa.demo.domain.entities.LeaveRequest;
 import com.stagepfa.demo.mappers.LeaveRequestMapper;
 import com.stagepfa.demo.services.LeaveRequestService;
+import com.stagepfa.demo.domain.dtos.request.EligibilityCheckRequest;
+import com.stagepfa.demo.domain.dtos.response.EligibilityResponse;
+import com.stagepfa.demo.services.EligibilityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
@@ -24,6 +27,16 @@ public class EmployeeLeaveRequestController {
 
     private final LeaveRequestService leaveRequestService;
     private final LeaveRequestMapper leaveRequestMapper;
+    private final EligibilityService eligibilityService;
+
+    @PostMapping("/eligibility")
+    @Operation(operationId = "checkEligibility", summary = "Check leave request eligibility and get plain-English explanations")
+    @ApiResponse(responseCode = "200", description = "Eligibility check evaluated")
+    public ResponseEntity<EligibilityResponse> checkEligibility(
+            @Valid @RequestBody EligibilityCheckRequest request) {
+        EligibilityResponse response = eligibilityService.checkCurrentUser(request);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     @Operation(operationId = "createDraftLeaveRequest", summary = "Create a draft leave request")

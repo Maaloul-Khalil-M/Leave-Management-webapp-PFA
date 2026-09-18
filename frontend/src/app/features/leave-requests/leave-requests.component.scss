@@ -304,6 +304,25 @@
   mat-icon { flex-shrink: 0; font-size: 18px; width: 18px; height: 18px; }
   &.notice-warn { background: #fef3c7; color: #92400e; }
   &.notice-error { background: #ffe4e6; color: #be123c; }
+  &.notice-info { background: #e0f2fe; color: #0369a1; }
+}
+
+.eligibility-explanations {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  .notice {
+    margin-bottom: 0;
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      strong { font-size: 0.85rem; }
+      p { margin: 0; font-size: 0.8rem; line-height: 1.35; }
+    }
+  }
 }
 
 /* ── Review Cards ───────────────────────────────────────── */

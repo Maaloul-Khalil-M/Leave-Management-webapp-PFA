@@ -46,6 +46,12 @@ class LeaveRequestServiceDurationTest {
     @Mock
     private LeavePolicyService leavePolicyService;
 
+    @org.mockito.Spy
+    private DurationCalculator durationCalculator = new DurationCalculator();
+
+    @Mock
+    private EligibilityService eligibilityService;
+
     @InjectMocks
     private LeaveRequestServiceImpl leaveRequestService;
 

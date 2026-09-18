@@ -24,6 +24,8 @@ import {
   CreateLeaveRequest,
   LeaveRequestResponse,
   LeaveTypeCode,
+  EligibilityResponse,
+  Explanation,
 } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
@@ -74,6 +76,7 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
 
 import { HeaderComponent } from '../../core/layout/header/header.component';
 import { StatusBadgeComponent } from '../../shared/ui/status-badge';
+import { LeaveReviewPanelComponent } from './leave-review-panel/leave-review-panel.component';
 
 @Component({
   selector: 'app-leave-requests',
@@ -84,6 +87,7 @@ import { StatusBadgeComponent } from '../../shared/ui/status-badge';
     FormsModule,
     HeaderComponent,
     StatusBadgeComponent,
+    LeaveReviewPanelComponent,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
@@ -138,6 +142,8 @@ export class LeaveRequestsComponent implements OnInit {
   readonly halfDayStart = signal<boolean>(false);
   readonly halfDayEnd = signal<boolean>(false);
   readonly reason = signal<string>('');
+  readonly eligibility = signal<EligibilityResponse | null>(null);
+  readonly checkingEligibility = signal<boolean>(false);
 
   // Profile and balance info from DashboardState
   readonly employeeName = computed(() => {
@@ -225,6 +231,28 @@ export class LeaveRequestsComponent implements OnInit {
   // ─── Stepper Navigation ───────────────────────────────────
   selectLeaveType(code: LeaveTypeCode): void {
     this.leaveTypeCode.set(code);
+    this.eligibility.set(null);
+  }
+
+  fetchEligibility(): void {
+    if (!this.step1Valid() || !this.step2Valid()) return;
+    this.checkingEligibility.set(true);
+    const payload = {
+      leaveTypeCode: this.leaveTypeCode(),
+      startDate: this.startDate(),
+      endDate: this.endDate(),
+      halfDayStart: this.halfDayStart(),
+      halfDayEnd: this.halfDayEnd(),
+    };
+    this.leaveRequestService.checkEligibility(payload).subscribe({
+      next: (res) => {
+        this.eligibility.set(res);
+        this.checkingEligibility.set(false);
+      },
+      error: () => {
+        this.checkingEligibility.set(false);
+      },
+    });
   }
 
   goNext(): void {
@@ -237,6 +265,9 @@ export class LeaveRequestsComponent implements OnInit {
     const stepperInstance = this.stepper();
     if (stepperInstance) {
       stepperInstance.selectedIndex = nextIndex;
+    }
+    if (nextIndex === 2) {
+      this.fetchEligibility();
     }
   }
 
@@ -264,6 +295,9 @@ export class LeaveRequestsComponent implements OnInit {
       if (stepperInstance) {
         stepperInstance.selectedIndex = index;
       }
+      if (index === 2) {
+        this.fetchEligibility();
+      }
     }
   }
 
@@ -290,10 +324,12 @@ export class LeaveRequestsComponent implements OnInit {
 
   onStartDateChange(d: Date | null): void {
     this.startDate.set(this.toIsoDate(d));
+    this.eligibility.set(null);
   }
 
   onEndDateChange(d: Date | null): void {
     this.endDate.set(this.toIsoDate(d));
+    this.eligibility.set(null);
   }
 
   private toIsoDate(d: Date | null): string {
@@ -370,9 +406,10 @@ export class LeaveRequestsComponent implements OnInit {
             this.submitting.set(false);
             this.submitMode.set(null);
             this.lastCreatedRequest.set(created);
+            const detailMsg = submitErr?.error?.error?.details?.[0]?.message;
             this.errorMessage.set(
-              `Draft was created, but submission for approval failed: ${
-                submitErr?.error?.message || 'Unknown error'
+              `Draft saved (#${created.id}), but submission was blocked: ${
+                detailMsg || submitErr?.error?.error?.message || submitErr?.error?.message || 'Not eligible'
               }`
             );
             this.loadRequests();
