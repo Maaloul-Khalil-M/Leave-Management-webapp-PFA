@@ -90,6 +90,58 @@ describe('LeaveRequestsComponent Stepper Reactivity', () => {
     expect(component.calculatedDuration()).toBe(4);
   });
 
+  it('should calculate calendar days for SICK leave and working days for PAID_ANNUAL', () => {
+    // Friday 2026-10-02 to Monday 2026-10-05 (4 calendar days, 2 working days)
+    const fri = new Date(2026, 9, 2); // 9 = Oct
+    const mon = new Date(2026, 9, 5);
+
+    component.onStartDateChange(fri);
+    component.onEndDateChange(mon);
+
+    // Default is PAID_ANNUAL (WORKING_DAY)
+    expect(component.calculatedDuration()).toBe(2);
+    expect(component.durationUnitLabel()).toBe('2 working days');
+
+    // Switch to SICK (CALENDAR_DAY)
+    component.selectLeaveType('SICK');
+    expect(component.calculatedDuration()).toBe(4);
+    expect(component.durationUnitLabel()).toBe('4 calendar days');
+
+    // Half day on start for SICK
+    component.halfDayStart.set(true);
+    expect(component.calculatedDuration()).toBe(3.5);
+    expect(component.durationUnitLabel()).toBe('3.5 calendar days');
+  });
+
+  it('should allow weekend-only date selection for SICK leave', () => {
+    // Saturday 2026-10-03 to Sunday 2026-10-04
+    const sat = new Date(2026, 9, 3);
+    const sun = new Date(2026, 9, 4);
+
+    component.onStartDateChange(sat);
+    component.onEndDateChange(sun);
+
+    // For PAID_ANNUAL, falls on weekend so calculated duration is 0
+    expect(component.calculatedDuration()).toBe(0);
+    expect(component.step2Valid()).toBe(false);
+
+    // Switch to SICK: weekend counts as 2 calendar days
+    component.selectLeaveType('SICK');
+    expect(component.calculatedDuration()).toBe(2);
+
+    // SICK requires proof, mock uploaded document
+    component.uploadedDocuments.set([
+      {
+        id: 'doc-1',
+        fileName: 'medical.pdf',
+        contentType: 'application/pdf',
+        fileSize: 1024,
+        uploadedAt: new Date().toISOString(),
+      },
+    ]);
+    expect(component.step2Valid()).toBe(true);
+  });
+
   it('should enforce reason requirement for unpaid leave', () => {
     component.onStartDateChange(new Date(2026, 8, 14));
     component.onEndDateChange(new Date(2026, 8, 18));

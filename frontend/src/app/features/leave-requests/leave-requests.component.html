@@ -218,12 +218,12 @@
                 </div>
               </div>
 
-              <!-- Requested Working Days Chip -->
+              <!-- Requested Days Chip -->
               <div class="duration-chip">
                 <mat-icon>schedule</mat-icon>
                 <span>
                   Calculated Duration:
-                  <strong>{{ calculatedDuration() }} working day{{ calculatedDuration() === 1 ? '' : 's' }}</strong>
+                  <strong>{{ durationUnitLabel() }}</strong>
                 </span>
               </div>
 
@@ -337,7 +337,11 @@
               @if (startDate() && endDate() && endDate() >= startDate() && calculatedDuration() <= 0) {
                 <div class="notice notice-warn">
                   <mat-icon>warning</mat-icon>
-                  <span>The selected date range contains no working days (e.g. falls entirely on weekends).</span>
+                  @if (isCalendarDay()) {
+                    <span>Please select a valid date range.</span>
+                  } @else {
+                    <span>The selected date range contains no working days (e.g. falls entirely on weekends).</span>
+                  }
                 </div>
               }
 

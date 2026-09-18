@@ -30,7 +30,7 @@ import {
 } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
-import { calculateWorkingDays, formatDisplayDate } from './leave-calculator';
+import { calculateLeaveDuration, calculateWorkingDays, formatDisplayDate, AccrualUnit } from './leave-calculator';
 
 export interface LeaveTypeItem {
   code: LeaveTypeCode;
@@ -38,6 +38,7 @@ export interface LeaveTypeItem {
   icon: string;
   description: string;
   policyHint: string;
+  accrualUnit: AccrualUnit;
 }
 
 export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
@@ -48,6 +49,7 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
     description: 'Standard paid vacation and accrued personal time off',
     policyHint:
       'Paid annual leave accrues monthly and deducts directly from your approved leave balance.',
+    accrualUnit: 'WORKING_DAY',
   },
   {
     code: 'SICK',
@@ -56,6 +58,7 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
     description: 'Absence due to illness, medical visits, or recovery',
     policyHint:
       'Sick leave covers periods of medical incapacity. Standard medical certification may be requested.',
+    accrualUnit: 'CALENDAR_DAY',
   },
   {
     code: 'UNPAID',
@@ -64,6 +67,7 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
     description: 'Approved time off without salary compensation',
     policyHint:
       'Unpaid leave is subject to manager review and requires a reason to be specified.',
+    accrualUnit: 'WORKING_DAY',
   },
   {
     code: 'MATERNITY',
@@ -72,6 +76,7 @@ export const LEAVE_TYPES_METADATA: LeaveTypeItem[] = [
     description: 'Statutory maternity or parental leave',
     policyHint:
       'Statutory leave for maternity. Does not deduct from your annual vacation balance.',
+    accrualUnit: 'CALENDAR_DAY',
   },
 ];
 
@@ -187,12 +192,23 @@ export class LeaveRequestsComponent implements OnInit {
   });
 
   readonly calculatedDuration = computed(() => {
-    return calculateWorkingDays(
+    return calculateLeaveDuration(
       this.startDate(),
       this.endDate(),
+      this.currentTypeMeta().accrualUnit,
       this.halfDayStart(),
       this.halfDayEnd()
     );
+  });
+
+  readonly isCalendarDay = computed(() => {
+    return this.currentTypeMeta().accrualUnit === 'CALENDAR_DAY';
+  });
+
+  readonly durationUnitLabel = computed(() => {
+    const days = this.calculatedDuration();
+    const unit = this.isCalendarDay() ? 'calendar day' : 'working day';
+    return `${days} ${unit}${days === 1 ? '' : 's'}`;
   });
 
   readonly step1Valid = computed(() => !!this.leaveTypeCode());

@@ -1,6 +1,57 @@
-/**
- * Utility functions for leave calculations and date formatting.
- */
+export type AccrualUnit = 'WORKING_DAY' | 'CALENDAR_DAY';
+
+export function calculateCalendarDays(
+  startDateStr: string,
+  endDateStr: string,
+  halfDayStart = false,
+  halfDayEnd = false
+): number {
+  if (!startDateStr || !endDateStr) return 0;
+  if (endDateStr < startDateStr) return 0;
+
+  const [sy, sm, sd] = startDateStr.split('-').map(Number);
+  const [ey, em, ed] = endDateStr.split('-').map(Number);
+
+  const start = new Date(sy, sm - 1, sd, 12, 0, 0);
+  const end = new Date(ey, em - 1, ed, 12, 0, 0);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0;
+
+  const diffTime = end.getTime() - start.getTime();
+  const totalDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+  if (totalDays <= 0) return 0;
+
+  if (startDateStr === endDateStr) {
+    if (halfDayStart || halfDayEnd) {
+      return 0.5;
+    }
+    return totalDays;
+  }
+
+  let days: number = totalDays;
+  if (halfDayStart) {
+    days -= 0.5;
+  }
+  if (halfDayEnd) {
+    days -= 0.5;
+  }
+
+  return Math.max(0, days);
+}
+
+export function calculateLeaveDuration(
+  startDateStr: string,
+  endDateStr: string,
+  accrualUnit: AccrualUnit = 'WORKING_DAY',
+  halfDayStart = false,
+  halfDayEnd = false
+): number {
+  if (accrualUnit === 'CALENDAR_DAY') {
+    return calculateCalendarDays(startDateStr, endDateStr, halfDayStart, halfDayEnd);
+  }
+  return calculateWorkingDays(startDateStr, endDateStr, halfDayStart, halfDayEnd);
+}
 
 export function calculateWorkingDays(
   startDateStr: string,

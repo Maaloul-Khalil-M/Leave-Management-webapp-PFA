@@ -9,13 +9,14 @@ import {
   LeaveTypeCode,
   SupportingDocumentResponse,
 } from '../../../core/services/leave-request.service';
-import { formatDisplayDate } from '../leave-calculator';
+import { AccrualUnit, formatDisplayDate } from '../leave-calculator';
 
 export interface ReviewLeaveTypeMeta {
   code: LeaveTypeCode;
   title: string;
   icon: string;
   description: string;
+  accrualUnit?: AccrualUnit;
 }
 
 @Component({
@@ -50,6 +51,15 @@ export class LeaveReviewPanelComponent {
   @Output() goBack = new EventEmitter<void>();
 
   readonly formatDisplayDate = formatDisplayDate;
+
+  get isCalendarDay(): boolean {
+    return this.leaveTypeMeta?.accrualUnit === 'CALENDAR_DAY';
+  }
+
+  get durationUnitLabel(): string {
+    const unit = this.isCalendarDay ? 'calendar day' : 'working day';
+    return `${this.durationDays} ${unit}${this.durationDays === 1 ? '' : 's'}`;
+  }
 
   get blockingExplanations(): Explanation[] {
     const elig = this.eligibility;
