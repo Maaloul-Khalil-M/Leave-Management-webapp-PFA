@@ -1,9 +1,4 @@
----
-lastUpdated: Sat, Sep 19 • 6:42 PM
-created: Thu, Sep 17 • 9:23 PM
-title: README
----
-The project involves developing a secure, web-based and centralized Leave Management System that simpify the entire leave process, from employee request to manager approval.
+The project involves developing a secure, web-based and centralized Leave Management System that simplify the entire leave process, from employee request to manager approval.
 
 | Layer                             | Technology                                     |
 | --------------------------------- | ---------------------------------------------- |
