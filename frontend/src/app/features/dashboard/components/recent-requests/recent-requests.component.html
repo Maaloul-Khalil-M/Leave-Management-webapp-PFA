@@ -1,4 +1,4 @@
-﻿<mat-card class="section-card requests-card">
+<mat-card class="section-card requests-card">
   <div class="card-header">
     <div class="title-wrap">
       <mat-icon class="header-icon">pending_actions</mat-icon>
@@ -39,7 +39,7 @@
                 <mat-icon>send</mat-icon>
               </button>
             }
-            @if (req.status === 'Draft' || req.status === 'Pending' || req.status === 'Approved') {
+            @if (canCancel(req)) {
               <button
                 mat-icon-button
                 class="action-btn cancel-action"

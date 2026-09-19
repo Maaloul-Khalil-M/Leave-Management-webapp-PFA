@@ -129,3 +129,13 @@ export function formatDisplayDate(dateStr: string): string {
     year: 'numeric',
   });
 }
+
+export function isBeforeStartDate(startDateStr: string, asOfDate: Date = new Date()): boolean {
+  if (!startDateStr) return false;
+  const year = asOfDate.getFullYear();
+  const month = String(asOfDate.getMonth() + 1).padStart(2, '0');
+  const day = String(asOfDate.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`;
+  return startDateStr > todayStr;
+}
+

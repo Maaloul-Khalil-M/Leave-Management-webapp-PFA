@@ -172,4 +172,74 @@ describe('LeaveRequestsComponent Stepper Reactivity', () => {
     component.cancelRequest('req-1');
     expect(leaveRequestServiceMock.cancel).not.toHaveBeenCalled();
   });
+
+  describe('canCancel', () => {
+    it('returns true for pending or approved leave in the future', () => {
+      const futureDate = '2099-12-01';
+      expect(component.canCancel({
+        id: '1',
+        employeeId: 'emp-1',
+        leaveTypeCode: 'PAID_ANNUAL',
+        startDate: futureDate,
+        endDate: futureDate,
+        halfDayStart: false,
+        halfDayEnd: false,
+        durationDays: 1,
+        status: 'PENDING'
+      })).toBe(true);
+
+      expect(component.canCancel({
+        id: '2',
+        employeeId: 'emp-1',
+        leaveTypeCode: 'PAID_ANNUAL',
+        startDate: futureDate,
+        endDate: futureDate,
+        halfDayStart: false,
+        halfDayEnd: false,
+        durationDays: 1,
+        status: 'APPROVED'
+      })).toBe(true);
+    });
+
+    it('returns false for leave whose start date is reached or in past', () => {
+      expect(component.canCancel({
+        id: '3',
+        employeeId: 'emp-1',
+        leaveTypeCode: 'PAID_ANNUAL',
+        startDate: '2020-01-01',
+        endDate: '2020-01-05',
+        halfDayStart: false,
+        halfDayEnd: false,
+        durationDays: 5,
+        status: 'APPROVED'
+      })).toBe(false);
+    });
+
+    it('returns false for already cancelled or rejected leaves', () => {
+      const futureDate = '2099-12-01';
+      expect(component.canCancel({
+        id: '4',
+        employeeId: 'emp-1',
+        leaveTypeCode: 'PAID_ANNUAL',
+        startDate: futureDate,
+        endDate: futureDate,
+        halfDayStart: false,
+        halfDayEnd: false,
+        durationDays: 1,
+        status: 'CANCELLED'
+      })).toBe(false);
+
+      expect(component.canCancel({
+        id: '5',
+        employeeId: 'emp-1',
+        leaveTypeCode: 'PAID_ANNUAL',
+        startDate: futureDate,
+        endDate: futureDate,
+        halfDayStart: false,
+        halfDayEnd: false,
+        durationDays: 1,
+        status: 'REJECTED'
+      })).toBe(false);
+    });
+  });
 });

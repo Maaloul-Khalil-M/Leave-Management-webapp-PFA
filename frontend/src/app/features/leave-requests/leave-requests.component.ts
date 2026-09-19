@@ -30,7 +30,7 @@ import {
 } from '../../core/services/leave-request.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { DashboardStateService } from '../dashboard/services/dashboard-state.service';
-import { calculateLeaveDuration, calculateWorkingDays, formatDisplayDate, AccrualUnit } from './leave-calculator';
+import { calculateLeaveDuration, calculateWorkingDays, formatDisplayDate, isBeforeStartDate, AccrualUnit } from './leave-calculator';
 
 export interface LeaveTypeItem {
   code: LeaveTypeCode;
@@ -520,6 +520,12 @@ export class LeaveRequestsComponent implements OnInit {
         );
       },
     });
+  }
+
+  canCancel(req: LeaveRequestResponse): boolean {
+    if (!req) return false;
+    const validStatus = req.status === 'DRAFT' || req.status === 'PENDING' || req.status === 'APPROVED';
+    return validStatus && isBeforeStartDate(req.startDate);
   }
 
   cancelRequest(id: string): void {

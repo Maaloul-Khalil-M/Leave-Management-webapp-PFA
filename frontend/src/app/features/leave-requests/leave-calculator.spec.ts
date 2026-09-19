@@ -4,6 +4,7 @@ import {
   calculateCalendarDays,
   calculateLeaveDuration,
   formatDisplayDate,
+  isBeforeStartDate,
 } from './leave-calculator';
 
 describe('leave-calculator', () => {
@@ -99,6 +100,29 @@ describe('leave-calculator', () => {
     it('should format display dates correctly', () => {
       expect(formatDisplayDate('2026-09-14')).toContain('Sep 14, 2026');
       expect(formatDisplayDate('')).toBe('—');
+    });
+  });
+
+  describe('isBeforeStartDate', () => {
+    // Current test date: Sep 19, 2026
+    const asOf = new Date(2026, 8, 19); // month index 8 is September
+
+    it('should allow cancellation for leaves starting in the future (Sep 20)', () => {
+      expect(isBeforeStartDate('2026-09-20', asOf)).toBe(true);
+      expect(isBeforeStartDate('2026-09-22', asOf)).toBe(true);
+    });
+
+    it('should disallow cancellation on the start date (Sep 19)', () => {
+      expect(isBeforeStartDate('2026-09-19', asOf)).toBe(false);
+    });
+
+    it('should disallow cancellation after the start date (in progress or completed)', () => {
+      expect(isBeforeStartDate('2026-09-18', asOf)).toBe(false);
+      expect(isBeforeStartDate('2026-09-10', asOf)).toBe(false);
+    });
+
+    it('should return false for empty or missing date', () => {
+      expect(isBeforeStartDate('', asOf)).toBe(false);
     });
   });
 });

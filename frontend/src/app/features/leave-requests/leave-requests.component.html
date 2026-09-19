@@ -531,7 +531,7 @@
                             {{ submittingId() === req.id ? 'Submitting…' : 'Submit' }}
                           </button>
                         }
-                        @if (req.status === 'DRAFT' || req.status === 'PENDING' || req.status === 'APPROVED') {
+                        @if (canCancel(req)) {
                           <button
                             mat-stroked-button
                             style="min-width: 72px; height: 32px; font-size: 0.75rem; color: #dc2626; border-color: #fca5a5;"

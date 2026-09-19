@@ -1,4 +1,4 @@
-﻿import { Component, inject, input, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,6 +9,7 @@ import { LeaveRequest } from '../../models';
 import { LeaveRequestService } from '../../../../core/services/leave-request.service';
 import { DashboardStateService } from '../../services/dashboard-state.service';
 import { StatusBadgeComponent } from '../../../../shared/ui/status-badge';
+import { isBeforeStartDate } from '../../../leave-requests/leave-calculator';
 
 @Component({
   selector: 'app-recent-requests',
@@ -32,6 +33,13 @@ export class RecentRequestsComponent {
   readonly items = input<LeaveRequest[]>([]);
   readonly submittingId = signal<string | null>(null);
   readonly cancellingId = signal<string | null>(null);
+
+  canCancel(req: LeaveRequest): boolean {
+    if (!req) return false;
+    const statusLower = req.status?.toLowerCase();
+    const validStatus = statusLower === 'draft' || statusLower === 'pending' || statusLower === 'approved';
+    return validStatus && isBeforeStartDate(req.startDate);
+  }
 
   submitDraft(id: string): void {
     this.submittingId.set(id);
