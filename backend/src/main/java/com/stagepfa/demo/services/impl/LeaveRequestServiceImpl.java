@@ -35,6 +35,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -56,6 +57,20 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     private final ApplicationEventPublisher eventPublisher;
     private final EligibilityService eligibilityService;
     private final DurationCalculator durationCalculator;
+    private Clock clock = Clock.systemDefaultZone();
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
+    private LocalDate getToday() {
+        return clock != null ? LocalDate.now(clock) : LocalDate.now();
+    }
+
+    private Instant getNow() {
+        return clock != null ? Instant.now(clock) : Instant.now();
+    }
 
     @Override
     @Transactional
@@ -115,7 +130,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
         StatusHistoryEntry initialHistory = StatusHistoryEntry.builder()
                 .fromStatus(null)
                 .toStatus(LeaveRequestStatus.DRAFT)
-                .at(Instant.now())
+                .at(getNow())
                 .byUserId(user.getId())
                 .comment("Draft created")
                 .build();
@@ -156,6 +171,12 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
         if (leaveRequest.getStatus() != LeaveRequestStatus.DRAFT) {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Only draft leave requests can be submitted");
+        }
+
+        LocalDate today = getToday();
+        if (leaveRequest.getStartDate() != null && !today.isBefore(leaveRequest.getStartDate())) {
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Cannot submit a leave request whose start date has already been reached");
         }
 
         LeaveType leaveType = leaveTypeRepository.findByCode(leaveRequest.getLeaveTypeCode().name())
@@ -233,6 +254,12 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Only pending leave requests can be approved");
         }
 
+        LocalDate today = getToday();
+        if (leaveRequest.getStartDate() != null && !today.isBefore(leaveRequest.getStartDate())) {
+            autoCancelPendingRequest(leaveRequest);
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Cannot approve leave request: start date has already been reached");
+        }
+
         if (managerEmployeeId.equals(leaveRequest.getEmployeeId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Managers cannot approve their own leave requests");
         }
@@ -249,7 +276,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
 
         if (leaveType.isDeductsFromBalance()) {
             LedgerMovement movement = LedgerMovement.builder()
-                    .date(Instant.now())
+                    .date(getNow())
                     .type(LedgerMovementType.APPROVED_LEAVE_DEBIT)
                     .amount(leaveRequest.getDurationDays())
                     .note(comment != null && !comment.isBlank() ? comment : "Leave request approved: " + leaveRequest.getId())
@@ -265,7 +292,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             );
         }
 
-        Instant now = Instant.now();
+        Instant now = getNow();
         leaveRequest.setStatus(LeaveRequestStatus.APPROVED);
         leaveRequest.setValidatedAt(now);
         leaveRequest.setValidatedBy(user.getId());
@@ -309,6 +336,12 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Only pending leave requests can be rejected");
         }
 
+        LocalDate today = getToday();
+        if (leaveRequest.getStartDate() != null && !today.isBefore(leaveRequest.getStartDate())) {
+            autoCancelPendingRequest(leaveRequest);
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION, "Cannot reject leave request: start date has already been reached");
+        }
+
         if (managerEmployeeId.equals(leaveRequest.getEmployeeId())) {
             throw new BusinessException(ErrorCode.FORBIDDEN, "Managers cannot reject their own leave requests");
         }
@@ -320,7 +353,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             throw new BusinessException(ErrorCode.FORBIDDEN, "You are not the manager of this employee");
         }
 
-        Instant now = Instant.now();
+        Instant now = getNow();
         leaveRequest.setStatus(LeaveRequestStatus.REJECTED);
         leaveRequest.setValidatedAt(now);
         leaveRequest.setValidatedBy(user.getId());
@@ -368,13 +401,22 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                     "Cannot cancel a leave request with status: " + currentStatus);
         }
 
+        LocalDate today = getToday();
+        if (leaveRequest.getStartDate() != null && !today.isBefore(leaveRequest.getStartDate())) {
+            if (currentStatus == LeaveRequestStatus.PENDING) {
+                autoCancelPendingRequest(leaveRequest);
+            }
+            throw new BusinessException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Cannot cancel a leave request once its start date has been reached");
+        }
+
         if (currentStatus == LeaveRequestStatus.APPROVED) {
             LeaveType leaveType = leaveTypeRepository.findByCode(leaveRequest.getLeaveTypeCode().name())
                     .orElseThrow(() -> new ResourceNotFoundException("LeaveType", leaveRequest.getLeaveTypeCode().name()));
 
             if (leaveType.isDeductsFromBalance()) {
                 LedgerMovement movement = LedgerMovement.builder()
-                        .date(Instant.now())
+                        .date(getNow())
                         .type(LedgerMovementType.CANCELLED_LEAVE_CREDIT)
                         .amount(leaveRequest.getDurationDays())
                         .note(reason != null && !reason.isBlank() ? reason : "Leave request cancelled: " + leaveRequest.getId())
@@ -391,7 +433,7 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
             }
         }
 
-        Instant now = Instant.now();
+        Instant now = getNow();
         leaveRequest.setStatus(LeaveRequestStatus.CANCELLED);
 
         if (leaveRequest.getStatusHistory() == null) {
@@ -413,7 +455,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
+    @Transactional
     public List<LeaveRequest> listMine() {
+        autoCancelExpiredPendingRequests();
         User user = currentUserService.requireLinkedUser();
         String employeeId = user.getEmployeeId();
         if (employeeId == null || employeeId.isBlank()) {
@@ -424,7 +468,9 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
     }
 
     @Override
+    @Transactional
     public List<LeaveRequest> listPendingTeamRequests() {
+        autoCancelExpiredPendingRequests();
         User user = currentUserService.requireLinkedUser();
         String managerEmployeeId = user.getEmployeeId();
         if (managerEmployeeId == null || managerEmployeeId.isBlank()) {
@@ -441,6 +487,46 @@ public class LeaveRequestServiceImpl implements LeaveRequestService {
                 .toList();
 
         return leaveRequestRepository.findByEmployeeIdInAndStatus(reportIds, LeaveRequestStatus.PENDING);
+    }
+
+    @Override
+    @Transactional
+    public int autoCancelExpiredPendingRequests() {
+        LocalDate today = getToday();
+        List<LeaveRequest> expiredPending = leaveRequestRepository
+                .findByStatusAndStartDateLessThanEqual(LeaveRequestStatus.PENDING, today);
+
+        for (LeaveRequest request : expiredPending) {
+            autoCancelPendingRequest(request);
+        }
+        return expiredPending.size();
+    }
+
+    private void autoCancelPendingRequest(LeaveRequest request) {
+        Instant now = getNow();
+        request.setStatus(LeaveRequestStatus.CANCELLED);
+
+        if (request.getStatusHistory() == null) {
+            request.setStatusHistory(new ArrayList<>());
+        }
+
+        StatusHistoryEntry entry = StatusHistoryEntry.builder()
+                .fromStatus(LeaveRequestStatus.PENDING)
+                .toStatus(LeaveRequestStatus.CANCELLED)
+                .at(now)
+                .byUserId("SYSTEM")
+                .comment("Automatically cancelled: start date reached while pending approval")
+                .build();
+        request.getStatusHistory().add(entry);
+
+        LeaveRequest saved = leaveRequestRepository.save(request);
+        eventPublisher.publishEvent(new LeaveRequestEvent(
+                saved,
+                LeaveRequestStatus.PENDING,
+                LeaveRequestStatus.CANCELLED,
+                "SYSTEM",
+                "Automatically cancelled: start date reached while pending approval"
+        ));
     }
 
     private void validateDates(LocalDate start, LocalDate end) {

@@ -23,7 +23,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -66,9 +71,15 @@ class LeaveRequestDecisionTest {
     private Employee requesterEmployee;
     private LeaveRequest pendingPaidAnnualRequest;
     private LeaveType paidAnnualType;
+    private final Clock fixedClock = Clock.fixed(
+            Instant.parse("2026-06-15T10:00:00Z"),
+            ZoneId.of("UTC")
+    );
 
     @BeforeEach
     void setUp() {
+        leaveRequestService.setClock(fixedClock);
+
         managerUser = User.builder()
                 .id("mgr-user-1")
                 .employeeId("mgr-emp-1")
@@ -335,5 +346,70 @@ class LeaveRequestDecisionTest {
         assertNotNull(list);
         assertEquals(1, list.size());
         assertEquals("req-1", list.get(0).getId());
+    }
+
+    @Test
+    void testApproveFailsAndAutoCancels_whenStartDateReached() {
+        when(currentUserService.requireLinkedUser()).thenReturn(managerUser);
+
+        LeaveRequest expiredRequest = LeaveRequest.builder()
+                .id("req-expired")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 6, 15)) // today
+                .endDate(LocalDate.of(2026, 6, 17))
+                .status(LeaveRequestStatus.PENDING)
+                .statusHistory(new ArrayList<>())
+                .build();
+
+        when(leaveRequestRepository.findById("req-expired")).thenReturn(Optional.of(expiredRequest));
+        when(leaveRequestRepository.save(any(LeaveRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> leaveRequestService.approve("req-expired", "Approved too late")
+        );
+
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("start date has already been reached"));
+
+        // Verify request was auto-cancelled
+        assertEquals(LeaveRequestStatus.CANCELLED, expiredRequest.getStatus());
+        assertEquals(1, expiredRequest.getStatusHistory().size());
+        assertEquals("SYSTEM", expiredRequest.getStatusHistory().get(0).getByUserId());
+        assertEquals(LeaveRequestStatus.CANCELLED, expiredRequest.getStatusHistory().get(0).getToStatus());
+        verifyNoInteractions(leaveLedgerService);
+    }
+
+    @Test
+    void testRejectFailsAndAutoCancels_whenStartDateReached() {
+        when(currentUserService.requireLinkedUser()).thenReturn(managerUser);
+
+        LeaveRequest expiredRequest = LeaveRequest.builder()
+                .id("req-expired-2")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 6, 15)) // today
+                .endDate(LocalDate.of(2026, 6, 17))
+                .status(LeaveRequestStatus.PENDING)
+                .statusHistory(new ArrayList<>())
+                .build();
+
+        when(leaveRequestRepository.findById("req-expired-2")).thenReturn(Optional.of(expiredRequest));
+        when(leaveRequestRepository.save(any(LeaveRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> leaveRequestService.reject("req-expired-2", "Reject too late")
+        );
+
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("start date has already been reached"));
+
+        // Verify request was auto-cancelled
+        assertEquals(LeaveRequestStatus.CANCELLED, expiredRequest.getStatus());
+        assertEquals(1, expiredRequest.getStatusHistory().size());
+        assertEquals("SYSTEM", expiredRequest.getStatusHistory().get(0).getByUserId());
+        assertEquals(LeaveRequestStatus.CANCELLED, expiredRequest.getStatusHistory().get(0).getToStatus());
     }
 }

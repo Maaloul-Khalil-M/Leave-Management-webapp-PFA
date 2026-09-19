@@ -4,7 +4,9 @@ import io.flamingock.api.annotations.EnableFlamingock;
 import io.flamingock.api.annotations.Stage;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @EnableFlamingock(
 		stages = {
 				@Stage(location = "com.stagepfa.demo.migrations")

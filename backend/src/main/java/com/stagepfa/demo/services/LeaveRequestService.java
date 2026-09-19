@@ -20,4 +20,6 @@ public interface LeaveRequestService {
     List<LeaveRequest> listMine();
 
     List<LeaveRequest> listPendingTeamRequests();
+
+    int autoCancelExpiredPendingRequests();
 }

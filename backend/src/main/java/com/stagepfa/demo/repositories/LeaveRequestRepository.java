@@ -38,4 +38,10 @@ public interface LeaveRequestRepository extends MongoRepository<LeaveRequest, St
     List<LeaveRequest> findByEmployeeIdInAndStatusAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             Collection<String> employeeIds, LeaveRequestStatus status, LocalDate end,
             LocalDate start);
+
+    /*
+    WHERE status = :status
+      AND start_date <= :date
+     */
+    List<LeaveRequest> findByStatusAndStartDateLessThanEqual(LeaveRequestStatus status, LocalDate date);
 }

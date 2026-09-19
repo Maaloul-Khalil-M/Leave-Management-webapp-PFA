@@ -24,7 +24,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Optional;
 
@@ -63,9 +68,14 @@ class LeaveRequestCancelTest {
     private LeaveRequestServiceImpl leaveRequestService;
 
     private User ownerUser;
+    private final Clock fixedClock = Clock.fixed(
+            Instant.parse("2026-09-19T10:00:00Z"),
+            ZoneId.of("UTC")
+    );
 
     @BeforeEach
     void setUp() {
+        leaveRequestService.setClock(fixedClock);
         ownerUser = User.builder()
                 .id("user-1")
                 .employeeId("emp-1")
@@ -81,8 +91,8 @@ class LeaveRequestCancelTest {
                 .employeeId("emp-1")
                 .leaveTypeCode(L_CODE.PAID_ANNUAL)
                 .durationDays(2.0)
-                .startDate(LocalDate.of(2026, 8, 10))
-                .endDate(LocalDate.of(2026, 8, 11))
+                .startDate(LocalDate.of(2026, 9, 20))
+                .endDate(LocalDate.of(2026, 9, 21))
                 .status(LeaveRequestStatus.DRAFT)
                 .statusHistory(new ArrayList<>())
                 .build();
@@ -105,7 +115,7 @@ class LeaveRequestCancelTest {
     }
 
     @Test
-    void cancelPending_success() {
+    void cancelPending_beforeStartDate_canBeCancelledManually() {
         when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
 
         LeaveRequest pending = LeaveRequest.builder()
@@ -113,8 +123,8 @@ class LeaveRequestCancelTest {
                 .employeeId("emp-1")
                 .leaveTypeCode(L_CODE.PAID_ANNUAL)
                 .durationDays(3.0)
-                .startDate(LocalDate.of(2026, 9, 1))
-                .endDate(LocalDate.of(2026, 9, 3))
+                .startDate(LocalDate.of(2026, 9, 20))
+                .endDate(LocalDate.of(2026, 9, 22))
                 .status(LeaveRequestStatus.PENDING)
                 .statusHistory(new ArrayList<>())
                 .build();
@@ -136,7 +146,7 @@ class LeaveRequestCancelTest {
     }
 
     @Test
-    void cancelApproved_deductible_appendsCompensatingCredit() {
+    void cancelApproved_beforeStartDate_appendsCompensatingCredit() {
         when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
 
         LeaveRequest approved = LeaveRequest.builder()
@@ -144,8 +154,8 @@ class LeaveRequestCancelTest {
                 .employeeId("emp-1")
                 .leaveTypeCode(L_CODE.PAID_ANNUAL)
                 .durationDays(4.0)
-                .startDate(LocalDate.of(2026, 7, 6))
-                .endDate(LocalDate.of(2026, 7, 9))
+                .startDate(LocalDate.of(2026, 9, 20))
+                .endDate(LocalDate.of(2026, 9, 23))
                 .status(LeaveRequestStatus.APPROVED)
                 .statusHistory(new ArrayList<>())
                 .build();
@@ -191,8 +201,8 @@ class LeaveRequestCancelTest {
                 .employeeId("emp-1")
                 .leaveTypeCode(L_CODE.SICK)
                 .durationDays(2.0)
-                .startDate(LocalDate.of(2026, 5, 4))
-                .endDate(LocalDate.of(2026, 5, 5))
+                .startDate(LocalDate.of(2026, 9, 20))
+                .endDate(LocalDate.of(2026, 9, 21))
                 .status(LeaveRequestStatus.APPROVED)
                 .statusHistory(new ArrayList<>())
                 .build();
@@ -211,6 +221,102 @@ class LeaveRequestCancelTest {
         assertNotNull(result);
         assertEquals(LeaveRequestStatus.CANCELLED, result.getStatus());
         verifyNoInteractions(leaveLedgerService);
+    }
+
+    @Test
+    void cancelApproved_onStartDate_throwsInvalidStatusTransition() {
+        // Today is Sep 19. Set start date to Sep 19 (start date reached).
+        when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
+
+        LeaveRequest started = LeaveRequest.builder()
+                .id("req-started")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 9, 19))
+                .endDate(LocalDate.of(2026, 9, 22))
+                .status(LeaveRequestStatus.APPROVED)
+                .build();
+
+        when(leaveRequestRepository.findById("req-started")).thenReturn(Optional.of(started));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> leaveRequestService.cancel("req-started", null));
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("start date has been reached"));
+        verifyNoInteractions(leaveLedgerService);
+    }
+
+    @Test
+    void cancelApproved_multiDayInProgress_throwsInvalidStatusTransition() {
+        // Today is Sep 19. Leave started Sep 18 and ends Sep 22 (in progress).
+        when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
+
+        LeaveRequest inProgress = LeaveRequest.builder()
+                .id("req-in-progress")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 9, 18))
+                .endDate(LocalDate.of(2026, 9, 22))
+                .status(LeaveRequestStatus.APPROVED)
+                .build();
+
+        when(leaveRequestRepository.findById("req-in-progress")).thenReturn(Optional.of(inProgress));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> leaveRequestService.cancel("req-in-progress", null));
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("start date has been reached"));
+    }
+
+    @Test
+    void cancelApproved_completedLeave_throwsInvalidStatusTransition() {
+        // Today is Sep 19. Leave finished Sep 15 (completed in past).
+        when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
+
+        LeaveRequest completed = LeaveRequest.builder()
+                .id("req-completed")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 9, 10))
+                .endDate(LocalDate.of(2026, 9, 15))
+                .status(LeaveRequestStatus.APPROVED)
+                .build();
+
+        when(leaveRequestRepository.findById("req-completed")).thenReturn(Optional.of(completed));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> leaveRequestService.cancel("req-completed", null));
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+        assertTrue(ex.getMessage().contains("start date has been reached"));
+    }
+
+    @Test
+    void cancelPending_onStartDate_autoCancelsAndRejectsEmployeeCancel() {
+        // Today is Sep 19. Pending leave start date is Sep 19 (start date reached).
+        when(currentUserService.requireLinkedUser()).thenReturn(ownerUser);
+
+        LeaveRequest pendingExpired = LeaveRequest.builder()
+                .id("req-pending-today")
+                .employeeId("emp-1")
+                .leaveTypeCode(L_CODE.PAID_ANNUAL)
+                .startDate(LocalDate.of(2026, 9, 19))
+                .endDate(LocalDate.of(2026, 9, 21))
+                .status(LeaveRequestStatus.PENDING)
+                .statusHistory(new ArrayList<>())
+                .build();
+
+        when(leaveRequestRepository.findById("req-pending-today")).thenReturn(Optional.of(pendingExpired));
+        when(leaveRequestRepository.save(any(LeaveRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> leaveRequestService.cancel("req-pending-today", null));
+        assertEquals(ErrorCode.INVALID_STATUS_TRANSITION, ex.getErrorCode());
+
+        // Verify it was auto-cancelled with SYSTEM actor
+        assertEquals(LeaveRequestStatus.CANCELLED, pendingExpired.getStatus());
+        assertEquals(1, pendingExpired.getStatusHistory().size());
+        assertEquals("SYSTEM", pendingExpired.getStatusHistory().get(0).getByUserId());
+        assertEquals(LeaveRequestStatus.CANCELLED, pendingExpired.getStatusHistory().get(0).getToStatus());
     }
 
     @Test
