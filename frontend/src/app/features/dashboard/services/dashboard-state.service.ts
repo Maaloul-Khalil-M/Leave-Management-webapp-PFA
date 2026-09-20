@@ -47,6 +47,9 @@ interface LeaveLedgerResponse {
   consumedBalance: number;
   carriedOverFromPreviousYear: number;
   availableBalance: number;
+  accrualRate?: number;
+  accrualUnit?: string;
+  leaveTypeLabel?: string;
   movements?: Array<{
     date: string;
     type: string;
@@ -54,6 +57,15 @@ interface LeaveLedgerResponse {
     note?: string;
     leaveRequestId?: string;
   }>;
+}
+
+interface LeaveTypeItem {
+  id: string;
+  code: string;
+  label: string;
+  requiresProof: boolean;
+  deductsFromBalance: boolean;
+  isActive: boolean;
 }
 
 interface LeaveRequestItem {
@@ -148,13 +160,36 @@ export class DashboardStateService {
       })
     );
 
+    const leaveTypes$ = this.http.get<PageResponse<LeaveTypeItem>>(`${this.apiUrl}/api/employee/leave-types`).pipe(
+      map((res) => res?.data || []),
+      catchError((err) => {
+        console.warn('Could not load leave types catalog', err);
+        return of([] as LeaveTypeItem[]);
+      })
+    );
+
     forkJoin({
       profileData: profile$,
       ledgers: ledgers$,
       requests: requests$,
-      holidayDays: holidays$
+      holidayDays: holidays$,
+      leaveTypes: leaveTypes$
     }).subscribe({
-      next: ({ profileData, ledgers, requests, holidayDays }) => {
+      next: ({ profileData, ledgers, requests, holidayDays, leaveTypes }) => {
+        // Find primary annual leave ledger to derive accrual rate & calculation
+        const annualLedger = ledgers.find((l) => l.leaveTypeCode === 'PAID_ANNUAL');
+
+        // Dynamic Accrual Rate derived from ledger/policy or employee country assignment
+        let dynamicAccrualRate = 'Standard policy';
+        if (annualLedger?.accrualRate != null && annualLedger.accrualRate > 0) {
+          const unitLabel = annualLedger.accrualUnit === 'CALENDAR_DAY' ? 'cal days/mo' : 'days/mo';
+          dynamicAccrualRate = `${annualLedger.accrualRate} ${unitLabel}`;
+        } else if (profileData?.currentAssignment?.countryCode === 'TN') {
+          dynamicAccrualRate = '1.0 day/mo';
+        } else if (profileData?.currentAssignment?.countryCode === 'FR') {
+          dynamicAccrualRate = '2.5 days/mo';
+        }
+
         // 1. Profile
         if (profileData) {
           const p = profileData.profile;
@@ -170,7 +205,7 @@ export class DashboardStateService {
             department: profileData.currentAssignment?.departmentLabel || 'Engineering',
             manager: mgr,
             avatarUrl: null,
-            accrualRate: '2.08 days/mo',
+            accrualRate: dynamicAccrualRate,
             fiscalPeriod: `Jan ${currentYear} – Dec ${currentYear}`,
             email: p?.email || ''
           });
@@ -198,7 +233,7 @@ export class DashboardStateService {
 
         if (ledgers && ledgers.length > 0) {
           ledgers.forEach((l) => {
-            const label = this.formatTypeCode(l.leaveTypeCode);
+            const label = l.leaveTypeLabel || this.formatTypeCode(l.leaveTypeCode);
             const total = (l.accruedToDate || 0) + (l.carriedOverFromPreviousYear || 0);
             const used = l.consumedBalance || 0;
             const remaining = l.availableBalance || 0;
@@ -222,22 +257,35 @@ export class DashboardStateService {
           });
         }
 
-        // Ensure all 4 catalog types exist in list if not in ledgers yet
-        const requiredCodes = ['PAID_ANNUAL', 'SICK', 'UNPAID', 'MATERNITY'];
-        requiredCodes.forEach((code) => {
-          if (!balancesList.some((b) => b.code === code)) {
+        // Ensure all active catalog types exist in list
+        const catalogCodes = leaveTypes && leaveTypes.length > 0
+          ? leaveTypes.map((t) => ({ code: t.code, label: t.label, deducts: t.deductsFromBalance }))
+          : [
+              { code: 'PAID_ANNUAL', label: 'Paid Annual', deducts: true },
+              { code: 'SICK', label: 'Sick Leave', deducts: false },
+              { code: 'UNPAID', label: 'Unpaid Leave', deducts: false },
+              { code: 'MATERNITY', label: 'Maternity Leave', deducts: false }
+            ];
+
+        catalogCodes.forEach((cat) => {
+          const existing = balancesList.find((b) => b.code === cat.code);
+          if (!existing) {
+            // For non-accruing leave types (or types without a ledger), compute actual approved days taken from leave requests
+            const approvedDaysTaken = requests
+              .filter((r) => r.leaveTypeCode === cat.code && r.status?.toUpperCase() === 'APPROVED')
+              .reduce((sum, r) => sum + (r.durationDays || 0), 0);
+
             balancesList.push({
-              type: this.formatTypeCode(code),
-              code,
-              total: code === 'PAID_ANNUAL' ? 25 : 0,
-              used: 0,
-              remaining: code === 'PAID_ANNUAL' ? 25 : 0,
-              color: this.getColorForType(code),
-              category: code === 'PAID_ANNUAL' ? 'accruing' : 'non-accruing'
+              type: cat.label || this.formatTypeCode(cat.code),
+              code: cat.code,
+              total: 0,
+              used: approvedDaysTaken,
+              remaining: 0,
+              color: this.getColorForType(cat.code),
+              category: cat.deducts ? 'accruing' : 'non-accruing'
             });
-            if (code === 'PAID_ANNUAL' && annualBase === 0) {
-              annualBase = 25;
-            }
+          } else if (cat.label && !existing.type) {
+            existing.type = cat.label;
           }
         });
 

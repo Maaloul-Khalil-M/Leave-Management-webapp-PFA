@@ -23,4 +23,7 @@ public class LeaveLedgerResponse {
     private double carriedOverFromPreviousYear;
     private double availableBalance;
     private List<LedgerMovement> movements;
+    private Double accrualRate;
+    private String accrualUnit;
+    private String leaveTypeLabel;
 }

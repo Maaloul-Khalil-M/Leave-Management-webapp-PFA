@@ -1,4 +1,4 @@
-﻿import { Component, input, computed } from '@angular/core';
+import { Component, input, computed } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,12 +30,13 @@ export class LeaveBalanceComponent {
     const annual = list.find((b) => b.code === 'PAID_ANNUAL') || list[0];
     if (!annual) return null;
     const circ = 2 * Math.PI * 28;
-    const pct = annual.total > 0 ? annual.remaining / annual.total : 0;
+    const rawPct = annual.total > 0 ? annual.remaining / annual.total : 0;
+    const clampedPct = Math.max(0, Math.min(1, rawPct));
     return {
       ...annual,
-      progress: pct * 100,
+      progress: Math.round(rawPct * 100),
       circumference: circ,
-      dashOffset: circ * (1 - pct)
+      dashOffset: circ * (1 - clampedPct)
     };
   });
 

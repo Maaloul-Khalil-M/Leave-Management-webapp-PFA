@@ -9,6 +9,11 @@ import com.stagepfa.demo.exception.ErrorCode;
 import com.stagepfa.demo.mappers.LeaveLedgerMapper;
 import com.stagepfa.demo.services.CurrentUserService;
 import com.stagepfa.demo.services.LeaveLedgerService;
+import com.stagepfa.demo.domain.entities.LeavePolicy;
+import com.stagepfa.demo.domain.enums.L_CODE;
+import com.stagepfa.demo.repositories.EmployeeRepository;
+import com.stagepfa.demo.repositories.LeavePolicyRepository;
+import com.stagepfa.demo.repositories.LeaveTypeRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +32,9 @@ public class EmployeeLeaveLedgerController {
     private final CurrentUserService currentUserService;
     private final LeaveLedgerService leaveLedgerService;
     private final LeaveLedgerMapper leaveLedgerMapper;
+    private final LeavePolicyRepository leavePolicyRepository;
+    private final LeaveTypeRepository leaveTypeRepository;
+    private final EmployeeRepository employeeRepository;
 
     // returns all leave ledgers for the current user (employee)
     @GetMapping
@@ -42,6 +50,7 @@ public class EmployeeLeaveLedgerController {
                                                                    user.getEmployeeId())
                                                            .stream()
                                                            .map(leaveLedgerMapper::toResponse)
+                                                           .peek(resp -> enrichResponse(resp, user.getEmployeeId()))
                                                            .toList();
 
         return ResponseEntity.ok(PageResponse.<LeaveLedgerResponse>builder()
@@ -70,6 +79,38 @@ public class EmployeeLeaveLedgerController {
             throw new BusinessException(ErrorCode.FORBIDDEN,
                                         "Ledger does not belong to the current employee");
         }
-        return ResponseEntity.ok(leaveLedgerMapper.toResponse(ledger));
+        LeaveLedgerResponse response = leaveLedgerMapper.toResponse(ledger);
+        enrichResponse(response, user.getEmployeeId());
+        return ResponseEntity.ok(response);
+    }
+
+    private void enrichResponse(LeaveLedgerResponse resp, String employeeId) {
+        if (resp == null) return;
+
+        if (resp.getLeaveTypeCode() != null) {
+            leaveTypeRepository.findByCode(resp.getLeaveTypeCode())
+                    .ifPresent(lt -> resp.setLeaveTypeLabel(lt.getLabel()));
+        }
+
+        LeavePolicy policy = null;
+        if (resp.getPolicyId() != null && !resp.getPolicyId().isBlank()) {
+            policy = leavePolicyRepository.findById(resp.getPolicyId()).orElse(null);
+        }
+
+        if (policy == null && employeeId != null && resp.getLeaveTypeCode() != null) {
+            try {
+                L_CODE code = L_CODE.valueOf(resp.getLeaveTypeCode());
+                var emp = employeeRepository.findById(employeeId).orElse(null);
+                if (emp != null && emp.getCurrentAssignment() != null && emp.getCurrentAssignment().getCountryCode() != null) {
+                    policy = leavePolicyRepository.findByCountryAndLeaveTypeCode(emp.getCurrentAssignment().getCountryCode(), code);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (policy != null) {
+            resp.setAccrualRate(policy.getAccrualRate());
+            resp.setAccrualUnit(policy.getAccrualUnit() != null ? policy.getAccrualUnit().name() : null);
+        }
     }
 }

@@ -101,11 +101,11 @@ public class _0005__SeedLeaveActivity {
 
         // ---- Salma: carry-over 5 + opening 20 = 25 available, no consumption ----
         col.insertOne(ledger(LEDGER_SALMA_ANNUAL_ID, EMP_SALMA_ID, "PAID_ANNUAL", YEAR,
-                             POLICY_TN_ANNUAL_ID, 20.0, 5.0, 0.0, 25.0,
+                             POLICY_TN_ANNUAL_ID, 10.0, 5.0, 0.0, 15.0,
                              List.of(movement("2026-01-01T00:00:00Z", "CARRY_OVER", 5.0,
                                               "Carry-over from 2025", null, null),
                                      movement("2026-01-01T00:00:00Z",
-                                              "HR_ADJUSTMENT_CREDIT", 20.0,
+                                              "HR_ADJUSTMENT_CREDIT", 10.0,
                                               "Opening grant 2026", null, USER_LEILA_ID)),
                              now));
 
