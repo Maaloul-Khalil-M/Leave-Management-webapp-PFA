@@ -1,4 +1,4 @@
-﻿import { Component, input, viewChild, effect, computed, AfterViewInit } from '@angular/core';
+import { Component, input, viewChild, effect, computed, AfterViewInit } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -27,7 +27,7 @@ import { StatusBadgeComponent } from '../../../../shared/ui/status-badge/status-
 export class LeaveLedgerComponent implements AfterViewInit {
   readonly items = input<LeaveLedgerEntry[]>([]);
 
-  readonly displayedColumns = ['date', 'leaveType', 'days', 'reason', 'status', 'balance'];
+  readonly displayedColumns = ['date', 'days', 'reason', 'status', 'balance'];
   dataSource = new MatTableDataSource<LeaveLedgerEntry>([]);
 
   readonly paginator = viewChild(MatPaginator);
@@ -37,32 +37,20 @@ export class LeaveLedgerComponent implements AfterViewInit {
     const raw = this.items();
     if (!raw || raw.length === 0) return [];
 
-    // Group entries by leave type to compute chronological running balances
-    const typeGroups = new Map<string, LeaveLedgerEntry[]>();
-    raw.forEach((entry) => {
-      const group = typeGroups.get(entry.leaveType) || [];
-      group.push({ ...entry });
-      typeGroups.set(entry.leaveType, group);
-    });
-
-    const result: LeaveLedgerEntry[] = [];
-    typeGroups.forEach((groupEntries) => {
-      // Sort newest first to unwind backward from the current final balance
-      groupEntries.sort((a, b) => b.date.localeCompare(a.date));
-      let running = groupEntries[0]?.balance ?? 0;
-      for (let i = 0; i < groupEntries.length; i++) {
-        if (i === 0) {
-          groupEntries[i].balance = running;
-        } else {
-          // balance before was current running minus the movement amount of the row after it
-          running = running - groupEntries[i - 1].days;
-          groupEntries[i].balance = Math.round(running * 10) / 10;
-        }
+    // Sort newest first to unwind backward from the current final balance
+    const entries = [...raw].sort((a, b) => b.date.localeCompare(a.date));
+    let running = entries[0]?.balance ?? 0;
+    for (let i = 0; i < entries.length; i++) {
+      if (i === 0) {
+        entries[i].balance = running;
+      } else {
+        // balance before was current running minus the movement amount of the row after it
+        running = running - entries[i - 1].days;
+        entries[i].balance = Math.round(running * 10) / 10;
       }
-      result.push(...groupEntries);
-    });
+    }
 
-    return result.sort((a, b) => b.date.localeCompare(a.date));
+    return entries;
   });
 
   constructor() {

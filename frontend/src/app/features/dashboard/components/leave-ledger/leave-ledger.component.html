@@ -1,8 +1,8 @@
-﻿<mat-card class="section-card ledger-card">
+<mat-card class="section-card ledger-card">
   <div class="card-header">
     <div class="title-wrap">
       <mat-icon class="header-icon">receipt_long</mat-icon>
-      <h3>Leave Ledger History</h3>
+      <h3>Annual Leave Ledger History</h3>
     </div>
     <span class="count-tag">{{ items().length }} entries</span>
   </div>
@@ -15,11 +15,6 @@
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Date</th>
           <td mat-cell *matCellDef="let row">{{ row.date | date: 'MMM d, y' }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="leaveType">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Type</th>
-          <td mat-cell *matCellDef="let row">{{ row.leaveType }}</td>
         </ng-container>
 
         <ng-container matColumnDef="days">
