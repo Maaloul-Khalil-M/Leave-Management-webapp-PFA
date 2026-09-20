@@ -26,4 +26,9 @@ public class DummyCurrentUserService implements CurrentUserService {
                                      () -> new BusinessException(ErrorCode.UNAUTHORIZED,
                                                                  "Dummy dev user not found"));
     }
+
+    @Override
+    public User requireUser() {
+        return requireLinkedUser();
+    }
 }

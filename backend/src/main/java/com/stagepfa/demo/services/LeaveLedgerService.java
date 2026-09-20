@@ -10,6 +10,8 @@ import java.util.List;
 public interface LeaveLedgerService {
     List<LeaveLedger> findByEmployeeId(String employeeId);
 
+    List<LeaveLedger> findByEmployeeIdAndYear(String employeeId, int year);
+
     LeaveLedger findById(String id);
 
     LeaveLedger getOrCreate(String employeeId, String leaveTypeCode, int year);

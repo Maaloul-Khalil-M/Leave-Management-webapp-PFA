@@ -40,17 +40,23 @@ public class CurrentUserServiceImpl implements CurrentUserService {
 
     private final UserService userService;
 
+    @Override
+    public User requireUser() {
+        Jwt jwt = extractJwt();
+        String subject = jwt.getSubject();
+
+        return userService.findBySubject(subject)
+                          .orElseGet(() -> linkOnFirstLogin(jwt, subject));
+    }
+
     /**
      * Returns the User linked to the currently authenticated JWT, creating
      * the identity link on first login. Callers (like CurrentEmployeeResolver)
      * can rely on the returned User already having an employeeId set.
      */
+    @Override
     public User requireLinkedUser() {
-        Jwt jwt = extractJwt();
-        String subject = jwt.getSubject();
-
-        User user = userService.findBySubject(subject)
-                               .orElseGet(() -> linkOnFirstLogin(jwt, subject));
+        User user = requireUser();
 
         if (user.getEmployeeId() == null || user.getEmployeeId()
                                                 .isBlank()) {

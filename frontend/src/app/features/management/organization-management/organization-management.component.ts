@@ -35,8 +35,22 @@ import {
   BonusApplication,
 } from '../../../core/services/leave-policy-admin.service';
 import { LeaveTypeCode } from '../../../core/services/leave-request.service';
+import {
+  LeaveLedgerAdminService,
+  LeaveLedgerResponse,
+  LedgerMovement,
+  LedgerMovementType,
+  LeaveAdjustmentRequest,
+} from '../../../core/services/leave-ledger-admin.service';
 
-type ManagementTab = 'departments' | 'positions' | 'calendars' | 'settings' | 'users' | 'policies';
+type ManagementTab =
+  | 'departments'
+  | 'positions'
+  | 'calendars'
+  | 'settings'
+  | 'users'
+  | 'policies'
+  | 'ledgers';
 
 interface DayOfWeekOption {
   value: number;
@@ -66,6 +80,7 @@ export class OrganizationManagementComponent implements OnInit {
   private readonly userAdminService = inject(UserAdminService);
   private readonly employeeAdminService = inject(EmployeeAdminService);
   private readonly policyService = inject(LeavePolicyAdminService);
+  private readonly ledgerAdminService = inject(LeaveLedgerAdminService);
   readonly auth = inject(AuthService);
 
   readonly isAdmin = computed(() => this.auth.hasRole('ADMIN'));
@@ -252,6 +267,14 @@ export class OrganizationManagementComponent implements OnInit {
       this.loadUsers();
     } else if (tab === 'policies' && this.policies().length === 0) {
       this.loadPolicies();
+    } else if (tab === 'ledgers') {
+      const empId = this.selectedEmployeeId() || this.allEmployees()[0]?.id;
+      if (empId) {
+        if (!this.selectedEmployeeId()) {
+          this.selectedEmployeeId.set(empId);
+        }
+        this.loadEmployeeLedgers(empId);
+      }
     }
   }
 
@@ -776,7 +799,14 @@ export class OrganizationManagementComponent implements OnInit {
   loadEmployees(): void {
     this.employeeAdminService.listEmployees().subscribe({
       next: (res) => {
-        this.allEmployees.set(res.data || []);
+        const list = res.data || [];
+        this.allEmployees.set(list);
+        if (list.length > 0 && !this.selectedEmployeeId()) {
+          this.selectedEmployeeId.set(list[0].id);
+          if (this.activeTab() === 'ledgers') {
+            this.loadEmployeeLedgers(list[0].id);
+          }
+        }
       },
       error: () => {
         // non-blocking lookup helper
@@ -1027,6 +1057,189 @@ export class OrganizationManagementComponent implements OnInit {
         return 'Maternity Leave';
       default:
         return code;
+    }
+  }
+
+  // =========================================================
+  // LEAVE BALANCES & ADJUSTMENTS (LEDGERS)
+  // =========================================================
+
+  readonly selectedEmployeeId = signal<string>('');
+  readonly selectedYear = signal<number>(new Date().getFullYear());
+  readonly employeeLedgers = signal<LeaveLedgerResponse[]>([]);
+  readonly loadingLedgers = signal<boolean>(false);
+  readonly selectedLedgerForMovements = signal<LeaveLedgerResponse | null>(null);
+
+  readonly availableYears: number[] = [
+    new Date().getFullYear() + 1,
+    new Date().getFullYear(),
+    new Date().getFullYear() - 1,
+    new Date().getFullYear() - 2,
+  ];
+
+  readonly selectedEmployee = computed(() => {
+    const id = this.selectedEmployeeId();
+    return this.allEmployees().find((e) => e.id === id) || null;
+  });
+
+  readonly totalAvailableDays = computed(() => {
+    return this.employeeLedgers().reduce((acc, l) => acc + (l.availableBalance || 0), 0);
+  });
+
+  readonly totalConsumedDays = computed(() => {
+    return this.employeeLedgers().reduce((acc, l) => acc + (l.consumedBalance || 0), 0);
+  });
+
+  readonly totalAccruedDays = computed(() => {
+    return this.employeeLedgers().reduce((acc, l) => acc + (l.accruedToDate || 0), 0);
+  });
+
+  readonly totalCarriedOverDays = computed(() => {
+    return this.employeeLedgers().reduce((acc, l) => acc + (l.carriedOverFromPreviousYear || 0), 0);
+  });
+
+  // Modal State
+  readonly showAdjustmentModal = signal(false);
+  adjustmentEmployeeId = '';
+  adjustmentLeaveTypeCode = 'PAID_ANNUAL';
+  adjustmentYear = new Date().getFullYear();
+  adjustmentAmount = 1;
+  adjustmentType: LedgerMovementType = 'HR_ADJUSTMENT_CREDIT';
+  adjustmentNote = '';
+
+  loadEmployeeLedgers(empId?: string, year?: number): void {
+    const id = empId || this.selectedEmployeeId();
+    if (!id) return;
+    const yr = year !== undefined ? year : this.selectedYear();
+    this.loadingLedgers.set(true);
+    this.ledgerAdminService.getEmployeeLedgers(id, yr).subscribe({
+      next: (res) => {
+        const list = res.data || [];
+        this.employeeLedgers.set(list);
+        this.loadingLedgers.set(false);
+        if (list.length > 0) {
+          const current = this.selectedLedgerForMovements();
+          const match = list.find((l) => l.id === current?.id);
+          this.selectedLedgerForMovements.set(match || list[0]);
+        } else {
+          this.selectedLedgerForMovements.set(null);
+        }
+      },
+      error: (err) => {
+        this.loadingLedgers.set(false);
+        this.errorMessage.set(err?.error?.message || 'Failed to load employee leave ledgers.');
+      },
+    });
+  }
+
+  onSelectEmployeeForLedger(empId: string): void {
+    this.selectedEmployeeId.set(empId);
+    this.selectedLedgerForMovements.set(null);
+    this.loadEmployeeLedgers(empId);
+  }
+
+  onSelectYearForLedger(year: number): void {
+    this.selectedYear.set(year);
+    this.loadEmployeeLedgers(this.selectedEmployeeId(), year);
+  }
+
+  selectLedgerMovements(ledger: LeaveLedgerResponse): void {
+    this.selectedLedgerForMovements.set(ledger);
+  }
+
+  openRecordAdjustment(preselectedLeaveType?: string): void {
+    this.adjustmentEmployeeId = this.selectedEmployeeId() || (this.allEmployees()[0]?.id ?? '');
+    this.adjustmentLeaveTypeCode = preselectedLeaveType || 'PAID_ANNUAL';
+    this.adjustmentYear = this.selectedYear();
+    this.adjustmentAmount = 1;
+    this.adjustmentType = 'HR_ADJUSTMENT_CREDIT';
+    this.adjustmentNote = '';
+    this.showAdjustmentModal.set(true);
+  }
+
+  saveAdjustment(): void {
+    if (!this.adjustmentEmployeeId || !this.adjustmentLeaveTypeCode || !this.adjustmentAmount || this.adjustmentAmount <= 0) {
+      this.errorMessage.set('Please provide a valid employee, leave type, and an amount greater than 0.');
+      return;
+    }
+
+    this.saving.set(true);
+    this.errorMessage.set(null);
+    this.successMessage.set(null);
+
+    const req: LeaveAdjustmentRequest = {
+      employeeId: this.adjustmentEmployeeId,
+      leaveTypeCode: this.adjustmentLeaveTypeCode,
+      year: Number(this.adjustmentYear),
+      amount: Number(this.adjustmentAmount),
+      type: this.adjustmentType,
+      note: this.adjustmentNote?.trim() || undefined,
+    };
+
+    this.ledgerAdminService.adjustLedger(req).subscribe({
+      next: (updatedLedger) => {
+        this.saving.set(false);
+        this.showAdjustmentModal.set(false);
+        this.successMessage.set(
+          `Adjustment of ${req.amount} day(s) (${this.formatMovementType(req.type)}) successfully recorded.`
+        );
+        if (this.selectedEmployeeId() === req.employeeId) {
+          this.loadEmployeeLedgers(req.employeeId, this.selectedYear());
+        } else {
+          this.selectedEmployeeId.set(req.employeeId);
+          this.loadEmployeeLedgers(req.employeeId, this.selectedYear());
+        }
+      },
+      error: (err) => {
+        this.saving.set(false);
+        this.errorMessage.set(err?.error?.message || 'Failed to record leave adjustment.');
+      },
+    });
+  }
+
+  formatMovementType(type: LedgerMovementType | string): string {
+    switch (type) {
+      case 'HR_ADJUSTMENT_CREDIT':
+        return 'HR Credit (+)';
+      case 'HR_ADJUSTMENT_DEBIT':
+        return 'HR Debit (-)';
+      case 'CORRECTION_CREDIT':
+        return 'Correction (+)';
+      case 'CORRECTION_DEBIT':
+        return 'Correction (-)';
+      case 'APPROVED_LEAVE_DEBIT':
+        return 'Approved Leave Debit (-)';
+      case 'CANCELLED_LEAVE_CREDIT':
+        return 'Cancelled Leave Credit (+)';
+      case 'MONTHLY_ACCRUAL':
+        return 'Monthly Accrual (+)';
+      case 'CARRY_OVER':
+        return 'Carry Over (+)';
+      default:
+        return type;
+    }
+  }
+
+  getMovementBadgeClass(type: LedgerMovementType | string): string {
+    switch (type) {
+      case 'HR_ADJUSTMENT_CREDIT':
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'HR_ADJUSTMENT_DEBIT':
+        return 'bg-rose-100 text-rose-800 border-rose-200';
+      case 'CORRECTION_CREDIT':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'CORRECTION_DEBIT':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'APPROVED_LEAVE_DEBIT':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'CANCELLED_LEAVE_CREDIT':
+        return 'bg-teal-100 text-teal-800 border-teal-200';
+      case 'MONTHLY_ACCRUAL':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'CARRY_OVER':
+        return 'bg-cyan-100 text-cyan-800 border-cyan-200';
+      default:
+        return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   }
 }

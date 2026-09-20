@@ -51,6 +51,11 @@ public class LeaveLedgerServiceImpl implements LeaveLedgerService {
     }
 
     @Override
+    public List<LeaveLedger> findByEmployeeIdAndYear(String employeeId, int year) {
+        return ledgerRepository.findByEmployeeIdAndYear(employeeId, year);
+    }
+
+    @Override
     public LeaveLedger findById(String id) {
         return ledgerRepository.findById(id)
                                .orElseThrow(

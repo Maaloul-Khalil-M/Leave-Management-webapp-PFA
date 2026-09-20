@@ -13,4 +13,12 @@ public interface CurrentUserService {
      * return the currently authenticated and linked User
      */
     User requireLinkedUser();
+
+    /**
+     * Returns the User linked to the currently authenticated JWT.
+     * If this is the user's first login, the identity link is created.
+     * Unlike requireLinkedUser(), this does not require an employeeId to be present,
+     * allowing pure ADMIN or unlinked users to be resolved.
+     */
+    User requireUser();
 }
