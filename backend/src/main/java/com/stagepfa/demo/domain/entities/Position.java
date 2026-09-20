@@ -27,6 +27,7 @@ public class Position {
 
     private String title;
     private String description;
+    private String departmentId;
 
     @CreatedDate
     private Instant createdAt;

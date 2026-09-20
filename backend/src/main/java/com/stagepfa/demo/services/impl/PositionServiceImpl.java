@@ -35,7 +35,15 @@ public class PositionServiceImpl implements PositionService {
     @Override
     @Transactional
     public Position create(Position position) {
-        if (repository.existsByCode(position.getCode())) {
+        if (position.getCode() == null || position.getCode().isBlank()) {
+            String baseCode = generateBaseCode(position.getTitle());
+            String code = baseCode;
+            int counter = 1;
+            while (repository.existsByCode(code)) {
+                code = baseCode + "_" + counter++;
+            }
+            position.setCode(code);
+        } else if (repository.existsByCode(position.getCode())) {
             throw new DuplicateResourceException(
                     "Position code already exists: " + position.getCode());
         }
@@ -49,7 +57,25 @@ public class PositionServiceImpl implements PositionService {
     @Transactional
     public Position update(String id, Position updates) {
         findById(id);
+        updates.setId(id);
         updates.setUpdatedAt(Instant.now());
         return repository.save(updates);
+    }
+
+    private String generateBaseCode(String title) {
+        if (title == null || title.isBlank()) {
+            return "POS";
+        }
+        String clean = title.trim().toUpperCase().replaceAll("[^A-Z0-9]+", "_");
+        if (clean.startsWith("_")) {
+            clean = clean.substring(1);
+        }
+        if (clean.endsWith("_")) {
+            clean = clean.substring(0, clean.length() - 1);
+        }
+        if (clean.isEmpty()) {
+            clean = "POS";
+        }
+        return clean.length() > 40 ? clean.substring(0, 40) : clean;
     }
 }

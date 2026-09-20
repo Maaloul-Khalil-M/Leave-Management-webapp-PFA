@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class CreatePositionRequest {
-    @NotBlank
     @Size(max = 50)
     private String code;
 
@@ -16,4 +15,6 @@ public class CreatePositionRequest {
 
     @Size(max = 500)
     private String description;
+
+    private String departmentId;
 }

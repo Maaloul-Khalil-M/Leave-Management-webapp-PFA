@@ -10,4 +10,6 @@ public class UpdatePositionRequest {
 
     @Size(max = 500)
     private String description;
+
+    private String departmentId;
 }

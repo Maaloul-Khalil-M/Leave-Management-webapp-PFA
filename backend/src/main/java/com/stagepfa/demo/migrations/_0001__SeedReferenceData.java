@@ -100,15 +100,15 @@ public class _0001__SeedReferenceData {
 
         col.insertMany(List.of(
                 pos(POS_BACKEND_ID, "BE_DEV", "Backend Developer",
-                        "Java / Spring backend engineer", now),
+                        "Java / Spring backend engineer", DEPT_ENGINEERING_ID, now),
                 pos(POS_FRONTEND_ID, "FE_DEV", "Frontend Developer",
-                        "Angular frontend engineer", now),
+                        "Angular frontend engineer", DEPT_ENGINEERING_ID, now),
                 pos(POS_HR_SPECIALIST_ID, "HR_SPEC", "HR Specialist",
-                        "Human resources specialist", now),
+                        "Human resources specialist", DEPT_HR_ID, now),
                 pos(POS_ENGINEERING_MANAGER_ID, "ENG_MGR", "Engineering Manager",
-                        "Engineering team lead", now),
+                        "Engineering team lead", DEPT_ENGINEERING_ID, now),
                 pos(POS_FINANCE_ANALYST_ID, "FIN_AN", "Finance Analyst",
-                        "Financial analysis and reporting", now)
+                        "Financial analysis and reporting", DEPT_FINANCE_ID, now)
         ));
     }
 
@@ -120,11 +120,12 @@ public class _0001__SeedReferenceData {
                 .append("updatedAt", now);
     }
 
-    private static Document pos(String id, String code, String title, String description, Instant now) {
+    private static Document pos(String id, String code, String title, String description, String departmentId, Instant now) {
         return new Document("_id", id)
                 .append("code", code)
                 .append("title", title)
                 .append("description", description)
+                .append("departmentId", departmentId)
                 .append("createdAt", now)
                 .append("updatedAt", now);
     }
