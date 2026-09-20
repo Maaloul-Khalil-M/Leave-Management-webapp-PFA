@@ -1,4 +1,4 @@
-﻿<mat-card class="section-card calendar-card">
+<mat-card class="section-card calendar-card">
   <div class="calendar-card-header">
     <div class="title-cluster">
       <mat-icon class="header-icon">calendar_month</mat-icon>
@@ -37,23 +37,47 @@
   <div class="calendar-wrapper">
     <full-calendar #fullCalendar [options]="calendarOptions()"></full-calendar>
   </div>
+</mat-card>
 
-  <div class="legend-bar">
-    <div class="legend-item">
-      <span class="pip approved"></span>
-      <span>Approved</span>
+<!-- Rich Floating Tooltip on Event Hover -->
+@if (hoveredEvent(); as ev) {
+  <div
+    class="rich-calendar-tooltip"
+    [class.placement-bottom]="tooltipPlacement() === 'bottom'"
+    [style.left.px]="tooltipPos()?.x"
+    [style.top.px]="tooltipPos()?.y"
+  >
+    <div class="tooltip-header">
+      <div class="tooltip-color-bar" [style.background-color]="ev.color || '#2563eb'"></div>
+      <div class="tooltip-title-block">
+        <h4 class="tooltip-title">{{ ev.title }}</h4>
+        <span class="tooltip-type">{{ ev.type }}</span>
+      </div>
+      @if (ev.status) {
+        <span class="tooltip-status-pill" [class]="'pill-' + ev.status.toLowerCase()">
+          {{ ev.status }}
+        </span>
+      } @else {
+        <span class="tooltip-status-pill pill-holiday">Holiday</span>
+      }
     </div>
-    <div class="legend-item">
-      <span class="pip pending"></span>
-      <span>Pending</span>
-    </div>
-    <div class="legend-item">
-      <span class="pip holiday"></span>
-      <span>Holiday</span>
-    </div>
-    <div class="legend-item">
-      <span class="pip today-pip"></span>
-      <span>Today</span>
+
+    <div class="tooltip-body">
+      <div class="tooltip-row">
+        <mat-icon class="row-icon">calendar_today</mat-icon>
+        <span class="date-range">
+          {{ ev.startDate }}@if (ev.endDate && ev.endDate !== ev.startDate) { – {{ ev.endDate }} }
+        </span>
+        @if (ev.days) {
+          <span class="duration-badge">{{ ev.days }} day{{ ev.days > 1 ? 's' : '' }}</span>
+        }
+      </div>
+      @if (ev.reason) {
+        <div class="tooltip-row reason-row">
+          <mat-icon class="row-icon">notes</mat-icon>
+          <span class="reason-text">{{ ev.reason }}</span>
+        </div>
+      }
     </div>
   </div>
-</mat-card>
+}

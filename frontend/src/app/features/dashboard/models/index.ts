@@ -74,6 +74,8 @@ export interface CalendarEvent {
   end: string;
   type: string;
   color: string;
+  status?: string;
+  days?: number;
 }
 
 export interface CalendarData {

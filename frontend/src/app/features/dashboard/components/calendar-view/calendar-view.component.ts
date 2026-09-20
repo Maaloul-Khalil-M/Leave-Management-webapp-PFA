@@ -1,16 +1,44 @@
-﻿import { Component, input, computed, signal, viewChild, inject } from '@angular/core';
+import { Component, input, computed, signal, viewChild } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from 'fullcalendar';
 import dayGridPlugin from 'fullcalendar/daygrid';
 import { CalendarData } from '../../models';
-import {
-  EventDetailDialogComponent,
-  CalendarEventDialogData
-} from './event-detail-dialog/event-detail-dialog.component';
+
+interface TooltipEventData {
+  title: string;
+  type: string;
+  status?: string;
+  startDate: string;
+  endDate?: string;
+  days?: number;
+  reason?: string;
+  color?: string;
+}
+
+function getExclusiveEndDate(startDateStr: string, endDateStr?: string): string {
+  const targetEnd = endDateStr || startDateStr;
+  const parts = targetEnd.split('-').map(Number);
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + 1));
+  return d.toISOString().split('T')[0];
+}
+
+function getDateRangeArray(startDateStr: string, endDateStr?: string): string[] {
+  const dates: string[] = [];
+  const endStr = endDateStr || startDateStr;
+  const startParts = startDateStr.split('-').map(Number);
+  const endParts = endStr.split('-').map(Number);
+  const cur = new Date(Date.UTC(startParts[0], startParts[1] - 1, startParts[2]));
+  const end = new Date(Date.UTC(endParts[0], endParts[1] - 1, endParts[2]));
+
+  while (cur <= end) {
+    dates.push(cur.toISOString().split('T')[0]);
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return dates;
+}
 
 @Component({
   selector: 'app-calendar-view',
@@ -19,32 +47,56 @@ import {
     MatCardModule,
     MatIconModule,
     MatButtonModule,
-    MatDialogModule,
     FullCalendarModule
   ],
   templateUrl: './calendar-view.component.html',
   styleUrl: './calendar-view.component.scss'
 })
 export class CalendarViewComponent {
-  private readonly dialog = inject(MatDialog);
-
   readonly calendarData = input<CalendarData | null>(null);
   readonly fullCalendarRef = viewChild<FullCalendarComponent>('fullCalendar');
 
   readonly activeMonthTitle = signal<string>('');
 
+  // Rich floating tooltip state
+  readonly hoveredEvent = signal<TooltipEventData | null>(null);
+  readonly tooltipPos = signal<{ x: number; y: number } | null>(null);
+  readonly tooltipPlacement = signal<'top' | 'bottom'>('top');
+
   readonly calendarOptions = computed<CalendarOptions>(() => {
     const data = this.calendarData();
+
+    const approvedDateSet = new Set<string>();
+    const pendingDateSet = new Set<string>();
+    const holidayDateSet = new Set<string>();
+
+    (data?.events ?? []).forEach((e) => {
+      const dates = getDateRangeArray(e.start, e.end);
+      dates.forEach((d) => {
+        if (e.type === 'Holiday') {
+          holidayDateSet.add(d);
+        } else if (e.status === 'Approved') {
+          approvedDateSet.add(d);
+        } else if (e.status === 'Pending') {
+          pendingDateSet.add(d);
+        }
+      });
+    });
+
     const events: EventInput[] = (data?.events ?? []).map((e) => ({
       id: e.id,
       title: e.title,
       start: e.start,
-      end: e.end,
+      end: getExclusiveEndDate(e.start, e.end),
       backgroundColor: e.color,
       borderColor: e.color,
       extendedProps: {
         rawType: e.type,
-        color: e.color
+        color: e.color,
+        status: e.status,
+        days: e.days,
+        rawStart: e.start,
+        rawEnd: e.end || e.start
       }
     }));
 
@@ -53,53 +105,97 @@ export class CalendarViewComponent {
       initialView: 'dayGridMonth',
       initialDate: data?.highlightDate || new Date().toISOString().split('T')[0],
       headerToolbar: false,
-      height: 290,
-      contentHeight: 250,
+      height: 310,
+      contentHeight: 270,
       fixedWeekCount: false,
-      dayMaxEvents: 3,
+      dayMaxEvents: 2,
       events,
       datesSet: (dateInfo) => {
         this.activeMonthTitle.set(dateInfo.view.title);
       },
       eventContent: (arg) => {
-        const color = (arg.event.extendedProps?.['color'] as string) || (arg.event as any).backgroundColor || '#3b82f6';
-        const title = arg.event.title.replace(/"/g, '&quot;');
+        const rawType = (arg.event.extendedProps?.['rawType'] as string) || 'Leave';
+        const status = arg.event.extendedProps?.['status'] as string;
+        const isPending = status === 'Pending';
+        const isHoliday = rawType === 'Holiday';
+
+        let iconName = 'beach_access';
+        let statusClass = 'event-approved';
+        if (isHoliday) {
+          iconName = 'celebration';
+          statusClass = 'event-holiday';
+        } else if (isPending) {
+          iconName = 'schedule';
+          statusClass = 'event-pending';
+        }
+
+        const title = arg.event.title
+          .replace(/ \((Approved|Pending|Rejected|Draft)\)/g, '')
+          .replace(/"/g, '&quot;');
+
         return {
-          html: `<span class="calendar-pip" style="background-color: ${color};" title="${title}"></span>`
+          html: `
+            <div class="calendar-event-ribbon ${statusClass}">
+              <span class="ribbon-icon material-icons">${iconName}</span>
+              <span class="ribbon-text">${title}</span>
+            </div>
+          `
         };
+      },
+      eventMouseEnter: (info) => {
+        const ev = info.event;
+        const color = (ev.extendedProps?.['color'] as string) || (ev as any).backgroundColor || '#3b82f6';
+        const rawTitle = ev.title.replace(/ \((Approved|Pending|Rejected|Draft)\)/g, '');
+
+        const targetRect = info.el.getBoundingClientRect();
+        const x = targetRect.left + targetRect.width / 2;
+        const placeBelow = targetRect.top < 130;
+        const y = placeBelow ? targetRect.bottom + 8 : targetRect.top - 8;
+
+        this.tooltipPlacement.set(placeBelow ? 'bottom' : 'top');
+        this.tooltipPos.set({ x, y });
+
+        this.hoveredEvent.set({
+          title: rawTitle,
+          type: (ev.extendedProps?.['rawType'] as string) || 'Event',
+          status: (ev.extendedProps?.['status'] as string) || (
+            ev.title.includes('(Approved)')
+              ? 'Approved'
+              : ev.title.includes('(Pending)')
+                ? 'Pending'
+                : undefined
+          ),
+          startDate: (ev.extendedProps?.['rawStart'] as string) || ev.startStr,
+          endDate: (ev.extendedProps?.['rawEnd'] as string) || (ev.extendedProps?.['rawStart'] as string) || ev.startStr,
+          days: ev.extendedProps?.['days'] as number,
+          reason: ev.extendedProps?.['reason'] as string,
+          color
+        });
+      },
+      eventMouseLeave: () => {
+        this.hoveredEvent.set(null);
+        this.tooltipPos.set(null);
       },
       eventClick: (info) => {
         info.jsEvent.preventDefault();
-        const ev = info.event;
-        const color = (ev.extendedProps?.['color'] as string) || (ev as any).backgroundColor || '#3b82f6';
-        const dialogData: CalendarEventDialogData = {
-          title: ev.title,
-          type: (ev.extendedProps?.['rawType'] as string) || 'Event',
-          status: ev.title.includes('(Approved)')
-            ? 'Approved'
-            : ev.title.includes('(Pending)')
-              ? 'Pending'
-              : ev.title.includes('(Rejected)')
-                ? 'Rejected'
-                : ev.title.includes('(Draft)')
-                  ? 'Draft'
-                  : undefined,
-          startDate: ev.startStr,
-          endDate: ev.endStr || ev.startStr,
-          color
-        };
-
-        this.dialog.open(EventDetailDialogComponent, {
-          data: dialogData,
-          width: '380px'
-        });
       },
       dayCellClassNames: (arg: any) => {
+        const classes: string[] = [];
+        const dateStr = arg['dateStr'];
         const highlight = data?.highlightDate;
-        if (highlight && arg['dateStr'] === highlight) {
-          return ['highlight-day'];
+        if (highlight && dateStr === highlight) {
+          classes.push('highlight-day');
         }
-        return [];
+        if (approvedDateSet.has(dateStr)) {
+          classes.push('day-approved');
+        }
+        if (pendingDateSet.has(dateStr)) {
+          classes.push('day-pending');
+        }
+        if (holidayDateSet.has(dateStr)) {
+          classes.push('day-holiday');
+        }
+        return classes;
       }
     };
   });

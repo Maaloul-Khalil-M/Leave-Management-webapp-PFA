@@ -365,7 +365,9 @@ export class DashboardStateService {
             start: req.startDate,
             end: req.endDate,
             type: 'Leave',
-            color: req.status === 'Approved' ? '#60a5fa' : '#fbbf24'
+            status: req.status,
+            days: req.days,
+            color: req.status === 'Approved' ? '#10b981' : '#f59e0b'
           });
         });
 

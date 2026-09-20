@@ -1,4 +1,4 @@
-﻿.section-card {
+.section-card {
   border-radius: var(--app-radius-lg, 12px);
   border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
   background: var(--mat-sys-surface, #ffffff);
@@ -99,10 +99,7 @@
       display: none !important;
     }
 
-    .fc-theme-standard th {
-      border-color: #f1f5f9 !important;
-    }
-
+    .fc-theme-standard th,
     .fc-theme-standard td {
       border-color: #f1f5f9 !important;
     }
@@ -118,22 +115,46 @@
     }
 
     .fc-daygrid-day {
-      min-height: 34px !important;
+      min-height: 36px !important;
       cursor: pointer;
       transition: background-color 0.15s ease;
 
       &:hover {
         background-color: #f1f5f9 !important;
       }
+
+      /* Multi-day connected cell tinting */
+      &.day-approved {
+        background-color: #f0fdf4 !important;
+
+        &:hover {
+          background-color: #dcfce7 !important;
+        }
+      }
+
+      &.day-pending {
+        background-color: #fffbeb !important;
+
+        &:hover {
+          background-color: #fef3c7 !important;
+        }
+      }
+
+      &.day-holiday {
+        background-color: #fef2f2 !important;
+
+        &:hover {
+          background-color: #fee2e2 !important;
+        }
+      }
     }
 
     .fc-daygrid-day-frame {
-      min-height: 34px;
+      min-height: 36px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 2px 0;
+      align-items: stretch;
+      padding: 1px 0;
     }
 
     .fc-daygrid-day-top {
@@ -145,7 +166,7 @@
     .fc-daygrid-day-number {
       font-size: 11px;
       font-weight: 500;
-      padding: 1px 4px;
+      padding: 0;
       color: #334155;
       border-radius: 50%;
       min-width: 18px;
@@ -155,56 +176,84 @@
       justify-content: center;
     }
 
-    .fc-daygrid-day.highlight-day,
-    .fc-daygrid-day.fc-day-today {
-      .fc-daygrid-day-number {
-        background: #2563eb;
-        color: #ffffff;
-        font-weight: 700;
-      }
+    .fc-daygrid-day.highlight-day .fc-daygrid-day-number,
+    .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+      background: #2563eb;
+      color: #ffffff;
+      font-weight: 700;
     }
 
+    /* Event segment styling supporting multi-day ribbons */
     .fc-daygrid-day-events {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: wrap !important;
-      justify-content: center !important;
-      align-items: center !important;
-      gap: 2px !important;
-      min-height: 8px !important;
       margin-top: 1px !important;
       margin-bottom: 0 !important;
-      width: 100% !important;
+      min-height: 16px !important;
     }
 
     .fc-daygrid-event-harness {
-      display: inline-flex !important;
-      margin: 0 !important;
-      line-height: 1 !important;
+      margin: 1px 0 !important;
     }
 
     .fc-daygrid-event {
-      background: transparent !important;
       border: none !important;
-      padding: 0 !important;
+      background: transparent !important;
+      padding: 0 1px !important;
       margin: 0 !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      display: block !important;
       box-shadow: none !important;
     }
 
-    .calendar-pip {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
-      transition: transform 0.15s ease;
+    .calendar-event-ribbon {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      width: 100%;
+      height: 18px;
+      line-height: 18px;
+      padding: 0 4px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      font-weight: 600;
+      box-sizing: border-box;
       cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      transition: filter 0.15s ease, transform 0.1s ease;
+
+      .ribbon-icon {
+        font-size: 11px;
+        width: 11px;
+        height: 11px;
+        flex-shrink: 0;
+      }
+
+      .ribbon-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &.event-approved {
+        background-color: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+      }
+
+      &.event-pending {
+        background-color: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+      }
+
+      &.event-holiday {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+      }
 
       &:hover {
-        transform: scale(1.35);
+        filter: brightness(0.95);
       }
     }
 
@@ -218,42 +267,148 @@
   }
 }
 
-.legend-bar {
+/* Rich Floating Tooltip on Hover */
+.rich-calendar-tooltip {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  min-width: 220px;
+  max-width: 290px;
+  background: #ffffff;
+  border: 1px solid var(--mat-sys-outline-variant, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+  padding: 10px 12px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 8px;
-  margin-top: 6px;
-  border-top: 1px solid #f1f5f9;
+  flex-direction: column;
+  gap: 8px;
+  animation: tooltipFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &.placement-bottom {
+    transform: translate(-50%, 0);
+  }
+
+  .tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .tooltip-color-bar {
+      width: 3px;
+      height: 24px;
+      border-radius: 9999px;
+      flex-shrink: 0;
+    }
+
+    .tooltip-title-block {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+
+      .tooltip-title {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 700;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .tooltip-type {
+        font-size: 10px;
+        color: #64748b;
+        font-weight: 500;
+      }
+    }
+
+    .tooltip-status-pill {
+      font-size: 9.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      flex-shrink: 0;
+
+      &.pill-approved {
+        background: #ecfdf5;
+        color: #047857;
+        border: 1px solid #a7f3d0;
+      }
+
+      &.pill-pending {
+        background: #fffbeb;
+        color: #b45309;
+        border: 1px solid #fde68a;
+      }
+
+      &.pill-holiday {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+      }
+    }
+  }
+
+  .tooltip-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #f1f5f9;
+
+    .tooltip-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #334155;
+
+      .row-icon {
+        font-size: 13px;
+        width: 13px;
+        height: 13px;
+        color: #94a3b8;
+        flex-shrink: 0;
+      }
+
+      .date-range {
+        font-weight: 500;
+      }
+
+      .duration-badge {
+        font-size: 10px;
+        font-weight: 700;
+        background: #eff6ff;
+        color: #2563eb;
+        padding: 0 5px;
+        border-radius: 4px;
+        margin-left: auto;
+      }
+
+      &.reason-row {
+        align-items: flex-start;
+
+        .reason-text {
+          font-size: 10.5px;
+          color: #64748b;
+          line-height: 1.25;
+        }
+      }
+    }
+  }
 }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  color: #64748b;
-  font-weight: 500;
-
-  .pip {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-
-    &.approved {
-      background: #10b981;
-    }
-
-    &.pending {
-      background: #f59e0b;
-    }
-
-    &.holiday {
-      background: #ef4444;
-    }
-
-    &.today-pip {
-      background: #2563eb;
-    }
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 4px));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%);
   }
 }
